@@ -1,0 +1,39 @@
+{
+  "name": "biatec-tokens-frontend",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc -b && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@agoralabs-sh/avm-web-provider": "^1.7.0",
+    "@algorandfoundation/algokit-utils": "^9.1.0",
+    "@blockshake/defly-connect": "^1.2.1",
+    "@magic-ext/algorand": "^23.20.0",
+    "@perawallet/connect": "^1.4.2",
+    "@txnlab/use-wallet-vue": "^4.1.0",
+    "@walletconnect/modal": "^2.7.0",
+    "@walletconnect/sign-client": "^2.21.2",
+    "algorand-authentication-component-vue": "^2.0.4",
+    "algosdk": "^3.3.1",
+    "axios": "^1.9.0",
+    "lute-connect": "^1.6.1",
+    "pinia": "^2.3.1",
+    "vue": "^3.4.0",
+    "vue-router": "^4.5.1",
+    "whatamesh": "^0.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.0",
+    "@vitejs/plugin-vue": "^5.2.4",
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.5",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.8.3",
+    "vite": "^5.4.19",
+    "vue-tsc": "^1.8.27"
+  }
+}
