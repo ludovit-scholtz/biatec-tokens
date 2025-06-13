@@ -40,24 +40,86 @@
             <MoonIcon v-else class="w-5 h-5" />
           </button>
 
+          <!-- Subscription Status -->
+          <div v-if="authStore.isAuthenticated && subscriptionStore.currentProduct" class="hidden sm:flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-green-100 dark:bg-green-900/30">
+            <div class="w-2 h-2 rounded-full bg-green-500"></div>
+            <span class="text-xs font-medium text-green-700 dark:text-green-300">{{ subscriptionStore.currentProduct.name }}</span>
+          </div>
+
           <!-- Network Status -->
           <div class="hidden sm:flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-800">
             <div class="w-2 h-2 rounded-full" :class="networkStatusColor"></div>
             <span class="text-xs font-medium text-gray-700 dark:text-gray-300">{{ networkStatus }}</span>
           </div>
 
-          <!-- Wallet Connection -->
-          <Button
-            @click="connectWallet"
-            :loading="isConnecting"
-            :variant="isConnected ? 'secondary' : 'primary'"
-            size="sm"
-          >
-            <template #icon>
-              <WalletIcon class="w-4 h-4" />
-            </template>
-            {{ walletButtonText }}
-          </Button>
+          <!-- Auth Actions -->
+          <div v-if="!authStore.isAuthenticated" class="flex items-center space-x-2">
+            <Button
+              @click="$router.push('/auth/login')"
+              variant="ghost"
+              size="sm"
+            >
+              Sign In
+            </Button>
+            <Button
+              @click="$router.push('/auth/signup')"
+              variant="primary"
+              size="sm"
+            >
+              Sign Up
+            </Button>
+          </div>
+
+          <!-- User Menu -->
+          <div v-else class="relative">
+            <button
+              @click="showUserMenu = !showUserMenu"
+              class="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            >
+              <div class="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+                <span class="text-white text-sm font-medium">
+                  {{ authStore.user?.email?.charAt(0).toUpperCase() }}
+                </span>
+              </div>
+              <ChevronDownIcon class="w-4 h-4 text-gray-500" />
+            </button>
+
+            <!-- User Dropdown -->
+            <Transition
+              enter-active-class="transition duration-200 ease-out"
+              enter-from-class="transform scale-95 opacity-0"
+              enter-to-class="transform scale-100 opacity-100"
+              leave-active-class="transition duration-75 ease-in"
+              leave-from-class="transform scale-100 opacity-100"
+              leave-to-class="transform scale-95 opacity-0"
+            >
+              <div v-if="showUserMenu" class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1">
+                <div class="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
+                  <p class="text-sm font-medium text-gray-900 dark:text-white">{{ authStore.user?.email }}</p>
+                </div>
+                <router-link
+                  to="/subscription/pricing"
+                  @click="showUserMenu = false"
+                  class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                >
+                  Subscription
+                </router-link>
+                <router-link
+                  to="/settings"
+                  @click="showUserMenu = false"
+                  class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                >
+                  Settings
+                </router-link>
+                <button
+                  @click="handleSignOut"
+                  class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                >
+                  Sign Out
+                </button>
+              </div>
+            </Transition>
+          </div>
 
           <!-- Mobile Menu Button -->
           <button
@@ -102,10 +164,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { ref, computed, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useThemeStore } from '../../stores/theme'
 import { useSettingsStore } from '../../stores/settings'
+import { useAuthStore } from '../../stores/auth'
+import { useSubscriptionStore } from '../../stores/subscription'
 import Button from '../ui/Button.vue'
 import {
   HomeIcon,
@@ -114,19 +178,20 @@ import {
   Cog6ToothIcon,
   SunIcon,
   MoonIcon,
-  WalletIcon,
   Bars3Icon,
-  XMarkIcon
+  XMarkIcon,
+  ChevronDownIcon
 } from '@heroicons/vue/24/outline'
 
 const route = useRoute()
+const router = useRouter()
 const themeStore = useThemeStore()
 const settingsStore = useSettingsStore()
+const authStore = useAuthStore()
+const subscriptionStore = useSubscriptionStore()
 
 const showMobileMenu = ref(false)
-const isConnecting = ref(false)
-const isConnected = ref(false)
-const walletAddress = ref('')
+const showUserMenu = ref(false)
 
 const navigationItems = [
   { name: 'Home', path: '/', icon: HomeIcon },
@@ -153,12 +218,6 @@ const networkStatusColor = computed(() => {
   }
 })
 
-const walletButtonText = computed(() => {
-  if (isConnecting.value) return 'Connecting...'
-  if (isConnected.value) return `${walletAddress.value.slice(0, 6)}...${walletAddress.value.slice(-4)}`
-  return 'Connect'
-})
-
 const isActiveRoute = (path: string) => {
   return route.path === path
 }
@@ -167,20 +226,15 @@ const toggleMobileMenu = () => {
   showMobileMenu.value = !showMobileMenu.value
 }
 
-const connectWallet = async () => {
-  if (isConnected.value) return
-  
-  isConnecting.value = true
-  
-  try {
-    // Mock wallet connection
-    await new Promise(resolve => setTimeout(resolve, 1500))
-    isConnected.value = true
-    walletAddress.value = 'DEMO' + Math.random().toString(36).substr(2, 54).toUpperCase()
-  } catch (error) {
-    console.error('Failed to connect wallet:', error)
-  } finally {
-    isConnecting.value = false
-  }
+const handleSignOut = async () => {
+  showUserMenu.value = false
+  await authStore.signOut()
+  router.push('/')
 }
+
+onMounted(async () => {
+  if (authStore.isAuthenticated) {
+    await subscriptionStore.fetchSubscription()
+  }
+})
 </script>
