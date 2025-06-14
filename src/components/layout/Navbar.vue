@@ -19,9 +19,11 @@
             :key="item.name"
             :to="item.path"
             class="px-4 py-2 rounded-lg text-sm font-medium transition-colors relative group"
-            :class="isActiveRoute(item.path) 
-              ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20' 
-              : 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800'"
+            :class="
+              isActiveRoute(item.path)
+                ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20'
+                : 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800'
+            "
           >
             <component :is="item.icon" class="w-4 h-4 inline mr-2" />
             {{ item.name }}
@@ -54,28 +56,20 @@
 
           <!-- Algorand Authentication Component -->
           <div v-if="!authStore.isAuthenticated">
-            <AlgorandAuthentication
-              :use-wallet="true"
-              :dark-mode="themeStore.isDark"
-              @authenticated="handleAuthenticated"
-              @error="handleAuthError"
-            />
+            <button @click="authStore.inAuthentication = true" class="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">Authenticate</button>
           </div>
 
           <!-- User Menu -->
           <div v-else class="relative">
-            <button
-              @click="showUserMenu = !showUserMenu"
-              class="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-            >
+            <button @click="showUserMenu = !showUserMenu" class="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
               <div class="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
                 <span class="text-white text-sm font-medium">
-                  {{ authStore.user?.address?.charAt(0).toUpperCase() }}
+                  {{ authStore.account.charAt(0).toUpperCase() }}
                 </span>
               </div>
               <div class="hidden sm:block text-left">
-                <p class="text-sm font-medium text-gray-900 dark:text-white">{{ authStore.user?.name }}</p>
-                <p class="text-xs text-gray-500 dark:text-gray-400">{{ formatAddress(authStore.user?.address) }}</p>
+                <p class="text-sm font-medium text-gray-900 dark:text-white">{{ authStore.arc76email }}</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">{{ formatAddress(authStore.account) }}</p>
               </div>
               <ChevronDownIcon class="w-4 h-4 text-gray-500" />
             </button>
@@ -91,29 +85,16 @@
             >
               <div v-if="showUserMenu" class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1">
                 <div class="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
-                  <p class="text-sm font-medium text-gray-900 dark:text-white">{{ authStore.user?.name }}</p>
-                  <p class="text-xs text-gray-500 dark:text-gray-400">{{ formatAddress(authStore.user?.address) }}</p>
+                  <p class="text-sm font-medium text-gray-900 dark:text-white">{{ authStore.arc76email }}</p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">{{ formatAddress(authStore.account) }}</p>
                 </div>
-                <router-link
-                  to="/subscription/pricing"
-                  @click="showUserMenu = false"
-                  class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-                >
+                <router-link to="/subscription/pricing" @click="showUserMenu = false" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">
                   Subscription
                 </router-link>
-                <router-link
-                  to="/settings"
-                  @click="showUserMenu = false"
-                  class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-                >
+                <router-link to="/settings" @click="showUserMenu = false" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">
                   Settings
                 </router-link>
-                <button
-                  @click="handleSignOut"
-                  class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-                >
-                  Disconnect Wallet
-                </button>
+                <button @click="handleSignOut" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">Disconnect Wallet</button>
               </div>
             </Transition>
           </div>
@@ -147,9 +128,11 @@
             :to="item.path"
             @click="showMobileMenu = false"
             class="flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors"
-            :class="isActiveRoute(item.path) 
-              ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20' 
-              : 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800'"
+            :class="
+              isActiveRoute(item.path)
+                ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20'
+                : 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800'
+            "
           >
             <component :is="item.icon" class="w-5 h-5 mr-3" />
             {{ item.name }}
@@ -161,98 +144,71 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { useThemeStore } from '../../stores/theme'
-import { useSettingsStore } from '../../stores/settings'
-import { useAuthStore } from '../../stores/auth'
-import { useSubscriptionStore } from '../../stores/subscription'
-import AlgorandAuthentication from 'algorand-authentication-component-vue'
-import {
-  HomeIcon,
-  PlusCircleIcon,
-  ChartBarIcon,
-  Cog6ToothIcon,
-  SunIcon,
-  MoonIcon,
-  Bars3Icon,
-  XMarkIcon,
-  ChevronDownIcon
-} from '@heroicons/vue/24/outline'
+import { ref, computed, onMounted } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import { useThemeStore } from "../../stores/theme";
+import { useSettingsStore } from "../../stores/settings";
+import { useSubscriptionStore } from "../../stores/subscription";
+import { useAVMAuthentication } from "algorand-authentication-component-vue";
+import { HomeIcon, PlusCircleIcon, ChartBarIcon, Cog6ToothIcon, SunIcon, MoonIcon, Bars3Icon, XMarkIcon, ChevronDownIcon } from "@heroicons/vue/24/outline";
 
-const route = useRoute()
-const router = useRouter()
-const themeStore = useThemeStore()
-const settingsStore = useSettingsStore()
-const authStore = useAuthStore()
-const subscriptionStore = useSubscriptionStore()
+const route = useRoute();
+const router = useRouter();
+const themeStore = useThemeStore();
+const settingsStore = useSettingsStore();
+const { authStore, logout } = useAVMAuthentication();
+const subscriptionStore = useSubscriptionStore();
 
-const showMobileMenu = ref(false)
-const showUserMenu = ref(false)
+const showMobileMenu = ref(false);
+const showUserMenu = ref(false);
 
 const navigationItems = [
-  { name: 'Home', path: '/', icon: HomeIcon },
-  { name: 'Create', path: '/create', icon: PlusCircleIcon },
-  { name: 'Dashboard', path: '/dashboard', icon: ChartBarIcon },
-  { name: 'Settings', path: '/settings', icon: Cog6ToothIcon }
-]
+  { name: "Home", path: "/", icon: HomeIcon },
+  { name: "Create", path: "/create", icon: PlusCircleIcon },
+  { name: "Dashboard", path: "/dashboard", icon: ChartBarIcon },
+  { name: "Settings", path: "/settings", icon: Cog6ToothIcon },
+];
 
 const networkStatus = computed(() => {
-  const network = settingsStore.settings.network
-  return network.charAt(0).toUpperCase() + network.slice(1)
-})
+  const network = settingsStore.settings.network;
+  return network.charAt(0).toUpperCase() + network.slice(1);
+});
 
 const networkStatusColor = computed(() => {
   switch (settingsStore.settings.network) {
-    case 'mainnet':
-      return 'bg-green-500'
-    case 'testnet':
-      return 'bg-yellow-500'
-    case 'dockernet':
-      return 'bg-blue-500'
+    case "mainnet":
+      return "bg-green-500";
+    case "testnet":
+      return "bg-yellow-500";
+    case "dockernet":
+      return "bg-blue-500";
     default:
-      return 'bg-gray-500'
+      return "bg-gray-500";
   }
-})
+});
 
 const isActiveRoute = (path: string) => {
-  return route.path === path
-}
+  return route.path === path;
+};
 
 const toggleMobileMenu = () => {
-  showMobileMenu.value = !showMobileMenu.value
-}
+  showMobileMenu.value = !showMobileMenu.value;
+};
 
 const formatAddress = (address?: string) => {
-  if (!address) return ''
-  return `${address.slice(0, 6)}...${address.slice(-4)}`
-}
-
-const handleAuthenticated = async (authData: any) => {
-  try {
-    await authStore.connectWallet(authData.address, {
-      name: authData.name,
-      email: authData.email
-    })
-    showUserMenu.value = false
-  } catch (error) {
-    console.error('Authentication error:', error)
-  }
-}
-
-const handleAuthError = (error: any) => {
-  console.error('Authentication error:', error)
-}
+  if (!address) return "";
+  return `${address.slice(0, 6)}...${address.slice(-4)}`;
+};
 
 const handleSignOut = async () => {
-  showUserMenu.value = false
-  await authStore.signOut()
-  router.push('/')
-}
+  showUserMenu.value = false;
+  await logout();
+  router.push("/");
+};
 
 onMounted(async () => {
   if (authStore.isAuthenticated) {
-    await subscriptionStore.fetchSubscription()
+    await subscriptionStore.fetchSubscription();
   }
-})
+});
 </script>
