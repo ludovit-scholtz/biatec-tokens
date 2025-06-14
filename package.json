@@ -18,7 +18,7 @@
     "@txnlab/use-wallet-vue": "^4.1.0",
     "@walletconnect/modal": "^2.7.0",
     "@walletconnect/sign-client": "^2.21.2",
-    "algorand-authentication-component-vue": "^2.0.4",
+    "algorand-authentication-component-vue": "^2.0.5",
     "algosdk": "^3.3.1",
     "axios": "^1.9.0",
     "buffer": "^6.0.3",
