@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { supabase } from './auth'
 import { getProductByPriceId } from '../stripe-config'
 import type { StripeProduct } from '../stripe-config'
 
@@ -40,16 +39,21 @@ export const useSubscriptionStore = defineStore('subscription', () => {
     error.value = null
 
     try {
-      const { data, error: fetchError } = await supabase
-        .from('stripe_user_subscriptions')
-        .select('*')
-        .maybeSingle()
-
-      if (fetchError) {
-        throw fetchError
+      // Mock subscription data for demo purposes
+      // In a real app, this would fetch from your backend
+      const mockSubscription: SubscriptionData = {
+        customer_id: 'demo_customer',
+        subscription_id: null,
+        subscription_status: 'not_started',
+        price_id: null,
+        current_period_start: null,
+        current_period_end: null,
+        cancel_at_period_end: false,
+        payment_method_brand: null,
+        payment_method_last4: null
       }
 
-      subscription.value = data
+      subscription.value = mockSubscription
     } catch (err) {
       console.error('Error fetching subscription:', err)
       error.value = err instanceof Error ? err.message : 'Failed to fetch subscription'
@@ -63,38 +67,16 @@ export const useSubscriptionStore = defineStore('subscription', () => {
     error.value = null
 
     try {
-      const { data: { session } } = await supabase.auth.getSession()
+      // Mock checkout session creation
+      // In a real app, this would call your backend to create a Stripe checkout session
+      console.log('Creating checkout session for:', { priceId, mode })
       
-      if (!session?.access_token) {
-        throw new Error('No authentication token available')
-      }
-
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/stripe-checkout`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`
-        },
-        body: JSON.stringify({
-          price_id: priceId,
-          mode,
-          success_url: `${window.location.origin}/subscription/success`,
-          cancel_url: `${window.location.origin}/subscription/cancel`
-        })
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to create checkout session')
-      }
-
-      const { url } = await response.json()
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 1000))
       
-      if (url) {
-        window.location.href = url
-      } else {
-        throw new Error('No checkout URL received')
-      }
+      // For demo purposes, just redirect to a mock success page
+      const mockCheckoutUrl = `${window.location.origin}/subscription/success?session_id=mock_session_${Date.now()}`
+      window.location.href = mockCheckoutUrl
     } catch (err) {
       console.error('Error creating checkout session:', err)
       error.value = err instanceof Error ? err.message : 'Failed to create checkout session'

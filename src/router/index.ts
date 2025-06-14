@@ -5,11 +5,6 @@ import TokenCreator from '../views/TokenCreator.vue'
 import TokenDashboard from '../views/TokenDashboard.vue'
 import Settings from '../views/Settings.vue'
 
-// Auth views
-import Login from '../views/auth/Login.vue'
-import Signup from '../views/auth/Signup.vue'
-import VerifyEmail from '../views/auth/VerifyEmail.vue'
-
 // Subscription views
 import Pricing from '../views/subscription/Pricing.vue'
 import Success from '../views/subscription/Success.vue'
@@ -41,24 +36,6 @@ const router = createRouter({
       component: Settings,
       meta: { requiresAuth: true }
     },
-    // Auth routes
-    {
-      path: '/auth/login',
-      name: 'Login',
-      component: Login,
-      meta: { requiresGuest: true }
-    },
-    {
-      path: '/auth/signup',
-      name: 'Signup',
-      component: Signup,
-      meta: { requiresGuest: true }
-    },
-    {
-      path: '/auth/verify-email',
-      name: 'VerifyEmail',
-      component: VerifyEmail
-    },
     // Subscription routes
     {
       path: '/subscription/pricing',
@@ -88,11 +65,9 @@ router.beforeEach(async (to, from, next) => {
   }
 
   const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
-  const requiresGuest = to.matched.some(record => record.meta.requiresGuest)
 
   if (requiresAuth && !authStore.isAuthenticated) {
-    next('/auth/login')
-  } else if (requiresGuest && authStore.isAuthenticated) {
+    // Redirect to home page where user can connect wallet
     next('/')
   } else {
     next()

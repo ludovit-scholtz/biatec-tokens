@@ -1,90 +1,82 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { createClient } from '@supabase/supabase-js'
-import type { User, Session } from '@supabase/supabase-js'
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+export interface AlgorandUser {
+  address: string
+  name?: string
+  email?: string
+  avatar?: string
+}
 
 export const useAuthStore = defineStore('auth', () => {
-  const user = ref<User | null>(null)
-  const session = ref<Session | null>(null)
-  const loading = ref(true)
+  const user = ref<AlgorandUser | null>(null)
+  const loading = ref(false)
+  const isConnected = ref(false)
 
-  const isAuthenticated = computed(() => !!user.value)
+  const isAuthenticated = computed(() => !!user.value && isConnected.value)
 
   const initialize = async () => {
+    loading.value = true
     try {
-      const { data: { session: currentSession } } = await supabase.auth.getSession()
-      session.value = currentSession
-      user.value = currentSession?.user ?? null
+      // Check if user was previously connected
+      const savedUser = localStorage.getItem('algorand_user')
+      if (savedUser) {
+        user.value = JSON.parse(savedUser)
+        isConnected.value = true
+      }
     } catch (error) {
       console.error('Error initializing auth:', error)
     } finally {
       loading.value = false
     }
-
-    // Listen for auth changes
-    supabase.auth.onAuthStateChange((event, newSession) => {
-      session.value = newSession
-      user.value = newSession?.user ?? null
-      loading.value = false
-    })
   }
 
-  const signUp = async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`
+  const connectWallet = async (walletAddress: string, userInfo?: Partial<AlgorandUser>) => {
+    loading.value = true
+    try {
+      const newUser: AlgorandUser = {
+        address: walletAddress,
+        name: userInfo?.name || `User ${walletAddress.slice(0, 6)}...`,
+        email: userInfo?.email,
+        avatar: userInfo?.avatar
       }
-    })
-    
-    if (error) throw error
-    return data
-  }
-
-  const signIn = async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    })
-    
-    if (error) throw error
-    return data
+      
+      user.value = newUser
+      isConnected.value = true
+      
+      // Save to localStorage
+      localStorage.setItem('algorand_user', JSON.stringify(newUser))
+      
+      return newUser
+    } catch (error) {
+      console.error('Error connecting wallet:', error)
+      throw error
+    } finally {
+      loading.value = false
+    }
   }
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut()
-    if (error) throw error
+    user.value = null
+    isConnected.value = false
+    localStorage.removeItem('algorand_user')
   }
 
-  const resetPassword = async (email: string) => {
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth/reset-password`
-    })
-    
-    if (error) throw error
-  }
-
-  const updatePassword = async (password: string) => {
-    const { error } = await supabase.auth.updateUser({ password })
-    if (error) throw error
+  const updateUser = (updates: Partial<AlgorandUser>) => {
+    if (user.value) {
+      user.value = { ...user.value, ...updates }
+      localStorage.setItem('algorand_user', JSON.stringify(user.value))
+    }
   }
 
   return {
     user,
-    session,
     loading,
+    isConnected,
     isAuthenticated,
     initialize,
-    signUp,
-    signIn,
+    connectWallet,
     signOut,
-    resetPassword,
-    updatePassword
+    updateUser
   }
 })

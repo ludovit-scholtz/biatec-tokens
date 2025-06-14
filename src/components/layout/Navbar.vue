@@ -52,22 +52,14 @@
             <span class="text-xs font-medium text-gray-700 dark:text-gray-300">{{ networkStatus }}</span>
           </div>
 
-          <!-- Auth Actions -->
-          <div v-if="!authStore.isAuthenticated" class="flex items-center space-x-2">
-            <Button
-              @click="$router.push('/auth/login')"
-              variant="ghost"
-              size="sm"
-            >
-              Sign In
-            </Button>
-            <Button
-              @click="$router.push('/auth/signup')"
-              variant="primary"
-              size="sm"
-            >
-              Sign Up
-            </Button>
+          <!-- Algorand Authentication Component -->
+          <div v-if="!authStore.isAuthenticated">
+            <AlgorandAuthentication
+              :use-wallet="true"
+              :dark-mode="themeStore.isDark"
+              @authenticated="handleAuthenticated"
+              @error="handleAuthError"
+            />
           </div>
 
           <!-- User Menu -->
@@ -78,8 +70,12 @@
             >
               <div class="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
                 <span class="text-white text-sm font-medium">
-                  {{ authStore.user?.email?.charAt(0).toUpperCase() }}
+                  {{ authStore.user?.address?.charAt(0).toUpperCase() }}
                 </span>
+              </div>
+              <div class="hidden sm:block text-left">
+                <p class="text-sm font-medium text-gray-900 dark:text-white">{{ authStore.user?.name }}</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">{{ formatAddress(authStore.user?.address) }}</p>
               </div>
               <ChevronDownIcon class="w-4 h-4 text-gray-500" />
             </button>
@@ -95,7 +91,8 @@
             >
               <div v-if="showUserMenu" class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1">
                 <div class="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
-                  <p class="text-sm font-medium text-gray-900 dark:text-white">{{ authStore.user?.email }}</p>
+                  <p class="text-sm font-medium text-gray-900 dark:text-white">{{ authStore.user?.name }}</p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">{{ formatAddress(authStore.user?.address) }}</p>
                 </div>
                 <router-link
                   to="/subscription/pricing"
@@ -115,7 +112,7 @@
                   @click="handleSignOut"
                   class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
                 >
-                  Sign Out
+                  Disconnect Wallet
                 </button>
               </div>
             </Transition>
@@ -170,7 +167,7 @@ import { useThemeStore } from '../../stores/theme'
 import { useSettingsStore } from '../../stores/settings'
 import { useAuthStore } from '../../stores/auth'
 import { useSubscriptionStore } from '../../stores/subscription'
-import Button from '../ui/Button.vue'
+import AlgorandAuthentication from 'algorand-authentication-component-vue'
 import {
   HomeIcon,
   PlusCircleIcon,
@@ -224,6 +221,27 @@ const isActiveRoute = (path: string) => {
 
 const toggleMobileMenu = () => {
   showMobileMenu.value = !showMobileMenu.value
+}
+
+const formatAddress = (address?: string) => {
+  if (!address) return ''
+  return `${address.slice(0, 6)}...${address.slice(-4)}`
+}
+
+const handleAuthenticated = async (authData: any) => {
+  try {
+    await authStore.connectWallet(authData.address, {
+      name: authData.name,
+      email: authData.email
+    })
+    showUserMenu.value = false
+  } catch (error) {
+    console.error('Authentication error:', error)
+  }
+}
+
+const handleAuthError = (error: any) => {
+  console.error('Authentication error:', error)
 }
 
 const handleSignOut = async () => {

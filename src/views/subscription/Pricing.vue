@@ -37,6 +37,19 @@
         </Card>
       </div>
 
+      <!-- Authentication Notice -->
+      <div v-if="!authStore.isAuthenticated" class="mb-8">
+        <Card variant="glass" padding="md">
+          <div class="text-center">
+            <WalletIcon class="w-12 h-12 text-blue-500 mx-auto mb-4" />
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Connect Your Wallet</h3>
+            <p class="text-gray-600 dark:text-gray-400 mb-4">
+              Please connect your Algorand wallet to manage your subscription
+            </p>
+          </div>
+        </Card>
+      </div>
+
       <!-- Pricing Cards -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
         <!-- Free Plan -->
@@ -111,10 +124,10 @@
               variant="primary"
               size="lg"
               :loading="subscriptionStore.loading"
-              :disabled="subscriptionStore.isActive"
+              :disabled="!authStore.isAuthenticated || subscriptionStore.isActive"
               full-width
             >
-              {{ subscriptionStore.isActive ? 'Already Subscribed' : 'Subscribe Now' }}
+              {{ getSubscribeButtonText() }}
             </Button>
           </div>
         </Card>
@@ -209,7 +222,8 @@ import Badge from '../../components/ui/Badge.vue'
 import {
   CheckIcon,
   XMarkIcon,
-  ChevronDownIcon
+  ChevronDownIcon,
+  WalletIcon
 } from '@heroicons/vue/24/outline'
 
 const router = useRouter()
@@ -257,9 +271,19 @@ const formatDate = (date: Date) => {
   }).format(date)
 }
 
+const getSubscribeButtonText = () => {
+  if (!authStore.isAuthenticated) {
+    return 'Connect Wallet to Subscribe'
+  }
+  if (subscriptionStore.isActive) {
+    return 'Already Subscribed'
+  }
+  return 'Subscribe Now'
+}
+
 const handleSubscribe = async () => {
   if (!authStore.isAuthenticated) {
-    router.push('/auth/login')
+    // User needs to connect wallet first
     return
   }
 
