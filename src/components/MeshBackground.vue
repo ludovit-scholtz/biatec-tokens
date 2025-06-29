@@ -70,7 +70,7 @@ const animate = () => {
   const colors = themeStore.isDark ? darkColors : lightColors
   
   // Update particle colors based on theme
-  particles.forEach((particle, index) => {
+  particles.forEach((particle) => {
     if (Math.random() < 0.001) { // Occasionally update color
       particle.color = colors[Math.floor(Math.random() * colors.length)]
     }
@@ -84,17 +84,19 @@ const animate = () => {
     if (particle.x < 0 || particle.x > canvas.width) particle.vx *= -1
     if (particle.y < 0 || particle.y > canvas.height) particle.vy *= -1
     
-    const gradient = ctx.createRadialGradient(
-      particle.x, particle.y, 0,
-      particle.x, particle.y, particle.size
-    )
-    gradient.addColorStop(0, particle.color + '30')
-    gradient.addColorStop(1, particle.color + '00')
-    
-    ctx.fillStyle = gradient
-    ctx.beginPath()
-    ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2)
-    ctx.fill()
+    if (ctx) {
+      const gradient = ctx.createRadialGradient(
+        particle.x, particle.y, 0,
+        particle.x, particle.y, particle.size
+      )
+      gradient.addColorStop(0, particle.color + '30')
+      gradient.addColorStop(1, particle.color + '00')
+      
+      ctx.fillStyle = gradient
+      ctx.beginPath()
+      ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2)
+      ctx.fill()
+    }
   })
   
   // Draw connections

@@ -82,7 +82,7 @@ const props = defineProps<{
   token: Token
 }>()
 
-const emit = defineEmits<{
+defineEmits<{
   delete: [id: string]
 }>()
 

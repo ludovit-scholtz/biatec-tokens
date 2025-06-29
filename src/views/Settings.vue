@@ -172,7 +172,7 @@
               Export Settings
             </button>
             <button
-              @click="$refs.importInput.click()"
+              @click="importInput?.click()"
               class="px-6 py-3 bg-biatec-accent/20 text-biatec-accent rounded-lg hover:bg-biatec-accent/30 transition-colors"
             >
               <i class="pi pi-upload mr-2"></i>
@@ -204,7 +204,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, reactive } from 'vue'
+import { ref, computed } from 'vue'
 import { useSettingsStore } from '../stores/settings'
 
 const settingsStore = useSettingsStore()

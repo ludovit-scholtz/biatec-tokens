@@ -212,7 +212,6 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
 import { useSubscriptionStore } from '../../stores/subscription'
 import { stripeProducts } from '../../stripe-config'
@@ -226,7 +225,6 @@ import {
   WalletIcon
 } from '@heroicons/vue/24/outline'
 
-const router = useRouter()
 const authStore = useAuthStore()
 const subscriptionStore = useSubscriptionStore()
 

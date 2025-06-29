@@ -139,7 +139,7 @@
               />
               <button
                 type="button"
-                @click="$refs.imageInput.click()"
+                @click="imageInput?.click()"
                 class="px-4 py-2 bg-biatec-accent/20 text-biatec-accent rounded-lg hover:bg-biatec-accent/30 transition-colors"
               >
                 <i class="pi pi-upload mr-2"></i>
