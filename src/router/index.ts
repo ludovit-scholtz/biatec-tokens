@@ -1,5 +1,4 @@
 import { createRouter, createWebHistory } from "vue-router";
-import { useAuthStore } from "../stores/auth";
 import Home from "../views/Home.vue";
 import TokenCreator from "../views/TokenCreator.vue";
 import TokenDashboard from "../views/TokenDashboard.vue";

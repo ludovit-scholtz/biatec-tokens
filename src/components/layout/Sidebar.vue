@@ -52,7 +52,6 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
 import { useTokenStore } from "../../stores/tokens";
 import Badge from "../ui/Badge.vue";
 import { PlusCircleIcon, ChartBarIcon } from "@heroicons/vue/24/outline";

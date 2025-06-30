@@ -71,7 +71,6 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
 import type { Token } from "../stores/tokens";
 
 const props = defineProps<{

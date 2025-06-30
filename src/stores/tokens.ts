@@ -18,7 +18,7 @@ export interface Token {
   assetId?: number;
   contractAddress?: string;
 }
-import { PlusCircleIcon, ChartBarIcon, BoltIcon, ShieldCheckIcon, GlobeAltIcon, CubeIcon, CurrencyDollarIcon, PhotoIcon } from "@heroicons/vue/24/outline";
+import { CubeIcon, CurrencyDollarIcon, PhotoIcon } from "@heroicons/vue/24/outline";
 
 export const useTokenStore = defineStore("tokens", () => {
   const tokens = ref<Token[]>([]);
