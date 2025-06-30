@@ -12,10 +12,10 @@
         </div>
       </div>
       <div class="flex items-center space-x-2">
-        <span class="px-2 py-1 text-xs font-medium rounded-full" :class="standardBadgeClass">
+        <span class="px-2 py-1 text-xs font-medium rounded-full">
           {{ token.standard }}
         </span>
-        <span class="px-2 py-1 text-xs font-medium rounded-full" :class="statusBadgeClass">
+        <span class="px-2 py-1 text-xs font-medium rounded-full">
           {{ token.status }}
         </span>
       </div>
@@ -62,11 +62,7 @@
         >
           <i class="pi pi-copy text-sm"></i>
         </button>
-        <button
-          @click="$emit('delete', token.id)"
-          class="p-2 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors"
-          title="Delete Token"
-        >
+        <button @click="$emit('delete', token.id)" class="p-2 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors" title="Delete Token">
           <i class="pi pi-trash text-sm"></i>
         </button>
       </div>
@@ -75,66 +71,34 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import type { Token } from '../stores/tokens'
+import { computed } from "vue";
+import type { Token } from "../stores/tokens";
 
 const props = defineProps<{
-  token: Token
-}>()
+  token: Token;
+}>();
 
 defineEmits<{
-  delete: [id: string]
-}>()
-
-const standardBadgeClass = computed(() => {
-  const baseClass = 'bg-opacity-20 border'
-  switch (props.token.standard) {
-    case 'ARC3':
-      return `${baseClass} bg-blue-500 text-blue-300 border-blue-500/30`
-    case 'ARC200':
-      return `${baseClass} bg-green-500 text-green-300 border-green-500/30`
-    case 'ARC72':
-      return `${baseClass} bg-purple-500 text-purple-300 border-purple-500/30`
-    case 'ERC20':
-      return `${baseClass} bg-yellow-500 text-yellow-300 border-yellow-500/30`
-    case 'ERC721':
-      return `${baseClass} bg-pink-500 text-pink-300 border-pink-500/30`
-    default:
-      return `${baseClass} bg-gray-500 text-gray-300 border-gray-500/30`
-  }
-})
-
-const statusBadgeClass = computed(() => {
-  const baseClass = 'bg-opacity-20 border'
-  switch (props.token.status) {
-    case 'deployed':
-      return `${baseClass} bg-green-500 text-green-300 border-green-500/30`
-    case 'deploying':
-      return `${baseClass} bg-yellow-500 text-yellow-300 border-yellow-500/30`
-    case 'failed':
-      return `${baseClass} bg-red-500 text-red-300 border-red-500/30`
-    default:
-      return `${baseClass} bg-gray-500 text-gray-300 border-gray-500/30`
-  }
-})
+  delete: [id: string];
+}>();
 
 const formatSupply = (supply: number) => {
   if (supply >= 1000000) {
-    return (supply / 1000000).toFixed(1) + 'M'
+    return (supply / 1000000).toFixed(1) + "M";
   } else if (supply >= 1000) {
-    return (supply / 1000).toFixed(1) + 'K'
+    return (supply / 1000).toFixed(1) + "K";
   }
-  return supply.toString()
-}
+  return supply.toString();
+};
 
 const formatDate = (date: Date) => {
-  return new Intl.DateTimeFormat('en-US', {
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  }).format(date)
-}
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+};
 
 const copyToClipboard = async () => {
   const details = {
@@ -143,16 +107,16 @@ const copyToClipboard = async () => {
     standard: props.token.standard,
     assetId: props.token.assetId,
     contractAddress: props.token.contractAddress,
-    txId: props.token.txId
-  }
-  
+    txId: props.token.txId,
+  };
+
   try {
-    await navigator.clipboard.writeText(JSON.stringify(details, null, 2))
+    await navigator.clipboard.writeText(JSON.stringify(details, null, 2));
     // You could show a toast notification here
   } catch (error) {
-    console.error('Failed to copy to clipboard:', error)
+    console.error("Failed to copy to clipboard:", error);
   }
-}
+};
 </script>
 
 <style scoped>

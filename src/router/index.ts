@@ -1,77 +1,59 @@
-import { createRouter, createWebHistory } from 'vue-router'
-import { useAuthStore } from '../stores/auth'
-import Home from '../views/Home.vue'
-import TokenCreator from '../views/TokenCreator.vue'
-import TokenDashboard from '../views/TokenDashboard.vue'
-import Settings from '../views/Settings.vue'
+import { createRouter, createWebHistory } from "vue-router";
+import { useAuthStore } from "../stores/auth";
+import Home from "../views/Home.vue";
+import TokenCreator from "../views/TokenCreator.vue";
+import TokenDashboard from "../views/TokenDashboard.vue";
+import Settings from "../views/Settings.vue";
 
 // Subscription views
-import Pricing from '../views/subscription/Pricing.vue'
-import Success from '../views/subscription/Success.vue'
-import Cancel from '../views/subscription/Cancel.vue'
+import Pricing from "../views/subscription/Pricing.vue";
+import Success from "../views/subscription/Success.vue";
+import Cancel from "../views/subscription/Cancel.vue";
 
 const router = createRouter({
   history: createWebHistory(),
   routes: [
     {
-      path: '/',
-      name: 'Home',
-      component: Home
+      path: "/",
+      name: "Home",
+      component: Home,
     },
     {
-      path: '/create',
-      name: 'TokenCreator',
+      path: "/create",
+      name: "TokenCreator",
       component: TokenCreator,
-      meta: { requiresAuth: true }
+      meta: { requiresAuth: true },
     },
     {
-      path: '/dashboard',
-      name: 'TokenDashboard',
+      path: "/dashboard",
+      name: "TokenDashboard",
       component: TokenDashboard,
-      meta: { requiresAuth: true }
+      meta: { requiresAuth: true },
     },
     {
-      path: '/settings',
-      name: 'Settings',
+      path: "/settings",
+      name: "Settings",
       component: Settings,
-      meta: { requiresAuth: true }
+      meta: { requiresAuth: true },
     },
     // Subscription routes
     {
-      path: '/subscription/pricing',
-      name: 'Pricing',
-      component: Pricing
+      path: "/subscription/pricing",
+      name: "Pricing",
+      component: Pricing,
     },
     {
-      path: '/subscription/success',
-      name: 'SubscriptionSuccess',
+      path: "/subscription/success",
+      name: "SubscriptionSuccess",
       component: Success,
-      meta: { requiresAuth: true }
+      meta: { requiresAuth: true },
     },
     {
-      path: '/subscription/cancel',
-      name: 'SubscriptionCancel',
-      component: Cancel
-    }
-  ]
-})
+      path: "/subscription/cancel",
+      name: "SubscriptionCancel",
+      component: Cancel,
+    },
+  ],
+});
 
-router.beforeEach(async (to, _from, next) => {
-  const authStore = useAuthStore()
-  
-  // Initialize auth if not already done
-  if (authStore.loading) {
-    await authStore.initialize()
-  }
-
-  const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
-
-  if (requiresAuth && !authStore.isAuthenticated) {
-    // Redirect to home page where user can connect wallet
-    next('/')
-  } else {
-    next()
-  }
-})
-
-export default router
+export default router;
