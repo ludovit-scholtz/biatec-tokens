@@ -4,7 +4,7 @@
       <div class="max-w-7xl mx-auto">
         <!-- Header -->
         <div class="mb-8">
-          <h1 class="text-4xl font-bold text-white mb-4">Token Dashboard</h1>
+          <h1 class="text-4xl font-bold text-gray-900 dark:text-white mb-4">Token Dashboard</h1>
           <p class="text-gray-300 text-lg">Monitor and manage your deployed tokens</p>
         </div>
 
@@ -15,7 +15,7 @@
               <h3 class="text-sm font-medium text-gray-400">Total Tokens</h3>
               <i class="pi pi-chart-line text-biatec-accent"></i>
             </div>
-            <div class="text-3xl font-bold text-white">{{ totalTokens }}</div>
+            <div class="text-3xl font-bold text-gray-900 dark:text-white">{{ totalTokens }}</div>
             <div class="text-sm text-gray-400 mt-1">Across all standards</div>
           </div>
 
@@ -24,7 +24,7 @@
               <h3 class="text-sm font-medium text-gray-400">Deployed</h3>
               <i class="pi pi-check-circle text-green-400"></i>
             </div>
-            <div class="text-3xl font-bold text-white">{{ deployedTokens }}</div>
+            <div class="text-3xl font-bold text-gray-900 dark:text-white">{{ deployedTokens }}</div>
             <div class="text-sm text-gray-400 mt-1">Successfully deployed</div>
           </div>
 
@@ -33,7 +33,7 @@
               <h3 class="text-sm font-medium text-gray-400">Deploying</h3>
               <i class="pi pi-spin pi-spinner text-yellow-400"></i>
             </div>
-            <div class="text-3xl font-bold text-white">{{ deployingTokens }}</div>
+            <div class="text-3xl font-bold text-gray-900 dark:text-white">{{ deployingTokens }}</div>
             <div class="text-sm text-gray-400 mt-1">In progress</div>
           </div>
 
@@ -42,7 +42,7 @@
               <h3 class="text-sm font-medium text-gray-400">Failed</h3>
               <i class="pi pi-exclamation-triangle text-red-400"></i>
             </div>
-            <div class="text-3xl font-bold text-white">{{ failedTokens }}</div>
+            <div class="text-3xl font-bold text-gray-900 dark:text-white">{{ failedTokens }}</div>
             <div class="text-sm text-gray-400 mt-1">Deployment failed</div>
           </div>
         </div>
@@ -51,7 +51,7 @@
         <div class="glass-effect rounded-xl p-6 mb-8">
           <div class="flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0">
             <div class="flex items-center space-x-4">
-              <select v-model="selectedStandardFilter" class="px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:border-biatec-accent">
+              <select v-model="selectedStandardFilter" class="px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-biatec-accent">
                 <option value="">All Standards</option>
                 <option value="ARC3">ARC3</option>
                 <option value="ARC200">ARC200</option>
@@ -60,7 +60,7 @@
                 <option value="ERC721">ERC721</option>
               </select>
 
-              <select v-model="selectedStatusFilter" class="px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:border-biatec-accent">
+              <select v-model="selectedStatusFilter" class="px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-biatec-accent">
                 <option value="">All Status</option>
                 <option value="created">Created</option>
                 <option value="deploying">Deploying</option>
@@ -74,7 +74,7 @@
                 <i class="pi pi-sync mr-2"></i>
                 Refresh
               </button>
-              <router-link to="/create" class="btn-primary px-4 py-2 rounded-lg text-white font-medium flex items-center space-x-2">
+              <router-link to="/create" class="btn-primary px-4 py-2 rounded-lg text-gray-900 dark:text-white font-medium flex items-center space-x-2">
                 <i class="pi pi-plus"></i>
                 <span>Create Token</span>
               </router-link>
@@ -91,11 +91,11 @@
         <div v-else class="text-center py-12">
           <div class="glass-effect rounded-xl p-12 max-w-md mx-auto">
             <i class="pi pi-coins text-6xl text-gray-400 mb-6"></i>
-            <h3 class="text-2xl font-semibold text-white mb-4">No Tokens Found</h3>
+            <h3 class="text-2xl font-semibold text-gray-900 dark:text-white mb-4">No Tokens Found</h3>
             <p class="text-gray-300 mb-6">
               {{ tokens.length === 0 ? "Create your first token to get started" : "No tokens match your current filters" }}
             </p>
-            <router-link to="/create" class="btn-primary px-6 py-3 rounded-xl text-white font-medium inline-flex items-center space-x-2">
+            <router-link to="/create" class="btn-primary px-6 py-3 rounded-xl text-gray-900 dark:text-white font-medium inline-flex items-center space-x-2">
               <i class="pi pi-plus"></i>
               <span>Create Token</span>
             </router-link>

@@ -6,10 +6,10 @@
         <div class="text-center section-padding">
           <div class="animate-fade-in">
             <h1 class="text-4xl sm:text-6xl lg:text-7xl font-bold text-gray-900 dark:text-white mb-6 text-balance">
-              Next-Generation
-              <span class="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent block mt-2"> Tokenization Platform </span>
+              <span class="bg-gradient-to-r from-blue-600 to-purple-800 bg-clip-text text-transparent block mt-2 dark:text-white">Next-Generation</span>
+              <span class="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent block mt-2 dark:text-white"> Tokenization Platform </span>
             </h1>
-            <p class="text-xl sm:text-2xl text-gray-600 dark:text-gray-300 max-w-4xl mx-auto mb-12 text-balance">
+            <p class="text-xl sm:text-2xl max-w-4xl mx-auto mb-12 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent block mt-2 dark:text-white">
               Create, manage, and deploy tokens across multiple standards with enterprise-grade security and lightning-fast performance.
             </p>
 
@@ -39,7 +39,7 @@
             <Card v-for="(feature, index) in features" :key="feature.title" variant="glass" hover class="animate-slide-up" :style="{ animationDelay: `${index * 0.1}s` }">
               <div class="text-center">
                 <div class="w-16 h-16 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center mb-6 mx-auto shadow-lg">
-                  <component :is="feature.icon" class="w-8 h-8 text-white" />
+                  <component :is="feature.icon" class="w-8 h-8 text-gray-900 dark:text-white" />
                 </div>
                 <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">{{ feature.title }}</h3>
                 <p class="text-gray-600 dark:text-gray-300 leading-relaxed">{{ feature.description }}</p>
@@ -68,7 +68,7 @@
             <Card v-for="standard in tokenStore.tokenStandards" :key="standard.name" variant="default" hover class="group">
               <div class="flex items-start space-x-4">
                 <div class="w-12 h-12 rounded-xl flex items-center justify-center" :class="standard.bgClass">
-                  <component :is="standard.icon" class="w-6 h-6 text-white" />
+                  <component :is="standard.icon" class="w-6 h-6 text-gray-900 dark:text-white" />
                 </div>
                 <div class="flex-1">
                   <div class="flex items-center justify-between mb-2">

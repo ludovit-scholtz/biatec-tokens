@@ -4,13 +4,13 @@
       <div class="max-w-4xl mx-auto">
         <!-- Header -->
         <div class="mb-8">
-          <h1 class="text-4xl font-bold text-white mb-4">Settings</h1>
+          <h1 class="text-4xl font-bold text-gray-900 dark:text-white mb-4">Settings</h1>
           <p class="text-gray-300 text-lg">Configure your development environment and network settings</p>
         </div>
 
         <!-- Network Configuration -->
         <div class="glass-effect rounded-xl p-6 mb-8">
-          <h2 class="text-2xl font-semibold text-white mb-6">Network Configuration</h2>
+          <h2 class="text-2xl font-semibold text-gray-900 dark:text-white mb-6">Network Configuration</h2>
 
           <div class="space-y-6">
             <!-- Network Selection -->
@@ -19,7 +19,7 @@
               <div class="flex space-x-4">
                 <label v-for="network in networks" :key="network" class="flex items-center space-x-2">
                   <input v-model="settings.network" :value="network" type="radio" class="w-4 h-4 text-biatec-accent focus:ring-biatec-accent" />
-                  <span class="text-white capitalize">{{ network }}</span>
+                  <span class="text-gray-900 dark:text-white capitalize">{{ network }}</span>
                 </label>
               </div>
             </div>
@@ -31,7 +31,7 @@
                 <input
                   v-model="currentNetworkConfig.algodUrl"
                   type="url"
-                  class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-biatec-accent focus:ring-2 focus:ring-biatec-accent/20"
+                  class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:border-biatec-accent focus:ring-2 focus:ring-biatec-accent/20"
                   placeholder="https://testnet-api.algonode.cloud"
                 />
               </div>
@@ -40,7 +40,7 @@
                 <input
                   v-model="currentNetworkConfig.algodToken"
                   type="password"
-                  class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-biatec-accent focus:ring-2 focus:ring-biatec-accent/20"
+                  class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:border-biatec-accent focus:ring-2 focus:ring-biatec-accent/20"
                   placeholder="Optional API token"
                 />
               </div>
@@ -52,7 +52,7 @@
                 <input
                   v-model="currentNetworkConfig.indexerUrl"
                   type="url"
-                  class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-biatec-accent focus:ring-2 focus:ring-biatec-accent/20"
+                  class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:border-biatec-accent focus:ring-2 focus:ring-biatec-accent/20"
                   placeholder="https://testnet-idx.algonode.cloud"
                 />
               </div>
@@ -61,7 +61,7 @@
                 <input
                   v-model="currentNetworkConfig.indexerToken"
                   type="password"
-                  class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-biatec-accent focus:ring-2 focus:ring-biatec-accent/20"
+                  class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:border-biatec-accent focus:ring-2 focus:ring-biatec-accent/20"
                   placeholder="Optional API token"
                 />
               </div>
@@ -71,7 +71,7 @@
 
         <!-- EVM Configuration -->
         <div class="glass-effect rounded-xl p-6 mb-8">
-          <h2 class="text-2xl font-semibold text-white mb-6">EVM Configuration</h2>
+          <h2 class="text-2xl font-semibold text-gray-900 dark:text-white mb-6">EVM Configuration</h2>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
@@ -79,7 +79,7 @@
               <input
                 v-model="settings.evmRpcUrl"
                 type="url"
-                class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-biatec-accent focus:ring-2 focus:ring-biatec-accent/20"
+                class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:border-biatec-accent focus:ring-2 focus:ring-biatec-accent/20"
                 placeholder="https://ethereum-sepolia.blockpi.network/v1/rpc/public"
               />
             </div>
@@ -88,7 +88,7 @@
               <input
                 v-model.number="settings.evmChainId"
                 type="number"
-                class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-biatec-accent focus:ring-2 focus:ring-biatec-accent/20"
+                class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:border-biatec-accent focus:ring-2 focus:ring-biatec-accent/20"
                 placeholder="11155111"
               />
             </div>
@@ -97,13 +97,13 @@
 
         <!-- Developer Tools -->
         <div class="glass-effect rounded-xl p-6 mb-8">
-          <h2 class="text-2xl font-semibold text-white mb-6">Developer Tools</h2>
+          <h2 class="text-2xl font-semibold text-gray-900 dark:text-white mb-6">Developer Tools</h2>
 
           <div class="space-y-6">
             <!-- Demo Mode -->
             <div class="flex items-center justify-between">
               <div>
-                <h3 class="text-lg font-semibold text-white">Demo Mode</h3>
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Demo Mode</h3>
                 <p class="text-sm text-gray-300">Mock all blockchain interactions for testing purposes</p>
               </div>
               <button
@@ -123,7 +123,7 @@
               <textarea
                 v-model="customHeaders"
                 rows="3"
-                class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-biatec-accent focus:ring-2 focus:ring-biatec-accent/20"
+                class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:border-biatec-accent focus:ring-2 focus:ring-biatec-accent/20"
                 placeholder='{"X-API-Key": "your-api-key"}'
               ></textarea>
             </div>
@@ -151,7 +151,7 @@
 
         <!-- Import/Export -->
         <div class="glass-effect rounded-xl p-6 mb-8">
-          <h2 class="text-2xl font-semibold text-white mb-6">Import/Export Settings</h2>
+          <h2 class="text-2xl font-semibold text-gray-900 dark:text-white mb-6">Import/Export Settings</h2>
 
           <div class="space-y-4">
             <div class="flex items-center space-x-4">
@@ -170,7 +170,7 @@
 
         <!-- Save Button -->
         <div class="flex justify-end">
-          <button @click="saveSettings" class="btn-primary px-8 py-3 rounded-xl text-white font-semibold flex items-center space-x-2">
+          <button @click="saveSettings" class="btn-primary px-8 py-3 rounded-xl text-gray-900 dark:text-white font-semibold flex items-center space-x-2">
             <i class="pi pi-save"></i>
             <span>Save Settings</span>
           </button>

@@ -10,7 +10,7 @@ const onNotification = (notification: INotification) => {
 
 <template>
   <AlgorandAuthentication @notification="onNotification" arc14Realm="BiatecTokens#ARC14">
-    <div class="min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors duration-200">
+    <div class="min-h-screen transition-colors duration-200">
       <Navbar />
 
       <div class="flex">

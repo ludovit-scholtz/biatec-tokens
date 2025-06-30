@@ -4,9 +4,7 @@
       <div class="flex justify-between items-center h-16">
         <!-- Logo -->
         <router-link to="/" class="flex items-center space-x-3 group">
-          <div class="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow">
-            <span class="text-white font-bold text-lg">B</span>
-          </div>
+          <img src="../../assets/logo-icon.svg" alt="Biatec Tokens Logo" class="h-14 w-auto hidden sm:block" />
           <div class="hidden sm:block">
             <h1 class="text-xl font-bold text-gray-900 dark:text-white">Biatec Tokens</h1>
           </div>
