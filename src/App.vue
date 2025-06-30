@@ -37,10 +37,10 @@ onMounted(() => {
 
 <style>
 :root {
-  --bg-color-1: #dcbaff;
-  --bg-color-2: #ffffff;
-  --bg-color-3: #ffffff;
-  --bg-color-4: #ffffff;
+  --bg-color-1: #043d5d;
+  --bg-color-2: #032e46;
+  --bg-color-3: #23b684;
+  --bg-color-4: #0f595e;
 }
 #gradient-canvas {
   width: 100%;
