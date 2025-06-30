@@ -1,0 +1,94 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: biatec-tokens-fe-app-deployment
+  namespace: biatec-tokens
+spec:
+  selector:
+    matchLabels:
+      app: biatec-tokens-fe-app
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: biatec-tokens-fe-app
+    spec:
+      containers:
+        - name: biatec-tokens-fe-app
+          image: scholtz2/biatec-tokens-fe:1.2025.06.29-main
+          imagePullPolicy: Always
+          resources:
+            requests:
+              cpu: 200m
+              memory: '200Mi'
+            limits:
+              cpu: 2000m
+              memory: '1000Mi'
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          readinessProbe:
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 2
+          livenessProbe:
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 2
+            terminationGracePeriodSeconds: 1
+          volumeMounts:
+            - name: biatec-tokens-fe-main-conf
+              mountPath: /app/appsettings.json
+              subPath: appsettings.json
+      volumes:
+        - name: biatec-tokens-fe-main-conf
+          configMap:
+            name: biatec-tokens-fe-main-conf
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: biatec-tokens-fe-service
+  namespace: biatec-tokens
+spec:
+  type: ClusterIP
+  selector:
+    app: biatec-tokens-fe-app
+  ports:
+    - name: http
+      protocol: TCP
+      appProtocol: http
+      port: 8080
+      targetPort: 8080
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: biatec-tokens-fe-ingress-main
+  namespace: biatec-tokens
+  annotations:
+    nginx.ingress.kubernetes.io/backend-protocol: 'HTTP'
+    cert-manager.io/cluster-issuer: letsencrypt
+    nginx.ingress.kubernetes.io/rewrite-target: /$1
+spec:
+  ingressClassName: 'nginx'
+  tls:
+    - hosts:
+        - tokens.biatec.io
+      secretName: tls-tokens.biatec.io
+  rules:
+    - host: tokens.biatec.io
+      http:
+        paths:
+          - path: /(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: biatec-tokens-fe-service
+                port:
+                  number: 8080
