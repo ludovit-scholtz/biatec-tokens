@@ -60,16 +60,25 @@ const router = createRouter({
 router.beforeEach(async (to, _from, next) => {
   const authStore = useAuthStore();
   
-  // Wait for auth store to initialize if needed
+  // Wait for auth store to initialize if loading
   if (authStore.loading) {
-    await new Promise(resolve => {
+    // Check if loading state changes, but timeout after 10 seconds
+    const timeout = new Promise(resolve => setTimeout(() => resolve(false), 10000));
+    const waitForInit = new Promise(resolve => {
       const unwatch = authStore.$subscribe(() => {
         if (!authStore.loading) {
           unwatch();
           resolve(true);
         }
       });
+      // Also check immediately in case it's no longer loading
+      if (!authStore.loading) {
+        unwatch();
+        resolve(true);
+      }
     });
+    
+    await Promise.race([waitForInit, timeout]);
   }
   
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
