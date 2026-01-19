@@ -6,7 +6,11 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc -b && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@agoralabs-sh/avm-web-provider": "^1.7.0",
@@ -31,12 +35,16 @@
   "devDependencies": {
     "@types/node": "^20.19.0",
     "@vitejs/plugin-vue": "^5.2.4",
+    "@vitest/ui": "^4.0.17",
+    "@vue/test-utils": "^2.4.6",
     "autoprefixer": "^10.4.21",
+    "happy-dom": "^20.3.3",
     "postcss": "^8.5.5",
     "prettier": "^3.5.3",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.8.3",
     "vite": "^5.4.19",
+    "vitest": "^4.0.17",
     "vue-tsc": "^2.2.10"
   }
 }
