@@ -356,30 +356,186 @@ docs(contributing): add PR guidelines
 
 ## Testing
 
-### Manual Testing
+### Test Framework
 
-Currently, the project relies on manual testing:
+The project uses **Vitest** as the testing framework, which is optimized for Vite projects and provides:
+- Fast test execution with hot module replacement
+- TypeScript support out of the box
+- Vue component testing with @vue/test-utils
+- Code coverage reporting
 
-1. **Token Creation**: Test all token standards
-2. **Wallet Connection**: Test all supported wallets
-3. **Network Switching**: Test on different networks
-4. **Responsive Design**: Test on mobile and desktop
-5. **Dark Mode**: Test both themes
-
-### Future: Automated Testing
-
-We plan to add automated testing with Vitest. Contributions in this area are welcome!
+### Running Tests
 
 ```bash
-# Future commands (not yet implemented)
-npm run test              # Run all tests
-npm run test:unit         # Run unit tests
-npm run test:coverage     # Generate coverage report
+# Run all tests once
+npm test
+
+# Run tests in watch mode (re-runs on file changes)
+npm run test:watch
+
+# Run tests with UI interface
+npm run test:ui
+
+# Run tests with coverage report
+npm run test:coverage
 ```
+
+### Test Structure
+
+Tests are co-located with the code they test:
+- **Store tests**: `src/stores/*.test.ts`
+- **Component tests**: `src/components/**/*.test.ts`
+- **View tests**: `src/views/*.test.ts`
+
+### Writing Tests
+
+#### Store Tests
+
+```typescript
+import { describe, it, expect, beforeEach } from 'vitest';
+import { setActivePinia, createPinia } from 'pinia';
+import { useAuthStore } from './auth';
+
+describe('Auth Store', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia());
+    localStorage.clear();
+  });
+
+  it('should connect wallet', async () => {
+    const store = useAuthStore();
+    await store.connectWallet('ALGO123...');
+    
+    expect(store.isConnected).toBe(true);
+  });
+});
+```
+
+#### Component Tests
+
+```typescript
+import { describe, it, expect } from 'vitest';
+import { mount } from '@vue/test-utils';
+import Button from './Button.vue';
+
+describe('Button Component', () => {
+  it('should render with text', () => {
+    const wrapper = mount(Button, {
+      slots: { default: 'Click me' },
+    });
+    
+    expect(wrapper.text()).toContain('Click me');
+  });
+
+  it('should emit click event', async () => {
+    const wrapper = mount(Button);
+    await wrapper.trigger('click');
+    
+    expect(wrapper.emitted('click')).toBeTruthy();
+  });
+});
+```
+
+### Test Coverage
+
+- **Target**: Minimum 70% code coverage for critical paths
+- **Focus Areas**:
+  - Authentication flow
+  - Wallet integration
+  - Token creation and management
+  - State management (Pinia stores)
+
+### Coverage Reports
+
+After running `npm run test:coverage`, you can view the coverage report:
+- **Terminal**: Text summary displayed in console
+- **HTML Report**: Open `coverage/index.html` in your browser
+- **JSON Report**: `coverage/coverage-final.json` for CI integration
+
+### Testing Best Practices
+
+1. **Arrange-Act-Assert**: Structure tests clearly
+   ```typescript
+   it('should do something', () => {
+     // Arrange - Set up test data
+     const store = useAuthStore();
+     
+     // Act - Perform the action
+     store.connectWallet('address');
+     
+     // Assert - Verify the result
+     expect(store.isConnected).toBe(true);
+   });
+   ```
+
+2. **Test Behavior, Not Implementation**: Focus on what the code does, not how
+3. **Use Descriptive Test Names**: "should connect wallet with valid address"
+4. **Keep Tests Independent**: Each test should run in isolation
+5. **Mock External Dependencies**: Mock API calls, localStorage, etc.
+6. **Test Edge Cases**: Empty states, error conditions, boundary values
+
+### Mocking
+
+#### LocalStorage
+
+```typescript
+beforeEach(() => {
+  localStorage.clear();
+});
+```
+
+#### API Calls
+
+```typescript
+import { vi } from 'vitest';
+
+vi.mock('axios', () => ({
+  default: {
+    get: vi.fn(() => Promise.resolve({ data: {} })),
+  },
+}));
+```
+
+#### DOM APIs
+
+```typescript
+global.window = {
+  matchMedia: vi.fn().mockReturnValue({ matches: false }),
+} as any;
+```
+
+### Continuous Integration
+
+Tests run automatically on every push and pull request via GitHub Actions:
+- All tests must pass before merging
+- Coverage reports are generated
+- Failed tests block deployment
+
+### Manual Testing
+
+In addition to automated tests, manual testing is important for:
+
+1. **Token Creation**: Test all token standards (ASA, ARC3, ARC200, ARC72, ERC20, ERC721)
+2. **Wallet Connection**: Test all supported wallets (Pera, Defly, Biatec, Exodus, Kibisis, Lute)
+3. **Network Switching**: Test on different networks (VOI, Aramid, dockernet)
+4. **Responsive Design**: Test on mobile and desktop
+5. **Dark Mode**: Test both light and dark themes
+6. **Browser Compatibility**: Test on Chrome, Firefox, Safari, Edge
 
 ### Testing Checklist
 
 Before submitting a PR, verify:
+
+- [ ] All existing tests pass (`npm test`)
+- [ ] New features have corresponding tests
+- [ ] Test coverage meets minimum requirements (70%+ for new code)
+- [ ] All tests are independent and can run in any order
+- [ ] No console errors or warnings in tests
+- [ ] Mock external dependencies (API calls, localStorage, etc.)
+- [ ] Tests follow naming conventions ("should do something")
+- [ ] Edge cases and error conditions are tested
+
+### UI/Manual Testing Checklist
 
 - [ ] All existing features still work
 - [ ] New features work as expected
