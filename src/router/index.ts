@@ -57,8 +57,20 @@ const router = createRouter({
 });
 
 // Navigation guard for protected routes
-router.beforeEach((to, _from, next) => {
+router.beforeEach(async (to, _from, next) => {
   const authStore = useAuthStore();
+  
+  // Wait for auth store to initialize if needed
+  if (authStore.loading) {
+    await new Promise(resolve => {
+      const unwatch = authStore.$subscribe(() => {
+        if (!authStore.loading) {
+          unwatch();
+          resolve(true);
+        }
+      });
+    });
+  }
   
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     // Redirect to home if not authenticated
