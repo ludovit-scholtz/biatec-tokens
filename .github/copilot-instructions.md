@@ -1,0 +1,140 @@
+# Copilot Instructions for Biatec Tokens
+
+## Project Overview
+
+This is a Vue 3 + TypeScript frontend application for managing and deploying tokens on Algorand-based networks (VOI, Aramid). The application provides a user interface for creating, managing, and deploying various token standards with wallet integration.
+
+## Tech Stack
+
+- **Framework**: Vue 3 with Composition API (`<script setup>`)
+- **Language**: TypeScript (strict mode enabled)
+- **Build Tool**: Vite
+- **Styling**: Tailwind CSS with custom configuration and dark mode support
+- **State Management**: Pinia stores
+- **Router**: Vue Router
+- **Blockchain**: Algorand SDK (algosdk) with wallet integrations
+- **Wallet Support**: @txnlab/use-wallet-vue, Pera Wallet, Defly Connect, Lute Connect, WalletConnect
+
+## Project Structure
+
+```
+src/
+├── components/       # Vue components
+│   ├── ui/          # Reusable UI components (Button, Modal, Card, Input, Select, Badge)
+│   └── layout/      # Layout components (Navbar, Sidebar)
+├── stores/          # Pinia stores (auth, tokens, theme, settings, subscription)
+├── router/          # Vue Router configuration
+├── views/           # Page components
+├── assets/          # Static assets
+├── main.ts          # Application entry point
+└── App.vue          # Root component
+```
+
+## Development Commands
+
+- **Development Server**: `npm run dev`
+- **Build**: `npm run build` (runs vue-tsc type checking then vite build)
+- **Preview Production Build**: `npm run preview`
+
+## Code Style and Conventions
+
+### TypeScript
+
+- **Strict Mode**: Always enabled - use proper typing, avoid `any`
+- **Compiler Options**: Target ES2020, use ESNext modules
+- **Type Checking**: The build command includes `vue-tsc -b` for type checking
+- Follow existing patterns in `tsconfig.app.json`:
+  - `noUnusedLocals: true`
+  - `noUnusedParameters: true`
+  - `noFallthroughCasesInSwitch: true`
+
+### Vue Components
+
+- Use **Composition API** with `<script setup>` syntax
+- Component structure example:
+  ```vue
+  <script setup lang="ts">
+  // imports
+  // props/emits
+  // composables/stores
+  // reactive state
+  // computed
+  // methods
+  </script>
+
+  <template>
+    <!-- markup -->
+  </template>
+  ```
+- Use TypeScript for all component logic
+- Prefer composition over options API
+
+### Styling
+
+- **Primary Framework**: Tailwind CSS
+- **Dark Mode**: Use `class` strategy (check `tailwind.config.js`)
+- **Custom Colors**: 
+  - Use extended gray palette (50-950)
+  - Biatec-specific colors defined in theme
+- **Custom Animations**: `fade-in`, `slide-up`, `float`, `pulse-slow` available
+- **Utility Classes**: Extensive safelist defined in `tailwind.config.js` - use these classes
+- **Font**: Inter font family is primary
+- Follow the glass-effect and gradient patterns seen in existing components
+
+### State Management
+
+- Use **Pinia** stores for global state
+- Store files located in `src/stores/`
+- Existing stores: `auth`, `tokens`, `theme`, `settings`, `subscription`
+- Follow existing store patterns when creating new ones
+
+### Algorand/Blockchain Integration
+
+- Use `algosdk` for blockchain interactions
+- Wallet integration via `@txnlab/use-wallet-vue`
+- Support multiple networks: VOI mainnet, Aramid mainnet, and dockernet
+- Network configurations defined in `main.ts`
+- Always handle wallet connection states properly
+
+### File Naming
+
+- Vue components: PascalCase (e.g., `TokenCard.vue`, `Button.vue`)
+- TypeScript files: kebab-case or camelCase (e.g., `auth.ts`, `stripe-config.ts`)
+- Store files: lowercase (e.g., `tokens.ts`, `settings.ts`)
+
+## Important Boundaries
+
+### DO NOT:
+
+- Modify `.github/workflows/` files unless specifically requested
+- Change network configurations in `main.ts` without explicit instruction
+- Remove or modify security-related code (wallet connections, authentication)
+- Modify deployment scripts or SSH configurations
+- Change TypeScript strict mode settings
+- Add `any` types - always use proper typing
+- Modify the Buffer/global polyfills in `main.ts` (required for wallet libraries)
+
+### DO:
+
+- Maintain existing component structure and patterns
+- Follow Tailwind CSS utility-first approach
+- Use Composition API with `<script setup>`
+- Ensure proper TypeScript typing
+- Test wallet integrations when modifying blockchain-related code
+- Keep dark mode support in mind for UI changes
+- Use existing UI components from `src/components/ui/` before creating new ones
+
+## Testing and Validation
+
+- Always run `npm run build` to ensure TypeScript compilation and type checking pass
+- Test in development mode with `npm run dev` for hot reload
+- Verify dark mode compatibility for UI changes
+- Test wallet connectivity when modifying blockchain features
+
+## Additional Notes
+
+- The application uses Vue Router for navigation
+- Authentication and wallet state managed through Pinia stores
+- Subscription/payment features integrated with Stripe (see `stripe-config.ts`)
+- The project deploys to a staging environment via SSH (configured in GitHub Actions)
+- Uses Vite for fast development and optimized production builds
