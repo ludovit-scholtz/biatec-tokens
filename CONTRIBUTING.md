@@ -452,6 +452,91 @@ After running `npm run test:coverage`, you can view the coverage report:
 - **HTML Report**: Open `coverage/index.html` in your browser
 - **JSON Report**: `coverage/coverage-final.json` for CI integration
 
+### Test-Driven Development (TDD)
+
+We encourage following Test-Driven Development practices for new features:
+
+#### TDD Workflow
+
+1. **Red** - Write a failing test first
+2. **Green** - Write minimal code to make the test pass
+3. **Refactor** - Improve the code while keeping tests green
+
+#### TDD Example
+
+Here's a real example from the codebase (`src/utils/address.ts`):
+
+**Step 1 - Red: Write failing tests**
+```typescript
+// src/utils/address.test.ts
+import { describe, it, expect } from 'vitest';
+import { formatAddress } from './address';
+
+describe('formatAddress', () => {
+  it('should shorten a long Algorand address', () => {
+    const address = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const result = formatAddress(address);
+    
+    expect(result).toBe('ABCDEF...VWXYZ');
+  });
+});
+```
+
+Run tests: `npm test` - Test fails because `formatAddress` doesn't exist yet ✗
+
+**Step 2 - Green: Implement minimal code**
+```typescript
+// src/utils/address.ts
+export function formatAddress(
+  address: string,
+  startLength: number = 6,
+  endLength: number = 5
+): string {
+  if (!address || address.length <= startLength + endLength) {
+    return address;
+  }
+  return `${address.slice(0, startLength)}...${address.slice(-endLength)}`;
+}
+```
+
+Run tests: `npm test` - Test passes! ✓
+
+**Step 3 - Refactor: Add more tests and improve**
+```typescript
+it('should handle empty string', () => {
+  expect(formatAddress('')).toBe('');
+});
+
+it('should allow custom lengths', () => {
+  const address = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  expect(formatAddress(address, 4, 4)).toBe('ABCD...WXYZ');
+});
+```
+
+All tests still pass! ✓
+
+#### Benefits of TDD
+
+- **Better Design**: Writing tests first forces you to think about the API
+- **Confidence**: Tests prove your code works before you write it
+- **Documentation**: Tests serve as usage examples
+- **Regression Prevention**: Tests catch bugs when making changes
+- **Faster Debugging**: When a test fails, you know exactly what broke
+
+#### When to Use TDD
+
+TDD works especially well for:
+- ✅ Utility functions and helpers
+- ✅ Business logic and calculations
+- ✅ Data transformations
+- ✅ Validation functions
+- ✅ State management (Pinia stores)
+
+TDD can be challenging for:
+- ⚠️ Complex UI interactions (consider component tests instead)
+- ⚠️ External API integrations (use mocks)
+- ⚠️ Third-party library setup
+
 ### Testing Best Practices
 
 1. **Arrange-Act-Assert**: Structure tests clearly
