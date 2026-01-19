@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from "vue-router";
+import { useAuthStore } from "../stores/auth";
 import Home from "../views/Home.vue";
 import TokenCreator from "../views/TokenCreator.vue";
 import TokenDashboard from "../views/TokenDashboard.vue";
@@ -53,6 +54,18 @@ const router = createRouter({
       component: Cancel,
     },
   ],
+});
+
+// Navigation guard for protected routes
+router.beforeEach((to, _from, next) => {
+  const authStore = useAuthStore();
+  
+  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
+    // Redirect to home if not authenticated
+    next({ name: "Home" });
+  } else {
+    next();
+  }
 });
 
 export default router;
