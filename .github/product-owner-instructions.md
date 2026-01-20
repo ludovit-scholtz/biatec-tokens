@@ -283,5 +283,6 @@ If merge is not possible, output a failure reason (e.g., `not_mergeable`) and ad
 *   Respect the **single-active-item rule** per repo.
 *   When creating the **tracker issue**, ensure it clearly tells **how to continue** and tags **@copilot**.
 *   When commenting on PRs, **output the comment URL**. If unavailable, output a **failure reason**.
+*   On Error make sure to always output the failed command which was executed
 
 ***
