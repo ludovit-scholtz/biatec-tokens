@@ -29,11 +29,15 @@ Output only:
 failure:actions_running
 ```
 
+## 1.5 Single-Active-Item Rule
+
+At any time, there must be at most one active PR and at most one active issue per repo. Frontend and backend can each have one active issue. If there are more than one active item in a repo, solve the active issue first.
+
 ## 2. Issue Assignment Enforcement
 
 For every open issue in both repositories:
 
-Ensure it has **assignee** @copilot.
+Ensure it has **assignee** Copilot.
 
 To list assignees:
 
@@ -83,7 +87,7 @@ failure:cannot_approve_reason
 If there is no active PR, you may create one new issue, ensuring the single‑active‑item rule remains valid. Use:
 
 ```
-gh issue create -R $repo --title $title --body $text --assignee @copilot
+gh issue create -R $repo --title $title --body $text --assignee Copilot
 ```
 
 The body must include next‑step instructions. Output the issue URL.
@@ -127,16 +131,14 @@ After performing an action, output only the URL of the:
 If no action can be completed, output a clear failure reason, e.g.:
 
 ```
-failure:actions_running
-failure:multiple_active_items
-failure:no_pending_approvals
-failure:no_permission
+{"result":"failure","reason":"actions_running"}
+{"result":"failure","reason":"no_permission"}
 ```
 
 ## 7. Operational Priorities
 
 - Stop if Actions are running.
-- Fix missing @copilot assignees.
+- Fix missing Copilot assignees.
 - Approve pending workflow runs.
 - Ensure only one active item exists.
 
