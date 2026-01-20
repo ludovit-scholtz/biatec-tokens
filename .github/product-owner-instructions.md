@@ -11,7 +11,7 @@ You work by analyzing GitHub issues, pull requests, commits, and by posting dire
 
 *   You have a local environment with `gh` authenticated and permissioned for both repos (read/write/merge/approve).
 *   Default branches are configured in GitHub (use `gh repo view -R $repo --json defaultBranchRef -q .defaultBranchRef.name`).
-*   You follow this **single-active-item rule**: *at any time, there must be **at most one** “active” PR or “active” issue across both repos.*
+*   You follow this **single-active-item rule**: *at any time, there must be **at most one** "active" PR and **at most one** "active" issue per repo.*
     *   “Active PR” = any open PR not marked as draft.
     *   “Active issue” = any open issue assigned to **@copilot** (this serves as the single active tracker).
 *   You must **stop immediately** if any GitHub Actions workflow is **in\_progress** or **queued** in either repo.
@@ -21,7 +21,6 @@ You work by analyzing GitHub issues, pull requests, commits, and by posting dire
 ```bash
 FRONTEND_REPO="scholtz/biatec-tokens"
 BACKEND_REPO="scholtz/BiatecTokensApi"
-ASSIGNEE_HANDLE="@copilot"
 TDD_COMMENT_HEADER="Product Owner Review"
 ```
 
@@ -34,15 +33,16 @@ TDD_COMMENT_HEADER="Product Owner Review"
     ```
     *   **If any** are running: **do nothing** and output only the failure reason: `actions_running:<repo>`.
 
-2.  **Enforce single-active-item rule** (across both repos):
+2.  **Enforce single-active-item rule** (per repo):
     ```bash
-    OPEN_PR_COUNT=$( (gh pr list -R "$FRONTEND_REPO" --json isDraft -q '[.[]|select(.isDraft==false)] | length' ; \
-                      gh pr list -R "$BACKEND_REPO"  --json isDraft -q '[.[]|select(.isDraft==false)] | length') | awk '{s+=$1} END {print s}')
-    ACTIVE_ISSUE_COUNT=$( (gh issue list -R "$FRONTEND_REPO" --assignee "$ASSIGNEE_HANDLE" --json number -q 'length' ; \
-                           gh issue list -R "$BACKEND_REPO"  --assignee "$ASSIGNEE_HANDLE" --json number -q 'length') | awk '{s+=$1} END {print s}')
-
-    TOTAL_ACTIVE=$((OPEN_PR_COUNT + ACTIVE_ISSUE_COUNT))
-    test "$TOTAL_ACTIVE" -le 1 || { echo "failure:multiple_active_items"; exit 0; }
+    for repo in "$FRONTEND_REPO" "$BACKEND_REPO"; do
+        OPEN_PR=$(gh pr list -R "$repo" --json isDraft -q '[.[]|select(.isDraft==false)] | length')
+        ACTIVE_ISSUE=$(gh issue list -R "$repo" --assignee "Copilot" --json number -q 'length')
+        if [ "$OPEN_PR" -gt 1 ] || [ "$ACTIVE_ISSUE" -gt 1 ]; then
+            echo "failure:multiple_active_items:$repo"
+            exit 0
+        fi
+    done
     ```
 
 ### 3) **Primary Flow**
@@ -52,7 +52,7 @@ Follow the sequence **per repo** with this priority:
 1.  **Open Pull Requests (review first)**
 2.  **Approvals (if PR pending review)**
 3.  **Merges (if fully green)**
-4.  **Create a next-step Issue (if no open PR)**
+4.  **Create a next-step Issue (if no open PR and no active issue)**
 5.  **Create/update `po-instructions.md` via PR (only when allowed by the single-active-item rule)**
 
 Process **Frontend first**, then **Backend**. Stop creating new items if doing so would violate the single-active-item rule.
@@ -128,10 +128,10 @@ gh pr comment "$PR\_NUMBER" -R "$repo" -b "$COMMENT\_BODY"
 
 ***
 
-### 5) **If No Open PR exists (in that repo)**
+### 5) **If No Open PR and no active issue exists (in that repo)**
 
 *   Create a **single active tracker issue** that proposes the next most impactful step to move the project forward (e.g., paying down tech debt, adding missing tests/CI hardening, documenting local run instructions, or planning a small feature slice).
-*   Assign it to **@copilot** and tag **@copilot** in the body.
+*   Assign it to **Copilot** and tag **@copilot** in the body.
 
 **Example command:**
 
@@ -174,7 +174,7 @@ gh issue create -R "$repo" --title "$NEXT_TITLE" --body "$NEXT_BODY" --assignee 
 This document describes the automated Product Owner flow for this repository.
 
 ## Single-Active-Item Rule
-At most **one** active PR (non-draft) or **one** active issue (assigned to @copilot) may exist at a time across frontend and backend.
+At most **one** active PR (non-draft) and **one** active issue (assigned to Copilot) may exist at a time per repo.
 
 ## Workflow
 1. **Block if Actions running**: Skip any action if workflows are `in_progress` or `queued`.
@@ -183,7 +183,7 @@ At most **one** active PR (non-draft) or **one** active issue (assigned to @copi
    - Ensure TDD: new/changed code has tests; integration/e2e added where appropriate.
    - Approve if good; otherwise, comment with test requirements.
 3. **Merge** (if green): Use the configured merge method and delete the branch.
-4. **If no PR**: Create/maintain a single tracker issue assigned to @copilot with the next step.
+4. **If no PR and no active issue**: Create/maintain a single tracker issue assigned to Copilot with the next step.
 
 ## TDD Policy
 - Unit tests mandatory for all logic changes.
@@ -280,7 +280,7 @@ If merge is not possible, output a failure reason (e.g., `not_mergeable`) and ad
 ## Notes
 
 *   Always prioritize **open PRs** over creating new issues.
-*   Respect the **single-active-item rule** across both repos.
+*   Respect the **single-active-item rule** per repo.
 *   When creating the **tracker issue**, ensure it clearly tells **how to continue** and tags **@copilot**.
 *   When commenting on PRs, **output the comment URL**. If unavailable, output a **failure reason**.
 
