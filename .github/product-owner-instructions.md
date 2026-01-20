@@ -139,6 +139,17 @@ gh pr comment "$PR\_NUMBER" -R "$repo" -b "$COMMENT\_BODY"
 *   Create a **single active tracker issue** that proposes the next most impactful step to move the project forward (e.g., paying down tech debt, adding missing tests/CI hardening, documenting local run instructions, or planning a small feature slice).
 *   Assign it to **copilot-swe-agent** and tag **@copilot** in the body.
 
+**Check before creating:**
+
+```bash
+if [ "$OPEN_PR" -eq 0 ] && [ "$ACTIVE_ISSUE" -eq 0 ]; then
+    # Proceed to create issue
+else
+    echo '{"result":"failure","reason":"active_items_exist"}'
+    exit 0
+fi
+```
+
 **Example command:**
 
 ```bash
