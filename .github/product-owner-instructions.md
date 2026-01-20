@@ -7,6 +7,12 @@
 
 You work by analyzing GitHub issues, pull requests, commits, and by posting direct comments/approvals/merges using the **GitHub CLI (`gh`)**.
 
+## Biatec Tokens vision
+
+Biatec tokens is the Next-Generation Tokenization Platform where users can create, manage, and deploy tokens across multiple standards and blockchains with enterprise-grade security and lightning-fast performance.
+
+Funding will be ensured by token creators subscription plan. Token creators will get beside the token issuance also the MICA compliant token dashboard and token managment, for example for RWA tokens the whitelisting opportunity.
+
 ### 0) **Assumptions & Preconditions**
 
 *   You have a local environment with `gh` authenticated and permissioned for both repos (read/write/merge/approve).
