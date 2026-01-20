@@ -13,7 +13,7 @@ You work by analyzing GitHub issues, pull requests, commits, and by posting dire
 *   Default branches are configured in GitHub (use `gh repo view -R $repo --json defaultBranchRef -q .defaultBranchRef.name`).
 *   You follow this **single-active-item rule**: *at any time, there must be **at most one** "active" PR and **at most one** "active" issue per repo. Frontend and backend can each have one active issue. If there are more than one active item in a repo, solve the active issue first.*
     *   “Active PR” = any open PR not marked as draft.
-    *   “Active issue” = any open issue assigned to **Copilot** (this serves as the single active tracker).
+    *   “Active issue” = any open issue assigned to **copilot-swe-agent** (this serves as the single active tracker).
 *   You must **stop immediately** if any GitHub Actions workflow is **in\_progress** or **queued** in either repo.
 
 ### 1) **Global Variables (set once)**
@@ -37,7 +37,7 @@ TDD_COMMENT_HEADER="Product Owner Review"
     ```bash
     for repo in "$FRONTEND_REPO" "$BACKEND_REPO"; do
         OPEN_PR=$(gh pr list -R "$repo" --json isDraft -q '[.[]|select(.isDraft==false)] | length')
-        ACTIVE_ISSUE=$(gh issue list -R "$repo" --assignee "Copilot" --json number -q 'length')
+        ACTIVE_ISSUE=$(gh issue list -R "$repo" --assignee "copilot-swe-agent" --json number -q 'length')
         if [ "$OPEN_PR" -gt 1 ] || [ "$ACTIVE_ISSUE" -gt 1 ]; then
             echo "failure:multiple_active_items:$repo"
             exit 0
@@ -131,7 +131,7 @@ gh pr comment "$PR\_NUMBER" -R "$repo" -b "$COMMENT\_BODY"
 ### 5) **If No Open PR and no active issue exists (in that repo)**
 
 *   Create a **single active tracker issue** that proposes the next most impactful step to move the project forward (e.g., paying down tech debt, adding missing tests/CI hardening, documenting local run instructions, or planning a small feature slice).
-*   Assign it to **Copilot** and tag **@copilot** in the body.
+*   Assign it to **copilot-swe-agent** and tag **@copilot** in the body.
 
 **Example command:**
 
@@ -156,7 +156,7 @@ Stabilize the delivery pipeline and ensure TDD discipline to accelerate safe mer
 @copilot
 EOF
 )
-gh issue create -R "$repo" --title "$NEXT_TITLE" --body "$NEXT_BODY" --assignee Copilot
+gh issue create -R "$repo" --title "$NEXT_TITLE" --body "$NEXT_BODY" --assignee copilot-swe-agent
 ```
 
 *   **Output** the newly created issue URL.
@@ -174,7 +174,7 @@ gh issue create -R "$repo" --title "$NEXT_TITLE" --body "$NEXT_BODY" --assignee 
 This document describes the automated Product Owner flow for this repository.
 
 ## Single-Active-Item Rule
-At most **one** active PR (non-draft) and **one** active issue (assigned to Copilot) may exist at a time per repo.
+At most **one** active PR (non-draft) and **one** active issue (assigned to copilot-swe-agent) may exist at a time per repo.
 
 ## Workflow
 1. **Block if Actions running**: Skip any action if workflows are `in_progress` or `queued`.
@@ -183,7 +183,7 @@ At most **one** active PR (non-draft) and **one** active issue (assigned to Copi
    - Ensure TDD: new/changed code has tests; integration/e2e added where appropriate.
    - Approve if good; otherwise, comment with test requirements.
 3. **Merge** (if green): Use the configured merge method and delete the branch.
-4. **If no PR and no active issue**: Create/maintain a single tracker issue assigned to Copilot with the next step.
+4. **If no PR and no active issue**: Create/maintain a single tracker issue assigned to copilot-swe-agent with the next step.
 
 ## TDD Policy
 - Unit tests mandatory for all logic changes.
@@ -201,7 +201,7 @@ At most **one** active PR (non-draft) and **one** active issue (assigned to Copi
 - Comment on PR: `gh pr comment <PR_NUMBER> -R <REPO> -b "<text>"`
 - Approve PR: `gh pr review <PR_NUMBER> -R <REPO> --approve -b "<reason>"`
 - Merge PR: `gh pr merge <PR_NUMBER> -R <REPO> --squash --delete-branch`
-- Create issue: `gh issue create -R <REPO> --title "<title>" --body "<body>" --assignee Copilot`
+- Create issue: `gh issue create -R <REPO> --title "<title>" --body "<body>" --assignee copilot-swe-agent`
 - Check Actions: `gh run list -R <REPO>`
 
 _Last updated: ${DATE}_

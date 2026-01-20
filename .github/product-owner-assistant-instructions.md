@@ -25,7 +25,7 @@ If the command fails, output a failure with the error details:
 
 For every open issue in both repositories:
 
-Ensure it has **assignee** Copilot.
+Ensure it has **assignee** copilot-swe-agent.
 
 To list assignees:
 
@@ -36,7 +36,7 @@ gh issue view ISSUE_ID --repo REPO --json assignees --jq '.assignees[].login'
 If not assigned, assign using:
 
 ```
-gh issue edit ISSUE_ID --repo REPO --add-assignee Copilot
+gh issue edit ISSUE_ID --repo REPO --add-assignee copilot-swe-agent
 ```
 
 Output the URL of each updated issue.
@@ -99,7 +99,7 @@ failure:cannot_approve_reason
 If there is no active PR, you may create one new issue, ensuring the single‑active‑item rule remains valid. Use:
 
 ```
-gh issue create -R $repo --title $title --body $text --assignee Copilot
+gh issue create -R $repo --title $title --body $text --assignee copilot-swe-agent
 ```
 
 The body must include next‑step instructions. Output the issue URL.
@@ -149,7 +149,7 @@ If no action can be completed, output a clear failure reason, e.g.:
 
 ## 8. Operational Priorities
 
-- Fix missing Copilot assignees.
+- Fix missing copilot-swe-agent assignees.
 - Stop if Actions are running.
 - Approve pending workflow runs.
 - Ensure only one active item exists.
