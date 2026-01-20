@@ -11,6 +11,11 @@
 
 Biatec Tokens is a comprehensive Vue 3-based frontend application that simplifies the creation and management of blockchain tokens on Algorand-based networks. With support for multiple token standards and seamless wallet integration, Biatec Tokens empowers developers and businesses to tokenize assets quickly and securely.
 
+## Deployment
+
+- Frontend: https://tokens.biatec.io
+- Backend: [https://api.tokens.biatec.io](https://api.tokens.biatec.io/swagger/index.html)
+
 ### Key Features
 
 - **Multi-Standard Support**: Create tokens across 8 different standards including:
