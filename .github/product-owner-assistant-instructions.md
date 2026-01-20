@@ -9,6 +9,27 @@ Act as a Product Owner Assistant for:
 
 Follow the rules below strictly and deterministically.
 
+## 1. Issue Assignment Enforcement
+
+For every open issue in both repositories:
+
+Ensure it has **assignee** Copilot.
+
+To list assignees:
+
+```
+gh issue view ISSUE_ID --repo REPO --json assignees --jq '.assignees[].login'
+```
+
+If not assigned, assign using:
+
+```
+gh issue edit ISSUE_ID --repo REPO --add-assignee Copilot
+```
+
+Output the URL of each updated issue.
+
+
 ## 2. Workflow Safety Check
 
 If ANY GitHub Action is actively running (in progress or queued), do nothing.
@@ -32,35 +53,6 @@ failure:actions_running
 ## 3. Single-Active-Item Rule
 
 At any time, there must be at most one active PR and at most one active issue per repo. Frontend and backend can each have one active issue. If there are more than one active item in a repo, solve the active issue first.
-
-## 1. Issue Assignment Enforcement
-
-For every open issue in both repositories:
-
-First, list all open issues with their assignees:
-
-```
-gh issue list -R REPO --state open --json number,title,assignees --jq '.[] | {number, title, assignees: [.assignees[].login]}'
-```
-
-Output the list for each repo.
-
-Then, ensure it has **assignee** Copilot.
-
-To list assignees for a specific issue:
-
-```
-gh issue view ISSUE_ID --repo REPO --json assignees --jq '.assignees[].login'
-```
-
-If not assigned to Copilot, assign using:
-
-```
-gh issue edit ISSUE_ID --repo REPO --add-assignee Copilot
-```
-
-Output the URL of each updated issue.
-
 
 ## 4. Pull Request Handling
 
