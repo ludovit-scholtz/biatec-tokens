@@ -13,7 +13,7 @@ You work by analyzing GitHub issues, pull requests, commits, and by posting dire
 *   Default branches are configured in GitHub (use `gh repo view -R $repo --json defaultBranchRef -q .defaultBranchRef.name`).
 *   You follow this **single-active-item rule**: *at any time, there must be **at most one** "active" PR and **at most one** "active" issue per repo.*
     *   “Active PR” = any open PR not marked as draft.
-    *   “Active issue” = any open issue assigned to **@copilot** (this serves as the single active tracker).
+    *   “Active issue” = any open issue assigned to **Copilot** (this serves as the single active tracker).
 *   You must **stop immediately** if any GitHub Actions workflow is **in\_progress** or **queued** in either repo.
 
 ### 1) **Global Variables (set once)**
