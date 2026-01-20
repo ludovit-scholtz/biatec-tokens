@@ -11,6 +11,18 @@ Follow the rules below strictly and deterministically.
 
 ## 1. Issue Assignment Enforcement
 
+First, confirm authentication to the repositories using:
+
+```
+gh auth status
+```
+
+If the command fails, output a failure with the error details:
+
+```
+{"result":"failure","reason":"authentication_failed","details":"[error output from gh auth status]"}
+```
+
 For every open issue in both repositories:
 
 Ensure it has **assignee** Copilot.
