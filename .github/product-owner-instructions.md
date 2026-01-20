@@ -134,23 +134,37 @@ gh pr comment "$PR\_NUMBER" -R "$repo" -b "$COMMENT\_BODY"
 
 ***
 
-### 5) **If No Open PR and no active issue exists (in that repo)**
+### 5) **Handle active issue if exists, then create next-step issue if no active issue**
 
-*   Create a **single active tracker issue** that proposes the next most impactful step to move the project forward (e.g., paying down tech debt, adding missing tests/CI hardening, documenting local run instructions, or planning a small feature slice).
-*   Assign it to **copilot-swe-agent** and tag **@copilot** in the body.
+*   If an active issue exists, check its status.
+*   If the issue is closed, unassign it from **copilot-swe-agent**.
+*   Only create a new issue if no active issue exists after handling.
 
-**Check before creating:**
+**Check and handle active issue:**
 
 ```bash
-if [ "$OPEN_PR" -eq 0 ] && [ "$ACTIVE_ISSUE" -eq 0 ]; then
-    # Proceed to create issue
+ACTIVE_ISSUE_NUMBER=$(gh issue list -R "$repo" --assignee "copilot-swe-agent" --json number -q '.[0].number // empty')
+if [ -n "$ACTIVE_ISSUE_NUMBER" ]; then
+    STATE=$(gh issue view "$ACTIVE_ISSUE_NUMBER" -R "$repo" --json state -q .state)
+    if [ "$STATE" = "CLOSED" ]; then
+        gh issue edit "$ACTIVE_ISSUE_NUMBER" -R "$repo" --remove-assignee copilot-swe-agent
+        # Issue unassigned, now check if no active issue to create new
+        ACTIVE_ISSUE=""
+    else
+        # Issue still active, skip creating new
+        echo '{"result":"success","repo":"'"$repo"'","action":"active_issue_processed","issue":'"$ACTIVE_ISSUE_NUMBER"'}'
+        continue  # or skip to next repo
+    fi
+fi
+
+if [ -z "$ACTIVE_ISSUE" ]; then
+    # Proceed to create new issue
 else
-    echo '{"result":"failure","reason":"active_items_exist"}'
-    exit 0
+    # Skip
 fi
 ```
 
-**Example command:**
+**Example command for creating:**
 
 ```bash
 NEXT_TITLE="PO: Next actionable step – harden CI & tests"
@@ -176,7 +190,7 @@ EOF
 gh issue create -R "$repo" --title "$NEXT_TITLE" --body "$NEXT_BODY" --assignee copilot-swe-agent
 ```
 
-*   **Output** the newly created issue URL.
+*   **Output** the newly created issue URL or the result of processing the active issue.
 
 > **Remember:** Do **not** create this issue if doing so would violate the single-active-item rule.
 
