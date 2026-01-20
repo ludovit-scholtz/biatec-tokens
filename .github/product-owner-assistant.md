@@ -90,7 +90,7 @@ The body must include next‑step instructions. Output the issue URL.
 
 ## 5. Workflow Approval
 
-If any GitHub workflow run is waiting for approval, approve it:
+If any GitHub workflow run is waiting for approval (including runs triggered from forks), approve it using the gh command:
 
 How to correctly detect "workflows awaiting approval" for a pull request (do NOT rely on PR UI text):
 
