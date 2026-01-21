@@ -69,7 +69,7 @@ Deterministic check (per repo):
 gh api -R $repo "repos/$REPO/actions/runs?per_page=100" --jq '.workflow_runs[] | {id, status, html_url}'
 ```
 
-2) If ANY run has `status` in `{ "queued", "in_progress" }`, treat Actions as running and exit immidiently.
+2) If ANY run has `status` in `{ "queued", "in_progress" }`, treat Actions as running, output error, and exit immidiently.
 
 Output only:
 
