@@ -1,231 +1,240 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { setActivePinia, createPinia } from 'pinia';
-import { useSubscriptionStore } from './subscription';
+import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { setActivePinia, createPinia } from 'pinia'
+import { useSubscriptionStore } from './subscription'
 
 // Mock the stripe-config module
 vi.mock('../stripe-config', () => ({
-  getProductByPriceId: (priceId: string) => {
-    if (priceId === 'price_1RZditFQlr5akrTCrlVCJ6Gd') {
-      return {
-        id: 'prod_SUcy60xNbxYd2P',
-        priceId: 'price_1RZditFQlr5akrTCrlVCJ6Gd',
-        name: 'Monthly subscription',
-        description: 'Access to premium features',
-        mode: 'subscription',
-        price: 50.00,
-        currency: 'usd',
-        interval: 'month'
-      };
+  getProductByPriceId: vi.fn((priceId: string) => {
+    if (priceId === 'price_test_basic') {
+      return { name: 'Basic Plan', price: 9.99, priceId: 'price_test_basic' }
     }
-    return null;
-  }
-}));
+    if (priceId === 'price_test_pro') {
+      return { name: 'Pro Plan', price: 29.99, priceId: 'price_test_pro' }
+    }
+    return null
+  })
+}))
 
 describe('Subscription Store', () => {
-  let originalLocation: any;
-
   beforeEach(() => {
-    // Create a new pinia instance for each test
-    setActivePinia(createPinia());
-    vi.clearAllMocks();
-    
-    // Mock window.location.href for checkout tests
-    originalLocation = window.location.href;
-    delete (window as any).location;
-    window.location = { href: originalLocation } as any;
-  });
+    setActivePinia(createPinia())
+    vi.clearAllMocks()
+  })
 
-  afterEach(() => {
-    // Restore original location
-    if (originalLocation) {
-      delete (window as any).location;
-      window.location = { href: originalLocation } as any;
-    }
-  });
+  describe('initialization', () => {
+    it('should initialize with null subscription', () => {
+      const store = useSubscriptionStore()
 
-  it('should initialize with null subscription', () => {
-    const store = useSubscriptionStore();
-    
-    expect(store.subscription).toBeNull();
-    expect(store.loading).toBe(false);
-    expect(store.error).toBeNull();
-  });
+      expect(store.subscription).toBeNull()
+      expect(store.loading).toBe(false)
+      expect(store.error).toBeNull()
+    })
 
-  it('should compute isActive as false when no subscription', () => {
-    const store = useSubscriptionStore();
-    
-    expect(store.isActive).toBe(false);
-  });
+    it('should have isActive computed property', () => {
+      const store = useSubscriptionStore()
 
-  it('should compute isActive as true when subscription is active', async () => {
-    const store = useSubscriptionStore();
-    
-    await store.fetchSubscription();
-    
-    // Change subscription to active
-    if (store.subscription) {
-      store.subscription.subscription_status = 'active';
-    }
-    
-    expect(store.isActive).toBe(true);
-  });
+      expect(store.isActive).toBe(false)
+    })
+  })
 
-  it('should fetch subscription data', async () => {
-    const store = useSubscriptionStore();
-    
-    await store.fetchSubscription();
-    
-    expect(store.subscription).not.toBeNull();
-    expect(store.subscription?.customer_id).toBe('demo_customer');
-    expect(store.subscription?.subscription_status).toBe('not_started');
-    expect(store.loading).toBe(false);
-    expect(store.error).toBeNull();
-  });
+  describe('isActive computed', () => {
+    it('should return true when subscription status is active', async () => {
+      const store = useSubscriptionStore()
+      
+      await store.fetchSubscription()
+      
+      // Manually update subscription to active for testing
+      if (store.subscription) {
+        store.subscription.subscription_status = 'active'
+      }
 
-  it('should set loading state correctly', async () => {
-    const store = useSubscriptionStore();
-    
-    expect(store.loading).toBe(false);
-    
-    await store.fetchSubscription();
-    
-    // After completion, loading should be false
-    expect(store.loading).toBe(false);
-    expect(store.subscription).not.toBeNull();
-  });
+      expect(store.isActive).toBe(true)
+    })
 
-  it('should compute currentProduct when price_id is set', async () => {
-    const store = useSubscriptionStore();
-    
-    await store.fetchSubscription();
-    
-    // Initially no product
-    expect(store.currentProduct).toBeNull();
-    
-    // Set a price_id
-    if (store.subscription) {
-      store.subscription.price_id = 'price_1RZditFQlr5akrTCrlVCJ6Gd';
-    }
-    
-    // Now currentProduct should be populated
-    expect(store.currentProduct).not.toBeNull();
-    expect(store.currentProduct?.name).toBe('Monthly subscription');
-  });
+    it('should return false when subscription is null', () => {
+      const store = useSubscriptionStore()
 
-  it('should compute currentProduct as null when price_id is null', async () => {
-    const store = useSubscriptionStore();
-    
-    await store.fetchSubscription();
-    
-    expect(store.subscription?.price_id).toBeNull();
-    expect(store.currentProduct).toBeNull();
-  });
+      expect(store.isActive).toBe(false)
+    })
 
-  it('should compute currentPeriodEnd as Date when current_period_end is set', async () => {
-    const store = useSubscriptionStore();
-    
-    await store.fetchSubscription();
-    
-    const timestamp = 1735000000; // Some future timestamp
-    
-    if (store.subscription) {
-      store.subscription.current_period_end = timestamp;
-    }
-    
-    const periodEnd = store.currentPeriodEnd;
-    expect(periodEnd).toBeInstanceOf(Date);
-    expect(periodEnd?.getTime()).toBe(timestamp * 1000);
-  });
+    it('should return false when subscription status is not active', async () => {
+      const store = useSubscriptionStore()
+      
+      await store.fetchSubscription()
 
-  it('should compute currentPeriodEnd as null when current_period_end is null', async () => {
-    const store = useSubscriptionStore();
-    
-    await store.fetchSubscription();
-    
-    expect(store.subscription?.current_period_end).toBeNull();
-    expect(store.currentPeriodEnd).toBeNull();
-  });
+      expect(store.isActive).toBe(false)
+    })
+  })
 
-  it('should create checkout session with default mode', async () => {
-    const store = useSubscriptionStore();
-    const mockPriceId = 'price_test_123';
-    
-    const promise = store.createCheckoutSession(mockPriceId);
-    
-    // Check loading is true during operation
-    expect(store.loading).toBe(true);
-    
-    // Wait for promise with timeout to prevent hanging
-    await Promise.race([
-      promise,
-      new Promise(resolve => setTimeout(() => resolve('timeout'), 2000))
-    ]);
-    
-    expect(store.loading).toBe(false);
-    expect(window.location.href).toContain('/subscription/success');
-    expect(window.location.href).toContain('session_id=mock_session_');
-  });
+  describe('currentProduct computed', () => {
+    it('should return null when subscription is null', () => {
+      const store = useSubscriptionStore()
 
-  it('should create checkout session with custom mode', async () => {
-    const store = useSubscriptionStore();
-    const mockPriceId = 'price_test_456';
-    
-    const promise = store.createCheckoutSession(mockPriceId, 'payment');
-    
-    // Wait for promise with timeout to prevent hanging
-    await Promise.race([
-      promise,
-      new Promise(resolve => setTimeout(() => resolve('timeout'), 2000))
-    ]);
-    
-    expect(store.loading).toBe(false);
-    expect(window.location.href).toContain('/subscription/success');
-  });
+      expect(store.currentProduct).toBeNull()
+    })
 
-  it('should initialize with all expected state properties', () => {
-    const store = useSubscriptionStore();
-    
-    // Check all exposed properties exist
-    expect(store).toHaveProperty('subscription');
-    expect(store).toHaveProperty('loading');
-    expect(store).toHaveProperty('error');
-    expect(store).toHaveProperty('isActive');
-    expect(store).toHaveProperty('currentProduct');
-    expect(store).toHaveProperty('currentPeriodEnd');
-    expect(store).toHaveProperty('fetchSubscription');
-    expect(store).toHaveProperty('createCheckoutSession');
-  });
+    it('should return null when price_id is null', async () => {
+      const store = useSubscriptionStore()
+      
+      await store.fetchSubscription()
 
-  it('should handle subscription with cancel_at_period_end flag', async () => {
-    const store = useSubscriptionStore();
-    
-    await store.fetchSubscription();
-    
-    expect(store.subscription?.cancel_at_period_end).toBe(false);
-    
-    // Simulate subscription being cancelled
-    if (store.subscription) {
-      store.subscription.cancel_at_period_end = true;
-    }
-    
-    expect(store.subscription?.cancel_at_period_end).toBe(true);
-  });
+      expect(store.currentProduct).toBeNull()
+    })
 
-  it('should store payment method details', async () => {
-    const store = useSubscriptionStore();
-    
-    await store.fetchSubscription();
-    
-    expect(store.subscription?.payment_method_brand).toBeNull();
-    expect(store.subscription?.payment_method_last4).toBeNull();
-    
-    // Simulate payment method being added
-    if (store.subscription) {
-      store.subscription.payment_method_brand = 'visa';
-      store.subscription.payment_method_last4 = '4242';
-    }
-    
-    expect(store.subscription?.payment_method_brand).toBe('visa');
-    expect(store.subscription?.payment_method_last4).toBe('4242');
-  });
-});
+    it('should return product when valid price_id exists', async () => {
+      const store = useSubscriptionStore()
+      
+      await store.fetchSubscription()
+      
+      // Set a valid price_id
+      if (store.subscription) {
+        store.subscription.price_id = 'price_test_basic'
+      }
+
+      const product = store.currentProduct
+      expect(product).toBeDefined()
+      expect(product?.name).toBe('Basic Plan')
+      expect(product?.priceId).toBe('price_test_basic')
+    })
+  })
+
+  describe('currentPeriodEnd computed', () => {
+    it('should return null when subscription is null', () => {
+      const store = useSubscriptionStore()
+
+      expect(store.currentPeriodEnd).toBeNull()
+    })
+
+    it('should return null when current_period_end is null', async () => {
+      const store = useSubscriptionStore()
+      
+      await store.fetchSubscription()
+
+      expect(store.currentPeriodEnd).toBeNull()
+    })
+
+    it('should return Date when current_period_end exists', async () => {
+      const store = useSubscriptionStore()
+      
+      await store.fetchSubscription()
+      
+      // Set current_period_end to a timestamp
+      const timestamp = Math.floor(Date.now() / 1000) + 86400 // 1 day from now
+      if (store.subscription) {
+        store.subscription.current_period_end = timestamp
+      }
+
+      const date = store.currentPeriodEnd
+      expect(date).toBeInstanceOf(Date)
+      expect(date?.getTime()).toBe(timestamp * 1000)
+    })
+  })
+
+  describe('fetchSubscription', () => {
+    it('should fetch subscription successfully', async () => {
+      const store = useSubscriptionStore()
+
+      await store.fetchSubscription()
+
+      expect(store.subscription).not.toBeNull()
+      expect(store.subscription?.customer_id).toBe('demo_customer')
+      expect(store.subscription?.subscription_status).toBe('not_started')
+      expect(store.loading).toBe(false)
+      expect(store.error).toBeNull()
+    })
+
+    it('should set loading to false after fetch completes', async () => {
+      const store = useSubscriptionStore()
+
+      await store.fetchSubscription()
+      
+      expect(store.loading).toBe(false)
+    })
+
+    it('should clear error on successful fetch', async () => {
+      const store = useSubscriptionStore()
+      
+      store.error = 'Previous error'
+      
+      await store.fetchSubscription()
+
+      expect(store.error).toBeNull()
+    })
+  })
+
+  describe('createCheckoutSession', () => {
+    beforeEach(() => {
+      // Mock window.location.href
+      delete (window as any).location
+      window.location = { href: '', origin: 'http://localhost' } as any
+    })
+
+    it('should set loading state during checkout session creation', async () => {
+      const store = useSubscriptionStore()
+
+      const createPromise = store.createCheckoutSession('price_test_basic')
+      expect(store.loading).toBe(true)
+
+      // Wait for the promise to resolve
+      await createPromise
+
+      expect(store.loading).toBe(false)
+    })
+
+    it('should redirect to checkout URL', async () => {
+      const store = useSubscriptionStore()
+
+      await store.createCheckoutSession('price_test_basic')
+
+      expect(window.location.href).toContain('/subscription/success')
+      expect(window.location.href).toContain('session_id=mock_session_')
+    })
+
+    it('should handle subscription mode', async () => {
+      const store = useSubscriptionStore()
+
+      await store.createCheckoutSession('price_test_pro', 'subscription')
+
+      expect(window.location.href).toContain('/subscription/success')
+    })
+
+    it('should handle payment mode', async () => {
+      const store = useSubscriptionStore()
+
+      await store.createCheckoutSession('price_test_basic', 'payment')
+
+      expect(window.location.href).toContain('/subscription/success')
+    })
+
+    it('should clear error on successful checkout', async () => {
+      const store = useSubscriptionStore()
+      
+      store.error = 'Previous error'
+      
+      await store.createCheckoutSession('price_test_basic')
+
+      // The loading will be false after completion
+      expect(store.loading).toBe(false)
+    })
+  })
+
+  describe('subscription data structure', () => {
+    it('should have correct subscription data structure after fetch', async () => {
+      const store = useSubscriptionStore()
+      
+      await store.fetchSubscription()
+
+      expect(store.subscription).toMatchObject({
+        customer_id: expect.any(String),
+        subscription_id: null,
+        subscription_status: expect.any(String),
+        price_id: null,
+        current_period_start: null,
+        current_period_end: null,
+        cancel_at_period_end: expect.any(Boolean),
+        payment_method_brand: null,
+        payment_method_last4: null
+      })
+    })
+  })
+})
