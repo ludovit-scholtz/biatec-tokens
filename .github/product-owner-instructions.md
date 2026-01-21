@@ -7,8 +7,16 @@
 ### 0) **Assumptions & Preconditions**
 - `gh` authenticated with read/write/merge/approve permissions.
 - Default branches set in GitHub.
-- **Single-active-item rule**: At most one active PR (non-draft) and one active issue (assigned to copilot-swe-agent) per repo. If violated, resolve active issue first.
+- **Single-active-item rule**: At most one active PR (non-draft) and one active issue per repo. If violated, resolve active issue first and do not create new issues.
 - Stop if any GitHub Actions are in_progress or queued.
+
+To check if there is more than one active issue, use commands and output it to the console:
+```
+gh issue list -R scholtz/BiatecTokensApi --json id,title,state
+gh issue list -R scholtz/biatec-tokens --json id,title,state
+```
+
+
 
 ### 1) **Global Variables**
 ```bash
