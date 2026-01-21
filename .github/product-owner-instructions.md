@@ -32,7 +32,7 @@ For each repo:
 
 ### 5) **Handle Issues & Create Next-Step**
 - If active issue exists: Progress it to close; Do not open new issue if there is open issue in the repository.
-- If no active PR/issue: Create one vision-focused issue (e.g., add token standard support, improve wallet integration). Assign to copilot-swe-agent. Output issue URL.
+- If no active PR/issue: Create one vision-focused issue (e.g., add token standard support, improve wallet integration, check internet for competitors features). Assign to copilot-swe-agent. Output issue URL.
 - Tie issues to product vision; avoid generic CI/testing unless critical.
 
 To check if there is more than one active issue, use commands and output it to the console:
