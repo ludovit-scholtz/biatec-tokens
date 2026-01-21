@@ -79,7 +79,7 @@ failure:actions_running
 
 ## 3. Approvals
 
-List all action_requred completed workflow runs, output it to the console and run rerun command.
+List all action_requred completed workflow runs, output it to the console and run rerun command. Do this for all repos and all runs.
 
 ```
 gh run list -R $REPO \
