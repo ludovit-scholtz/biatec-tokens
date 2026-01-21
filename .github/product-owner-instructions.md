@@ -35,7 +35,7 @@ For each repo:
 - List open non-draft PRs (prioritize newest updated).
 - For each PR: Check CI passes, mergeable, and approval status.
 - **If ready (CI green, mergeable, no blocks)**: Approve if aligns with vision (clean diff, tests cover changes, no secrets). Then merge (squash, delete branch).
-- **If not ready**: Comment with TDD requirements (add unit/integration tests, link to issue explaining business value/risk, fix CI). Output comment URL.
+- **If not ready**: Comment with TDD requirements and tag @copilot (add unit/integration tests, link to issue explaining business value/risk, fix CI). Output comment URL.
 - Output JSON for action (e.g., merge, comment).
 
 ### 5) **Handle Issues & Create Next-Step**
