@@ -9,14 +9,6 @@
 - Default branches set in GitHub.
 - Stop if any GitHub Actions are in_progress or queued.
 
-To check if there is more than one active issue, use commands and output it to the console:
-```
-gh issue list -R scholtz/BiatecTokensApi --json id,title,state
-gh issue list -R scholtz/biatec-tokens --json id,title,state
-```
-
-
-
 ### 1) **Global Variables**
 ```bash
 FRONTEND_REPO="scholtz/biatec-tokens"
@@ -42,6 +34,12 @@ For each repo:
 - If active issue exists: Progress it to close; Do not open new issue if there is open issue in the repository.
 - If no active PR/issue: Create one vision-focused issue (e.g., add token standard support, improve wallet integration). Assign to copilot-swe-agent. Output issue URL.
 - Tie issues to product vision; avoid generic CI/testing unless critical.
+
+To check if there is more than one active issue, use commands and output it to the console:
+```
+gh issue list -R scholtz/BiatecTokensApi --json id,title,state
+gh issue list -R scholtz/biatec-tokens --json id,title,state
+```
 
 ### 6) **Instructions Summary**
 - **Scope**: Automated PO flow for repos.
