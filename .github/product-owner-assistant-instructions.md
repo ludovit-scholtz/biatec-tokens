@@ -68,9 +68,9 @@ At any time, there must be at most one active PR and at most one active issue pe
 
 ## 4. Pull Request Handling
 
-### 3.1 Commenting on PRs
+### 4.1 Commenting on PRs
 
-Use:
+If the PR workflow failed comment it and tag @copilot to fix the issue:
 
 ```
 gh pr comment $PR_ID -R $repoName -b $text
@@ -78,59 +78,21 @@ gh pr comment $PR_ID -R $repoName -b $text
 
 Output the resulting comment URL.
 
-### 3.2 Approvals
+### 4.2 Approvals
 
-If any PR is waiting for approval, and you determine it is good for the project, approve it:
-
-```
-gh pr review $PR_ID -R $repoName --approve -b "Approved by Product Owner Assistant"
-```
-
-You do not have rights to merge PRs, so do not attempt merging.
-
-If you cannot approve, output a failure:
+List all action_requred completed workflow runs, output it to the console and run rerun command.
 
 ```
-failure:cannot_approve_reason
+gh run list -R $repoName \
+  --json name,status,databaseId,conclusion \
+  --jq '.[] | select(.conclusion == "action_required" and .status == "completed")'
 ```
 
-## 5. Issue Creation
-
-If there is no active PR, you may create one new issue, ensuring the single‑active‑item rule remains valid. Use:
+Rerun with following command and output to the console the output from the command:
 
 ```
-gh issue create -R $repo --title $title --body $text --assignee copilot-swe-agent
+gh run rerun 21213920335 -R $repoName
 ```
-
-The body must include next‑step instructions. Output the issue URL.
-
-## 6. Workflow Approval
-
-If any GitHub workflow run is waiting for approval (including runs triggered from forks), approve it using the gh command:
-
-How to correctly detect "workflows awaiting approval" for a pull request (do NOT rely on PR UI text):
-
-1) Get PR head ref + head SHA:
-
-```
-gh pr view $PR_ID -R $repo --json headRefName,headRefOid
-```
-
-2) List workflow runs for the PR head commit and select those with `status=="waiting"`:
-
-```
-gh run list -R $repo --branch <headRefName> \
-	--json databaseId,headSha,status,workflowName,event,url \
-	--jq '.[] | select(.headSha=="<headRefOid>") | select(.status=="waiting")'
-```
-
-If any results are returned, workflows are awaiting approval. Use `databaseId` as RUN_ID.
-
-```
-gh run approve RUN_ID -R $repo
-```
-
-Output the run URL.
 
 ## 7. Output Formatting
 
