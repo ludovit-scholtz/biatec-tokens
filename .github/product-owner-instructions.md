@@ -27,7 +27,6 @@ TDD_COMMENT_HEADER="Product Owner Review"
 
 ### 2) **Concurrency & Safety Checks**
 - Block on running workflows: Check `gh run list` for in_progress/queued; output `actions_running:<repo>` if any.
-- Enforce single-active-item: Check for >1 open PR or >1 active issue; output `multiple_active_items:<repo>` if violated.
 
 ### 3) **Primary Flow**
 Process Frontend first, then Backend. Priority: Handle open PRs (review/approve/merge), then active issues, then create next-step issue if none active.
