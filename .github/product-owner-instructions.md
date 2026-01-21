@@ -20,14 +20,14 @@ TDD_COMMENT_HEADER="Product Owner Review"
 - Block on running workflows: Check `gh run list` for in_progress/queued; output `actions_running:<repo>` if any.
 
 ### 3) **Primary Flow**
-Process Frontend first, then Backend. Priority: Handle open PRs (review/approve/merge), then active issues, then create next-step issue if none active.
+Process Frontend first, then Backend. Priority: Handle open PRs (review/mrege), then active issues, then create next-step issue if none active.
 
 ### 4) **PR Analysis & Actions**
 For each repo:
-- List open non-draft PRs (prioritize newest updated).
+- Output to the console list of open PRs (prioritize newest updated).
 - For each PR: Check CI passes, mergeable, and approval status.
-- **If ready (CI green, mergeable, no blocks)**: Approve if aligns with vision (clean diff, tests cover changes, no secrets). Then merge (squash, delete branch).
-- **If not ready**: Comment with TDD requirements and tag @copilot (add unit/integration tests, link to issue explaining business value/risk, fix CI). Output comment URL.
+- **If ready (CI green, mergeable, no blocks)**: Merge pull request (squash, delete branch). Output the result
+- **If not ready**: Comment with TDD requirements and tag @copilot (add unit/integration tests, link to issue explaining business value/risk, fix CI). Tag @copilot. Output comment URL.
 - Output JSON for action (e.g., merge, comment).
 
 ### 5) **Handle Issues & Create Next-Step**
