@@ -112,6 +112,27 @@
           <div v-if="activeTab === 'whitelist'">
             <WhitelistManagement :token-id="tokenId" />
           </div>
+
+          <!-- Compliance Tab -->
+          <div v-if="activeTab === 'compliance'">
+            <div class="space-y-6">
+              <div class="glass-effect rounded-xl p-6">
+                <h3 class="text-xl font-semibold text-white mb-4">Quick Access</h3>
+                <p class="text-gray-400 mb-4">
+                  Access the full compliance dashboard with whitelist management, transfer validation, and audit logs.
+                </p>
+                <router-link
+                  :to="`/compliance/${tokenId}?network=VOI`"
+                  class="inline-flex items-center gap-2 px-6 py-3 bg-biatec-accent text-gray-900 rounded-lg hover:bg-biatec-teal transition-colors font-medium"
+                >
+                  <i class="pi pi-shield-check"></i>
+                  Open Compliance Dashboard
+                </router-link>
+              </div>
+
+              <ComplianceChecklist />
+            </div>
+          </div>
         </div>
 
         <!-- Loading State -->
@@ -130,6 +151,7 @@ import { useRoute } from 'vue-router';
 import { useTokenStore } from '../stores/tokens';
 import MainLayout from '../layout/MainLayout.vue';
 import WhitelistManagement from '../components/WhitelistManagement.vue';
+import ComplianceChecklist from '../components/ComplianceChecklist.vue';
 
 const route = useRoute();
 const tokenStore = useTokenStore();
@@ -142,6 +164,7 @@ const activeTab = ref('overview');
 const tabs = [
   { id: 'overview', label: 'Overview', icon: 'pi pi-info-circle' },
   { id: 'whitelist', label: 'Whitelist', icon: 'pi pi-list' },
+  { id: 'compliance', label: 'Compliance', icon: 'pi pi-shield-check' },
 ];
 
 const formatDate = (date: Date) => {
