@@ -46,8 +46,8 @@ export class ComplianceService {
     if (filters.startDate) params.append('startDate', filters.startDate);
     if (filters.endDate) params.append('endDate', filters.endDate);
     if (filters.result) params.append('result', filters.result);
-    if (filters.limit) params.append('limit', filters.limit.toString());
-    if (filters.offset) params.append('offset', filters.offset.toString());
+    if (filters.limit !== undefined) params.append('limit', filters.limit.toString());
+    if (filters.offset !== undefined) params.append('offset', filters.offset.toString());
 
     const query = params.toString() ? `?${params.toString()}` : '';
     return this.apiClient.get<AuditLogResponse>(`/v1/audit-log${query}`);
