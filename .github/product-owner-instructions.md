@@ -26,11 +26,9 @@ Process Frontend first, then Backend. Priority: Handle open PRs (review/mrege), 
 For each repo:
 - Output to the console list of open PRs (prioritize newest updated).
 - For each PR: All checks have passed and mergeable.
-- **If ready (All checks have passed, mergeable)**: Make it ready for review and merge pull request (squash, delete branch). Output the result
+- **If ready (All checks have passed, mergeable, may be in draft status)**: Make it ready for review and merge pull request (squash, delete branch). Output the result
 - **If not ready**: Comment with TDD requirements and tag @copilot (add unit/integration tests, link to issue explaining business value/risk, fix CI). Tag @copilot. Output comment URL.
 - Output JSON for action (e.g., merge, comment).
-
-PR in draft state is considered finished if no action is running.
 
 ### 5) **Handle Issues & Create Next-Step**
 - If active issue exists: Progress it to close; Do not open new issue if there is open issue in the repository.
