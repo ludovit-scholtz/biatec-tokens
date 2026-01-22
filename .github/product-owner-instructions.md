@@ -30,6 +30,8 @@ For each repo:
 - **If not ready**: Comment with TDD requirements and tag @copilot (add unit/integration tests, link to issue explaining business value/risk, fix CI). Tag @copilot. Output comment URL.
 - Output JSON for action (e.g., merge, comment).
 
+PR in draft state is considered finished if no action is running.
+
 ### 5) **Handle Issues & Create Next-Step**
 - If active issue exists: Progress it to close; Do not open new issue if there is open issue in the repository.
 - If no active PR/issue: Create one vision-focused issue (e.g., add token standard support, improve wallet integration, check internet for competitors features). Assign to copilot-swe-agent. Output issue URL.
