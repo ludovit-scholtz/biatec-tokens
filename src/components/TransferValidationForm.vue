@@ -304,8 +304,9 @@ const handleValidate = async () => {
     } else {
       toast.warning('Transfer validation failed');
     }
-  } catch (err: any) {
-    error.value = err.message || 'Failed to validate transfer';
+  } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : 'Failed to validate transfer';
+    error.value = errorMessage;
     toast.error('Validation request failed');
   } finally {
     isValidating.value = false;

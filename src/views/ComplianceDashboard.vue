@@ -197,7 +197,7 @@ const loadComplianceStatus = async () => {
       tokenId.value,
       selectedNetwork.value
     );
-  } catch (err: any) {
+  } catch (err) {
     console.error('Failed to load compliance status:', err);
     // Set default values if API call fails
     complianceStatus.value = {

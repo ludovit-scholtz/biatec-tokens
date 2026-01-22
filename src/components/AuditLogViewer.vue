@@ -357,8 +357,9 @@ const loadAuditLog = async () => {
     entries.value = response.entries;
     total.value = response.total;
     hasMore.value = response.hasMore;
-  } catch (err: any) {
-    error.value = err.message || 'Failed to load audit log';
+  } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : 'Failed to load audit log';
+    error.value = errorMessage;
     toast.error('Failed to load audit log');
   } finally {
     isLoading.value = false;
@@ -407,7 +408,7 @@ const handleExport = async () => {
     URL.revokeObjectURL(url);
 
     toast.success('Audit log exported successfully');
-  } catch (err: any) {
+  } catch (err) {
     toast.error('Failed to export audit log');
   } finally {
     isExporting.value = false;
