@@ -2,7 +2,10 @@ import { createRouter, createWebHistory } from "vue-router";
 import Home from "../views/Home.vue";
 import TokenCreator from "../views/TokenCreator.vue";
 import TokenDashboard from "../views/TokenDashboard.vue";
+import TokenDetail from "../views/TokenDetail.vue";
 import Settings from "../views/Settings.vue";
+import ComplianceDashboard from "../views/ComplianceDashboard.vue";
+import AttestationsDashboard from "../views/AttestationsDashboard.vue";
 
 // Subscription views
 import Pricing from "../views/subscription/Pricing.vue";
@@ -30,9 +33,27 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: "/tokens/:id",
+      name: "TokenDetail",
+      component: TokenDetail,
+      meta: { requiresAuth: true },
+    },
+    {
       path: "/settings",
       name: "Settings",
       component: Settings,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: "/compliance/:id?",
+      name: "ComplianceDashboard",
+      component: ComplianceDashboard,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: "/attestations",
+      name: "AttestationsDashboard",
+      component: AttestationsDashboard,
       meta: { requiresAuth: true },
     },
     // Subscription routes
