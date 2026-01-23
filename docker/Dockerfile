@@ -10,6 +10,7 @@ COPY package-lock.json package-lock.json
 COPY package.json package.json
 RUN npm ci
 COPY . .
+RUN npm run test:coverage
 RUN npm run build
 RUN cd /src/dist && ls
 #RUN npm run test
