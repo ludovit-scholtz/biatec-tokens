@@ -9,6 +9,7 @@ on:
       - 'k8s/**'
       - 'public/**'
       - 'package-lock.json'
+      - '.github/workflows/build-fe.yml'
 
 env:
   DOCKERHUB_IMAGE: scholtz2/biatec-tokens-fe
