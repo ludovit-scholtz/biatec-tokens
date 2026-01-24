@@ -21,6 +21,16 @@
       </div>
     </div>
 
+    <!-- On-Chain Compliance Badge for VOI/Aramid tokens -->
+    <div v-if="isVoiOrAramidToken" class="mb-3">
+      <OnChainComplianceBadge
+        :token-id="token.id"
+        :network="getTokenNetwork()"
+        :compliance-score="getComplianceScore()"
+        variant="badge"
+      />
+    </div>
+
     <p class="text-gray-300 text-sm mb-4 line-clamp-2">{{ token.description }}</p>
 
     <div class="grid grid-cols-2 gap-4 mb-4">
@@ -78,7 +88,11 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
 import type { Token } from "../stores/tokens";
+import OnChainComplianceBadge from './OnChainComplianceBadge.vue';
+import type { Network } from '../types/compliance';
+import { isAlgorandBasedToken, calculateComplianceScore, getDefaultNetwork } from '../utils/compliance';
 
 const props = defineProps<{
   token: Token;
@@ -87,6 +101,18 @@ const props = defineProps<{
 defineEmits<{
   delete: [id: string];
 }>();
+
+const isVoiOrAramidToken = computed(() => {
+  return isAlgorandBasedToken(props.token.standard);
+});
+
+const getTokenNetwork = (): Network => {
+  return getDefaultNetwork();
+};
+
+const getComplianceScore = (): number => {
+  return calculateComplianceScore(props.token);
+};
 
 const formatSupply = (supply: number) => {
   if (supply >= 1000000) {

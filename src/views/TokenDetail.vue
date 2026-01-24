@@ -21,6 +21,14 @@
               <div>
                 <h1 class="text-4xl font-bold text-white mb-2">{{ token.name }}</h1>
                 <p class="text-gray-400">{{ token.symbol }} • {{ token.standard }}</p>
+                <!-- On-Chain Compliance Badge for VOI/Aramid tokens -->
+                <div v-if="isVoiOrAramidToken" class="mt-2">
+                  <OnChainComplianceBadge
+                    :token-id="tokenId"
+                    :network="getTokenNetwork()"
+                    :compliance-score="getComplianceScore()"
+                  />
+                </div>
               </div>
             </div>
             <span
@@ -291,8 +299,10 @@ import MainLayout from '../layout/MainLayout.vue';
 import WhitelistManagement from '../components/WhitelistManagement.vue';
 import ComplianceChecklist from '../components/ComplianceChecklist.vue';
 import AuditLogViewer from '../components/AuditLogViewer.vue';
-import type { AttestationType } from '../types/compliance';
+import OnChainComplianceBadge from '../components/OnChainComplianceBadge.vue';
+import type { AttestationType, Network } from '../types/compliance';
 import { getAttestationTypeLabel } from '../utils/attestation';
+import { isAlgorandBasedToken, calculateComplianceScore, getDefaultNetwork } from '../utils/compliance';
 
 const route = useRoute();
 const tokenStore = useTokenStore();
@@ -335,6 +345,20 @@ const statusClass = (status: string) => {
     default:
       return 'bg-blue-500/20 text-blue-400 border border-blue-500/30';
   }
+};
+
+const isVoiOrAramidToken = computed(() => {
+  if (!token.value) return false;
+  return isAlgorandBasedToken(token.value.standard);
+});
+
+const getTokenNetwork = (): Network => {
+  return getDefaultNetwork();
+};
+
+const getComplianceScore = (): number => {
+  if (!token.value) return 0;
+  return calculateComplianceScore(token.value);
 };
 
 onMounted(() => {
