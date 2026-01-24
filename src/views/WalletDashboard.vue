@@ -101,6 +101,15 @@
             </div>
           </div>
 
+          <!-- Compliance Dashboard Filters -->
+          <ComplianceDashboardFilters />
+
+          <!-- Compliance Metrics Summary -->
+          <ComplianceMetricsSummary 
+            :network-metrics="complianceMetrics"
+            :show-network-breakdown="true"
+          />
+
           <!-- Wallet Info and Token Balance Row -->
           <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <!-- Wallet Info -->
@@ -203,7 +212,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import MainLayout from '../layout/MainLayout.vue'
 import Card from '../components/ui/Card.vue'
@@ -213,15 +222,42 @@ import WalletInfo from '../components/WalletInfo.vue'
 import AccountSwitcher from '../components/AccountSwitcher.vue'
 import TokenBalancePanel from '../components/TokenBalancePanel.vue'
 import ComplianceStatusIndicator from '../components/ComplianceStatusIndicator.vue'
+import ComplianceDashboardFilters from '../components/ComplianceDashboardFilters.vue'
+import ComplianceMetricsSummary from '../components/ComplianceMetricsSummary.vue'
 import WalletConnectModal from '../components/WalletConnectModal.vue'
 import NetworkSwitcher from '../components/NetworkSwitcher.vue'
 import { useWalletManager } from '../composables/useWalletManager'
+import { useTokenBalance } from '../composables/useTokenBalance'
+import { useTokenMetadata } from '../composables/useTokenMetadata'
+import { useComplianceDashboardStore } from '../stores/complianceDashboard'
+import { detectNetworkType } from '../utils/network'
 
 const router = useRouter()
 const { isConnected, networkInfo, disconnect } = useWalletManager()
+const { accountBalance } = useTokenBalance()
+const { metadataCache } = useTokenMetadata()
+const complianceDashboardStore = useComplianceDashboardStore()
 
 const showWalletConnect = ref(false)
 const showNetworkSwitcher = ref(false)
+
+// Calculate compliance metrics from wallet assets
+const complianceMetrics = computed(() => {
+  // Get current network from networkInfo using utility function
+  const currentNetwork = detectNetworkType(networkInfo.value?.displayName)
+  
+  // Map assets with their compliance flags, safely handling empty arrays
+  const assets = accountBalance.value.assets || []
+  const assetsWithCompliance = assets.map(asset => {
+    const metadata = metadataCache.value.get(asset.assetId)
+    return {
+      network: currentNetwork,
+      complianceFlags: metadata?.complianceFlags
+    }
+  })
+
+  return complianceDashboardStore.calculateNetworkMetrics(assetsWithCompliance)
+})
 
 const formatUrl = (url?: string): string => {
   if (!url) return 'N/A'
