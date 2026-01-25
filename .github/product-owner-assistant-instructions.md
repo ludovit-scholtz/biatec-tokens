@@ -38,7 +38,7 @@ List issues and output list to the console:
 
 ```
 gh issue list -R $REPO --json number,state,title
-``` 
+```
 
 Ensure it has **assignee** copilot-swe-agent.
 
@@ -56,20 +56,19 @@ gh issue edit $ISSUE_NUMBER --repo REPO --add-assignee copilot-swe-agent
 
 Output the URL of each updated issue.
 
-
 ## 2. Workflow Safety Check
 
 If ANY GitHub Action is actively running (in progress or queued), do nothing.
 
 Deterministic check (per repo):
 
-1) Fetch recent runs:
+1. Fetch recent runs:
 
 ```
 gh api -R $repo "repos/$REPO/actions/runs?per_page=100" --jq '.workflow_runs[] | {id, status, html_url}'
 ```
 
-2) If ANY run has `status` in `{ "queued", "in_progress" }`, treat Actions as running, output error, and exit immidiently.
+2. If ANY run has `status` in `{ "queued", "in_progress" }`, treat Actions as running, output error, and exit immidiently.
 
 Output only:
 
@@ -103,6 +102,7 @@ gh pr comment $PR_ID -R $REPO -b $text
 
 Output the resulting comment URL or output that all PRs are in successful state or information that there are no PRs.
 
+If PR workflow is successful, make sure that pull requests is properly tested. If there are no new tests, comment it to ensure test driven development.
 
 ## 5. Output Formatting
 
