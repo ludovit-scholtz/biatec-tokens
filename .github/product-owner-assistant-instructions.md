@@ -102,7 +102,7 @@ gh pr comment $PR_ID -R $REPO -b $text
 
 Output the resulting comment URL or output that all PRs are in successful state or information that there are no PRs.
 
-If PR workflow is successful, make sure that pull requests is properly tested. If there are no new tests, comment it to ensure test driven development.
+If PR workflow is successful, make sure that pull requests is properly tested. If there are no new tests, comment it to ensure test driven development and tag @copilot and output the comment url.
 
 ## 5. Output Formatting
 
