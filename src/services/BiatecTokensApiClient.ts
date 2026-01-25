@@ -1,8 +1,8 @@
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosError } from 'axios';
+import axios, { AxiosInstance, AxiosRequestConfig, AxiosError } from "axios";
 
 /**
  * API Client for BiatecTokensApi backend
- * 
+ *
  * Provides type-safe HTTP methods for communicating with the backend API.
  * Handles configuration, error handling, and request/response interceptors.
  */
@@ -15,13 +15,13 @@ export class BiatecTokensApiClient {
    * @param baseURL - Optional base URL override (defaults to environment variable or localhost)
    */
   constructor(baseURL?: string) {
-    this.baseURL = baseURL || import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
-    
+    this.baseURL = baseURL || import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+
     this.axiosInstance = axios.create({
       baseURL: this.baseURL,
       timeout: 30000, // 30 seconds
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
     });
 
@@ -43,7 +43,7 @@ export class BiatecTokensApiClient {
       },
       (error) => {
         return Promise.reject(error);
-      }
+      },
     );
 
     // Response interceptor
@@ -58,14 +58,14 @@ export class BiatecTokensApiClient {
       (error: AxiosError) => {
         // Log error in development mode
         if (import.meta.env.DEV) {
-          console.error('[API Error]', error.message);
+          console.error("[API Error]", error.message);
           if (error.response) {
-            console.error('Response data:', error.response.data);
-            console.error('Response status:', error.response.status);
+            console.error("Response data:", error.response.data);
+            console.error("Response status:", error.response.status);
           }
         }
         return Promise.reject(error);
-      }
+      },
     );
   }
 
@@ -120,7 +120,7 @@ export class BiatecTokensApiClient {
    * @returns Promise with health status
    */
   async healthCheck(): Promise<{ status: string; timestamp: string }> {
-    return this.get('/health');
+    return this.get("/health");
   }
 
   /**
@@ -134,7 +134,7 @@ export class BiatecTokensApiClient {
 /**
  * Default instance of the API client
  * Can be imported and used directly throughout the application
- * 
+ *
  * Note: Created lazily to support testing
  */
 let defaultClient: BiatecTokensApiClient | null = null;

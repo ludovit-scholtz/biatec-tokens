@@ -25,7 +25,21 @@ const app = createApp(App);
 const pinia = createPinia();
 
 const networks = new NetworkConfigBuilder()
-  .addNetwork("voi-mainnet", {
+  .mainnet({
+    algod: {
+      baseServer: "https://mainnet-api.4160.nodely.dev",
+      port: "443",
+      token: "",
+    },
+  })
+  .testnet({
+    algod: {
+      baseServer: "https://testnet-api.4160.nodely.dev",
+      port: "443",
+      token: "",
+    },
+  })
+  .addNetwork("voimain", {
     algod: {
       token: "",
       baseServer: "https://mainnet-api.voi.nodely.dev",
