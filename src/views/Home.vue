@@ -15,23 +15,13 @@
 
             <!-- CTA Buttons -->
             <div class="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16">
-              <Button 
-                @click="handleCreateToken"
-                variant="primary" 
-                size="lg" 
-                class="text-lg px-8 py-4"
-              >
+              <Button @click="handleCreateToken" variant="primary" size="lg" class="text-lg px-8 py-4">
                 <template #icon>
                   <PlusCircleIcon class="w-6 h-6 mr-2" />
                 </template>
                 Create Your First Token
               </Button>
-              <Button 
-                @click="handleViewDashboard"
-                variant="outline" 
-                size="lg" 
-                class="text-lg px-8 py-4"
-              >
+              <Button @click="handleViewDashboard" variant="outline" size="lg" class="text-lg px-8 py-4">
                 <template #icon>
                   <ChartBarIcon class="w-6 h-6 mr-2" />
                 </template>
@@ -68,7 +58,10 @@
         <div class="section-padding border-t border-gray-200 dark:border-gray-800">
           <div class="text-center mb-12">
             <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-4">Supported Token Standards</h2>
-            <p class="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">Create tokens across multiple blockchain standards with a unified interface</p>
+            <p class="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+              Create tokens across multiple blockchain standards with a unified interface. ERC standards for EVM chains (Ethereum, Arbitrum, Base) and ASA/ARC standards for AVM chains (Algorand, VOI,
+              Aramid).
+            </p>
           </div>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <Card v-for="standard in tokenStore.tokenStandards" :key="standard.name" variant="default" hover class="group">
@@ -95,16 +88,12 @@
     </div>
 
     <!-- Wallet Onboarding Wizard -->
-    <WalletOnboardingWizard
-      :is-open="showOnboardingWizard"
-      @close="showOnboardingWizard = false"
-      @complete="handleOnboardingComplete"
-    />
+    <WalletOnboardingWizard :is-open="showOnboardingWizard" @close="showOnboardingWizard = false" @complete="handleOnboardingComplete" />
   </MainLayout>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted } from "vue";
+import { computed, ref, onMounted, watch } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { useTokenStore } from "../stores/tokens";
 import { useWalletManager } from "../composables/useWalletManager";
@@ -152,6 +141,7 @@ const handleCreateToken = () => {
   if (isConnected.value) {
     router.push("/create");
   } else {
+    localStorage.setItem(AUTH_STORAGE_KEYS.REDIRECT_AFTER_AUTH, "/create");
     showOnboardingWizard.value = true;
   }
 };
@@ -160,13 +150,14 @@ const handleViewDashboard = () => {
   if (isConnected.value) {
     router.push("/dashboard");
   } else {
+    localStorage.setItem(AUTH_STORAGE_KEYS.REDIRECT_AFTER_AUTH, "/dashboard");
     showOnboardingWizard.value = true;
   }
 };
 
 const handleOnboardingComplete = () => {
   showOnboardingWizard.value = false;
-  
+
   // Check if there's a redirect destination
   const redirectPath = localStorage.getItem(AUTH_STORAGE_KEYS.REDIRECT_AFTER_AUTH);
   if (redirectPath) {
@@ -179,8 +170,18 @@ const handleOnboardingComplete = () => {
 
 onMounted(() => {
   // Check if we should show onboarding
-  if (route.query.showOnboarding === 'true') {
+  if (route.query.showOnboarding === "true") {
     showOnboardingWizard.value = true;
   }
 });
+
+// Watch for route query changes to handle navigation to the same component
+watch(
+  () => route.query.showOnboarding,
+  (newValue) => {
+    if (newValue === "true") {
+      showOnboardingWizard.value = true;
+    }
+  },
+);
 </script>

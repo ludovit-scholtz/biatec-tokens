@@ -1,6 +1,7 @@
 import { defineStore } from "pinia";
 import { ref, computed } from "vue";
 import type { TokenAttestationMetadata } from "../types/compliance";
+import type { MicaComplianceMetadata } from "../types/api";
 
 export interface Token {
   id: string;
@@ -19,6 +20,7 @@ export interface Token {
   assetId?: number;
   contractAddress?: string;
   attestationMetadata?: TokenAttestationMetadata;
+  complianceMetadata?: MicaComplianceMetadata;
 }
 
 export interface TokenTemplate {
@@ -128,7 +130,7 @@ export const useTokenStore = defineStore("tokens", () => {
         acc[token.standard].push(token);
         return acc;
       },
-      {} as Record<string, Token[]>
+      {} as Record<string, Token[]>,
     );
     return grouped;
   });
@@ -281,7 +283,8 @@ export const useTokenStore = defineStore("tokens", () => {
       standard: "ARC3FNFT",
       type: "NFT",
       network: "Aramid",
-      compliance: "Fractional NFTs may trigger securities regulations if representing investment rights. Not automatically MICA-compliant - requires legal review and may need prospectus approval. Consult legal counsel before deployment.",
+      compliance:
+        "Fractional NFTs may trigger securities regulations if representing investment rights. Not automatically MICA-compliant - requires legal review and may need prospectus approval. Consult legal counsel before deployment.",
       guidance: "Best for: Shared ownership of real estate, art, or luxury items. Use decimals to define fraction size.",
       defaults: {
         supply: 1000000,
@@ -383,8 +386,10 @@ export const useTokenStore = defineStore("tokens", () => {
       standard: "ARC200",
       type: "FT",
       network: "Aramid",
-      compliance: "Stablecoins require e-money or asset-referenced token authorization under MICA. Must maintain reserves and provide redemption rights. Smart contract controls facilitate regulatory compliance.",
-      guidance: "Best for: Stable-value payments, DeFi collateral, trading pairs. Requires e-money license, reserve backing, and redemption infrastructure. Programmable controls enable whitelisting and transfer restrictions.",
+      compliance:
+        "Stablecoins require e-money or asset-referenced token authorization under MICA. Must maintain reserves and provide redemption rights. Smart contract controls facilitate regulatory compliance.",
+      guidance:
+        "Best for: Stable-value payments, DeFi collateral, trading pairs. Requires e-money license, reserve backing, and redemption infrastructure. Programmable controls enable whitelisting and transfer restrictions.",
       defaults: {
         supply: 100000000,
         decimals: 6,
@@ -417,8 +422,10 @@ export const useTokenStore = defineStore("tokens", () => {
       standard: "ARC200",
       type: "FT",
       network: "Aramid",
-      compliance: "Security tokens under MICA require prospectus approval and authorization. Mandatory KYC/AML, whitelisting, and transfer restrictions. Smart contract enforces compliance rules automatically.",
-      guidance: "Best for: Equity tokens, asset-backed securities, regulated investment products. Requires legal opinion, prospectus, and regulatory authorization. Whitelisting and transfer controls mandatory.",
+      compliance:
+        "Security tokens under MICA require prospectus approval and authorization. Mandatory KYC/AML, whitelisting, and transfer restrictions. Smart contract enforces compliance rules automatically.",
+      guidance:
+        "Best for: Equity tokens, asset-backed securities, regulated investment products. Requires legal opinion, prospectus, and regulatory authorization. Whitelisting and transfer controls mandatory.",
       defaults: {
         supply: 1000000,
         decimals: 0,
@@ -451,8 +458,10 @@ export const useTokenStore = defineStore("tokens", () => {
       standard: "ARC200",
       type: "FT",
       network: "Both",
-      compliance: "Algorithmic stablecoins under MICA may require authorization as asset-referenced tokens. Must maintain adequate collateral backing and provide redemption mechanisms. Smart contract enforces algorithmic price stability through supply adjustments.",
-      guidance: "Best for: Price-stable medium of exchange, DeFi collateral. Requires algorithmic stabilization mechanisms (supply expansion/contraction, collateral pools, arbitrage incentives). High decimals for precision. Works on both VOI and Aramid.",
+      compliance:
+        "Algorithmic stablecoins under MICA may require authorization as asset-referenced tokens. Must maintain adequate collateral backing and provide redemption mechanisms. Smart contract enforces algorithmic price stability through supply adjustments.",
+      guidance:
+        "Best for: Price-stable medium of exchange, DeFi collateral. Requires algorithmic stabilization mechanisms (supply expansion/contraction, collateral pools, arbitrage incentives). High decimals for precision. Works on both VOI and Aramid.",
       defaults: {
         supply: 1000000,
         decimals: 18,
@@ -493,8 +502,8 @@ export const useTokenStore = defineStore("tokens", () => {
         "Geographic restrictions enforced based on regulatory authorization",
         "Real-time transfer validation against sanctions lists and jurisdiction rules",
         "Comprehensive audit trail maintained for all transactions",
-        "Regular reporting to regulatory authorities required"
-      ]
+        "Regular reporting to regulatory authorities required",
+      ],
     },
     {
       id: "rwa-real-estate-token",
@@ -511,7 +520,8 @@ export const useTokenStore = defineStore("tokens", () => {
         kycRequired: true,
         jurisdictionRestrictions: true,
       },
-      compliance: "Real estate tokens typically qualify as securities under MICA. Requires authorization, investor accreditation verification, and compliance with property law. May require real estate fund authorization.",
+      compliance:
+        "Real estate tokens typically qualify as securities under MICA. Requires authorization, investor accreditation verification, and compliance with property law. May require real estate fund authorization.",
       guidance: "Best for: Tokenized property ownership, REITs, fractional real estate. Requires property legal structure, custody arrangements, and accredited investor verification.",
       defaults: {
         supply: 10000000,
@@ -527,8 +537,8 @@ export const useTokenStore = defineStore("tokens", () => {
         "Automatic distribution of rental income or property proceeds",
         "Legal ownership structure must comply with local property law",
         "Issuer controls enable forced buybacks or redemptions if required",
-        "Property valuation and custody documentation required"
-      ]
+        "Property valuation and custody documentation required",
+      ],
     },
     {
       id: "rwa-emoney-token",
@@ -545,7 +555,8 @@ export const useTokenStore = defineStore("tokens", () => {
         kycRequired: true,
         jurisdictionRestrictions: true,
       },
-      compliance: "E-money tokens under MICA require e-money institution authorization. Must maintain 1:1 reserves in segregated accounts, provide redemption at par value, and comply with payment service regulations.",
+      compliance:
+        "E-money tokens under MICA require e-money institution authorization. Must maintain 1:1 reserves in segregated accounts, provide redemption at par value, and comply with payment service regulations.",
       guidance: "Best for: Digital currency, payment tokens, remittances. Requires e-money institution license, reserve management, and redemption infrastructure.",
       defaults: {
         supply: 100000000,
@@ -562,8 +573,8 @@ export const useTokenStore = defineStore("tokens", () => {
         "Issuer controls enable transaction monitoring and sanctions screening",
         "Regular reserve audits and public disclosure required",
         "Compliance with payment service regulations (PSD2 in EU)",
-        "Customer funds protection and deposit insurance considerations"
-      ]
+        "Customer funds protection and deposit insurance considerations",
+      ],
     },
     {
       id: "rwa-carbon-credit",
@@ -580,7 +591,8 @@ export const useTokenStore = defineStore("tokens", () => {
         kycRequired: false,
         jurisdictionRestrictions: false,
       },
-      compliance: "Carbon credits may fall under environmental commodity regulations. Requires linkage to certified carbon registry, transparent tracking, and retirement mechanism to prevent double-counting.",
+      compliance:
+        "Carbon credits may fall under environmental commodity regulations. Requires linkage to certified carbon registry, transparent tracking, and retirement mechanism to prevent double-counting.",
       guidance: "Best for: Verified carbon offsets, renewable energy credits, environmental commodities. Requires certification from recognized registry (Gold Standard, Verra, etc.).",
       defaults: {
         supply: 1000000,
@@ -596,8 +608,8 @@ export const useTokenStore = defineStore("tokens", () => {
         "Transparent tracking of credit vintage, project, and methodology",
         "Integration with carbon registries (Gold Standard, Verra, ACR, etc.)",
         "Prevents double-counting through blockchain transparency",
-        "May require commodity trading license depending on jurisdiction"
-      ]
+        "May require commodity trading license depending on jurisdiction",
+      ],
     },
     {
       id: "rwa-supply-chain-token",
@@ -630,8 +642,8 @@ export const useTokenStore = defineStore("tokens", () => {
         "Integration with physical asset custody and insurance",
         "Trade compliance checking (export controls, sanctions)",
         "Audit trail links on-chain tokens to physical asset documentation",
-        "May require commodity trading or warehouse license"
-      ]
+        "May require commodity trading or warehouse license",
+      ],
     },
   ];
 
@@ -643,22 +655,22 @@ export const useTokenStore = defineStore("tokens", () => {
       fees: {
         creation: "~0.1 VOI",
         transaction: "~0.001 VOI",
-        description: "VOI offers minimal transaction costs, making it ideal for high-volume applications and microtransactions"
+        description: "VOI offers minimal transaction costs, making it ideal for high-volume applications and microtransactions",
       },
       metadataHosting: {
         recommended: ["IPFS", "Arweave", "VOI native storage"],
-        description: "Store token metadata on decentralized networks for permanence and censorship resistance. VOI native storage recommended for best integration."
+        description: "Store token metadata on decentralized networks for permanence and censorship resistance. VOI native storage recommended for best integration.",
       },
       compliance: {
         considerations: [
           "Ensure KYC/AML procedures for security tokens",
           "Maintain transparent token documentation",
           "Implement proper disclosure of token rights and limitations",
-          "Consider data protection requirements (GDPR)"
+          "Consider data protection requirements (GDPR)",
         ],
-        micaRelevance: "VOI tokens must comply with MICA regulations when operating in EU markets. Utility tokens require proper disclosure of purpose and limitations."
+        micaRelevance: "VOI tokens must comply with MICA regulations when operating in EU markets. Utility tokens require proper disclosure of purpose and limitations.",
       },
-      bestFor: ["DeFi applications", "Gaming tokens", "DAO governance", "High-frequency trading"]
+      bestFor: ["DeFi applications", "Gaming tokens", "DAO governance", "High-frequency trading"],
     },
     {
       name: "Aramid",
@@ -667,11 +679,11 @@ export const useTokenStore = defineStore("tokens", () => {
       fees: {
         creation: "~0.2 ARAMID",
         transaction: "~0.002 ARAMID",
-        description: "Aramid provides predictable fee structure suitable for enterprise applications and regulated environments"
+        description: "Aramid provides predictable fee structure suitable for enterprise applications and regulated environments",
       },
       metadataHosting: {
         recommended: ["IPFS", "Arweave", "Private enterprise storage", "Aramid certified providers"],
-        description: "Use certified metadata providers for compliance requirements. Enterprise storage options available for regulated use cases."
+        description: "Use certified metadata providers for compliance requirements. Enterprise storage options available for regulated use cases.",
       },
       compliance: {
         considerations: [
@@ -679,12 +691,12 @@ export const useTokenStore = defineStore("tokens", () => {
           "Reserve requirements for stablecoins",
           "Regular compliance audits recommended",
           "Maintain audit trail for all transactions",
-          "Implement geo-blocking if required by regulations"
+          "Implement geo-blocking if required by regulations",
         ],
-        micaRelevance: "Aramid is optimized for MICA-compliant tokens. E-money tokens and asset-referenced tokens require authorization and reserve management."
+        micaRelevance: "Aramid is optimized for MICA-compliant tokens. E-money tokens and asset-referenced tokens require authorization and reserve management.",
       },
-      bestFor: ["Payment systems", "Stablecoins", "Security tokens", "Cross-border transfers", "Regulated assets"]
-    }
+      bestFor: ["Payment systems", "Stablecoins", "Security tokens", "Cross-border transfers", "Regulated assets"],
+    },
   ];
 
   const tokenStandards: TokenStandard[] = [
@@ -692,12 +704,13 @@ export const useTokenStore = defineStore("tokens", () => {
       name: "ASA",
       type: "Fungible",
       description: "Native Algorand Standard Asset - lightweight, fast, and cost-effective fungible token without metadata",
-      detailedDescription: "ASA is the foundational token standard on Algorand-based chains. It provides native Layer-1 token functionality with minimal fees and instant finality. Best for simple fungible tokens that don't require complex metadata or smart contract logic.",
+      detailedDescription:
+        "ASA is the foundational token standard on Algorand-based chains. It provides native Layer-1 token functionality with minimal fees and instant finality. Best for simple fungible tokens that don't require complex metadata or smart contract logic.",
       icon: CubeIcon,
       bgClass: "bg-gray-500",
       badgeVariant: "default" as const,
       statusColor: "bg-gray-500",
-      network: "Algorand",
+      network: "VOI",
       count: 0,
       pros: ["Lowest fees", "Native Layer-1", "Instant finality", "Simple implementation"],
       cons: ["No metadata support", "Limited functionality", "No smart contract features"],
@@ -711,18 +724,19 @@ export const useTokenStore = defineStore("tokens", () => {
         mutableMetadata: false,
         programmableLogic: false,
         nativeL1: true,
-      }
+      },
     },
     {
       name: "ARC3FT",
       type: "Fungible",
       description: "Algorand Standard Asset with ARC3 metadata standard - includes rich token information and visual assets",
-      detailedDescription: "ARC3 extends ASA with comprehensive metadata support stored on IPFS. Ideal for tokens requiring branding, detailed descriptions, and visual identity. Fully compatible with wallets and explorers supporting ARC3.",
+      detailedDescription:
+        "ARC3 extends ASA with comprehensive metadata support stored on IPFS. Ideal for tokens requiring branding, detailed descriptions, and visual identity. Fully compatible with wallets and explorers supporting ARC3.",
       icon: CurrencyDollarIcon,
       bgClass: "bg-blue-500",
       badgeVariant: "info" as const,
       statusColor: "bg-blue-500",
-      network: "Algorand",
+      network: "VOI",
       count: 0,
       pros: ["Rich metadata support", "Wallet compatibility", "Native Layer-1 speed", "IPFS integration"],
       cons: ["Requires IPFS hosting", "Slightly higher setup cost", "Metadata is immutable"],
@@ -736,18 +750,19 @@ export const useTokenStore = defineStore("tokens", () => {
         mutableMetadata: false,
         programmableLogic: false,
         nativeL1: true,
-      }
+      },
     },
     {
       name: "ARC3NFT",
       type: "NFT",
       description: "True NFT standard with unique supply of 1 - perfect for digital art, certificates, and collectibles",
-      detailedDescription: "ARC3 NFT enforces true non-fungibility with a supply of exactly 1. Metadata includes artwork, properties, and provenance stored on IPFS. Widely supported across Algorand ecosystem wallets and marketplaces.",
+      detailedDescription:
+        "ARC3 NFT enforces true non-fungibility with a supply of exactly 1. Metadata includes artwork, properties, and provenance stored on IPFS. Widely supported across Algorand ecosystem wallets and marketplaces.",
       icon: CubeIcon,
       bgClass: "bg-orange-500",
       badgeVariant: "info" as const,
       statusColor: "bg-orange-500",
-      network: "Algorand",
+      network: "VOI",
       count: 0,
       pros: ["True uniqueness (supply = 1)", "Full metadata support", "Marketplace compatible", "Proven standard"],
       cons: ["Not fractionizable", "Requires IPFS", "Fixed supply post-creation"],
@@ -762,18 +777,19 @@ export const useTokenStore = defineStore("tokens", () => {
         programmableLogic: false,
         nativeL1: true,
         fractionalOwnership: false,
-      }
+      },
     },
     {
       name: "ARC3FNFT",
       type: "NFT",
       description: "Fractional NFT enabling shared ownership - split valuable assets into tradeable fractions",
-      detailedDescription: "ARC3 Fractional NFT allows multiple owners to hold portions of a single asset. Supply equals 10^decimals for precise fractional division. Ideal for high-value assets requiring shared ownership models.",
+      detailedDescription:
+        "ARC3 Fractional NFT allows multiple owners to hold portions of a single asset. Supply equals 10^decimals for precise fractional division. Ideal for high-value assets requiring shared ownership models.",
       icon: CubeIcon,
       bgClass: "bg-orange-200",
       badgeVariant: "info" as const,
       statusColor: "bg-orange-200",
-      network: "Algorand",
+      network: "VOI",
       count: 0,
       pros: ["Shared ownership model", "Divisible into fractions", "Liquidity for high-value assets", "NFT metadata retained"],
       cons: ["Complex legal considerations", "May trigger securities laws", "Requires governance model"],
@@ -788,18 +804,19 @@ export const useTokenStore = defineStore("tokens", () => {
         programmableLogic: false,
         nativeL1: true,
         fractionalOwnership: true,
-      }
+      },
     },
     {
       name: "ARC19",
       type: "NFT",
       description: "Mutable NFT with templated URLs - update metadata after minting via reserve address",
-      detailedDescription: "ARC19 enables NFT metadata mutability by using templated Asset URLs that reference the Reserve Address. Change NFT content by updating the Reserve Address, allowing dynamic or evolving NFTs while maintaining on-chain provenance.",
+      detailedDescription:
+        "ARC19 enables NFT metadata mutability by using templated Asset URLs that reference the Reserve Address. Change NFT content by updating the Reserve Address, allowing dynamic or evolving NFTs while maintaining on-chain provenance.",
       icon: PhotoIcon,
       bgClass: "bg-teal-500",
       badgeVariant: "info" as const,
       statusColor: "bg-teal-500",
-      network: "Algorand",
+      network: "VOI",
       count: 0,
       pros: ["Mutable metadata", "Dynamic NFT content", "On-chain mutability control", "Combines well with ARC-3"],
       cons: ["Requires Reserve Address management", "More complex setup", "Must maintain metadata infrastructure"],
@@ -814,18 +831,19 @@ export const useTokenStore = defineStore("tokens", () => {
         programmableLogic: false,
         nativeL1: true,
         fractionalOwnership: false,
-      }
+      },
     },
     {
       name: "ARC69",
       type: "NFT",
       description: "On-chain metadata NFT - lightweight metadata stored directly in transaction notes",
-      detailedDescription: "ARC69 stores NFT metadata on-chain in the transaction NOTE field (max 1024 bytes), eliminating the need for external metadata storage. Ideal for simple NFTs with lightweight metadata that require fast, reliable access.",
+      detailedDescription:
+        "ARC69 stores NFT metadata on-chain in the transaction NOTE field (max 1024 bytes), eliminating the need for external metadata storage. Ideal for simple NFTs with lightweight metadata that require fast, reliable access.",
       icon: PhotoIcon,
       bgClass: "bg-cyan-500",
       badgeVariant: "info" as const,
       statusColor: "bg-cyan-500",
-      network: "Algorand",
+      network: "VOI",
       count: 0,
       pros: ["On-chain metadata", "No IPFS required", "Fast metadata access", "Simple implementation"],
       cons: ["1024 byte metadata limit", "Less flexible than ARC-3", "Metadata size constrained"],
@@ -840,18 +858,19 @@ export const useTokenStore = defineStore("tokens", () => {
         programmableLogic: false,
         nativeL1: true,
         fractionalOwnership: false,
-      }
+      },
     },
     {
       name: "ARC200",
       type: "Fungible",
       description: "Smart contract token with ERC20-like functionality - programmable logic and advanced features",
-      detailedDescription: "ARC200 provides ERC20-compatible functionality through smart contracts. Enables complex tokenomics, access control, minting/burning logic, and custom transfer rules. Best for tokens requiring programmable behavior.",
+      detailedDescription:
+        "ARC200 provides ERC20-compatible functionality through smart contracts. Enables complex tokenomics, access control, minting/burning logic, and custom transfer rules. Best for tokens requiring programmable behavior.",
       icon: CurrencyDollarIcon,
       bgClass: "bg-green-500",
       badgeVariant: "success" as const,
       statusColor: "bg-green-500",
-      network: "Algorand",
+      network: "VOI",
       count: 0,
       pros: ["Programmable logic", "ERC20 compatibility", "Custom tokenomics", "Advanced features"],
       cons: ["Higher fees than ASA", "Requires smart contract development", "More complex deployment"],
@@ -866,18 +885,19 @@ export const useTokenStore = defineStore("tokens", () => {
         programmableLogic: true,
         nativeL1: false,
         erc20Compatible: true,
-      }
+      },
     },
     {
       name: "ARC72",
       type: "NFT",
       description: "Advanced NFT standard with ERC721-style features - dynamic metadata and enhanced functionality",
-      detailedDescription: "ARC72 brings Ethereum's ERC721 capabilities to Algorand. Supports mutable metadata, royalties, and advanced NFT features. Ideal for gaming, evolving collectibles, and applications requiring dynamic NFT properties.",
+      detailedDescription:
+        "ARC72 brings Ethereum's ERC721 capabilities to Algorand. Supports mutable metadata, royalties, and advanced NFT features. Ideal for gaming, evolving collectibles, and applications requiring dynamic NFT properties.",
       icon: PhotoIcon,
       bgClass: "bg-purple-500",
       badgeVariant: "default" as const,
       statusColor: "bg-green-500",
-      network: "Algorand",
+      network: "VOI",
       count: 0,
       pros: ["Mutable metadata", "Royalty support", "ERC721 compatibility", "Advanced NFT features"],
       cons: ["Smart contract complexity", "Higher fees", "Newer standard with evolving support"],
@@ -892,18 +912,19 @@ export const useTokenStore = defineStore("tokens", () => {
         programmableLogic: true,
         nativeL1: false,
         erc721Compatible: true,
-      }
+      },
     },
     {
       name: "ERC20",
       type: "Fungible",
       description: "Industry-standard Ethereum fungible token - maximum ecosystem compatibility and tooling",
-      detailedDescription: "ERC20 is the most widely adopted fungible token standard in blockchain. Full EVM compatibility means extensive tooling, wallet support, and DeFi integration. Best for Ethereum-native applications and cross-chain bridges.",
+      detailedDescription:
+        "ERC20 is the most widely adopted fungible token standard in blockchain. Full EVM compatibility means extensive tooling, wallet support, and DeFi integration. Best for Ethereum-native applications and cross-chain bridges.",
       icon: CurrencyDollarIcon,
       bgClass: "bg-yellow-500",
       badgeVariant: "warning" as const,
       statusColor: "bg-yellow-500",
-      network: "Ethereum",
+      network: "EVM",
       count: 0,
       pros: ["Widest adoption", "Extensive tooling", "DeFi integration", "Maximum compatibility"],
       cons: ["Higher gas fees", "Network congestion", "Ethereum-only"],
@@ -918,18 +939,19 @@ export const useTokenStore = defineStore("tokens", () => {
         programmableLogic: true,
         nativeL1: false,
         erc20Compatible: true,
-      }
+      },
     },
     {
       name: "ERC721",
       type: "NFT",
       description: "Ethereum NFT standard - vast marketplace support and proven track record",
-      detailedDescription: "ERC721 pioneered NFT standards and remains the most supported format. Deep integration with NFT marketplaces, galleries, and tools. The go-to choice for Ethereum-native NFT projects with maximum discoverability.",
+      detailedDescription:
+        "ERC721 pioneered NFT standards and remains the most supported format. Deep integration with NFT marketplaces, galleries, and tools. The go-to choice for Ethereum-native NFT projects with maximum discoverability.",
       icon: PhotoIcon,
       bgClass: "bg-pink-500",
       badgeVariant: "error" as const,
       statusColor: "bg-yellow-500",
-      network: "Ethereum",
+      network: "EVM",
       count: 0,
       pros: ["Largest NFT ecosystem", "Maximum marketplace support", "Proven standard", "Rich tooling"],
       cons: ["High gas fees", "Ethereum network limitations", "Not suitable for high-volume"],
@@ -944,19 +966,15 @@ export const useTokenStore = defineStore("tokens", () => {
         programmableLogic: true,
         nativeL1: false,
         erc721Compatible: true,
-      }
+      },
     },
   ];
-  
+
   // Computed properties to filter templates
-  const rwaTokenTemplates = computed(() => 
-    tokenTemplates.filter(t => t.isRwaPreset === true)
-  );
-  
-  const standardTokenTemplates = computed(() => 
-    tokenTemplates.filter(t => !t.isRwaPreset)
-  );
-  
+  const rwaTokenTemplates = computed(() => tokenTemplates.filter((t) => t.isRwaPreset === true));
+
+  const standardTokenTemplates = computed(() => tokenTemplates.filter((t) => !t.isRwaPreset));
+
   return {
     tokens,
     tokensByStandard,
