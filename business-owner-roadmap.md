@@ -349,5 +349,84 @@
 
 **Business Outlook:** Challenging with significant technical debt and missing core functionality. MVP launch delayed to Q2 2025. Revenue targets for 2025 unrealistic given current state. Focus must shift to achieving functional MVP before pursuing advanced features.
 
+---
+
+## Short Term Implementation Plan (Q1 2026)
+
+### Critical MVP Blockers - Priority 1 (Complete by March 2026)
+
+#### Subscription System Implementation
+
+- **Issue:** No working subscription plan - users cannot purchase or access paid features
+- **Impact:** Zero revenue generation, no customer acquisition possible
+- **Action Items:**
+  - Integrate Stripe payment processing
+  - Implement subscription tiers ($29 basic, $99 professional, $299 enterprise)
+  - Add payment flow validation and error handling
+  - Test end-to-end subscription lifecycle
+
+#### Backend Integration Fixes
+
+- **Issue:** Web application not working properly with backend - API connectivity issues
+- **Impact:** Core functionality broken, token deployment fails
+- **Action Items:**
+  - Debug and fix API communication layer
+  - Implement proper error handling for failed requests
+  - Add backend health monitoring
+  - Test all API endpoints for reliability
+
+#### UX/UI Critical Fixes
+
+- **Issue:** Token creation wizard has transparent background and is not readable
+- **Impact:** Users cannot complete token creation process
+- **Action Items:**
+  - Fix wizard background opacity and contrast
+  - Ensure readability across all themes (light/dark)
+  - Test wizard on different screen sizes and browsers
+  - Add proper loading states and error messages
+
+#### Network Support Prioritization
+
+- **Issue:** Only Voi and Aramid supported, main chains should be Algorand and Ethereum
+- **Impact:** Limited user adoption, testnet-only functionality
+- **Action Items:**
+  - Prioritize Algorand mainnet deployment support
+  - Add Ethereum mainnet (Ethereum, Base, Arbitrum) support
+  - Deprecating Voi/Aramid as primary networks
+  - Update network selection UI to reflect priorities
+
+#### Wallet Authentication Flow
+
+- **Issue:** Third step in wizard is "connect your wallet" even if user authenticated with email/password Arc76 account
+- **Impact:** Confusing UX, redundant authentication steps
+- **Action Items:**
+  - Detect existing Arc76 authentication
+  - Skip wallet connection for authenticated users
+  - Streamline wizard flow based on auth state
+  - Add clear messaging about authentication requirements
+
+#### Top Menu Wallet Button Fix
+
+- **Issue:** Clicking wallet button in top menu launches new token creation wizard (wrong behavior)
+- **Impact:** Unexpected navigation, poor user experience
+- **Action Items:**
+  - Fix wallet button to show wallet connection modal
+  - Remove incorrect token creation launch
+  - Add proper wallet status display
+  - Test wallet button functionality across all pages
+
+### MVP Completion Milestones (March 2026)
+
+- [ ] Subscription system fully operational
+- [ ] Backend API integration stable (95%+ success rate)
+- [ ] Token creation wizard UX issues resolved
+- [ ] Algorand and Ethereum mainnet support complete
+- [ ] Wallet authentication flow streamlined
+- [ ] Top menu wallet button fixed
+- [ ] Beta user testing completed with 50 users
+- [ ] First paying customer acquired
+
+---
+
 **Last Updated:** February 1, 2026
 **Next Review:** March 1, 2026</content>
