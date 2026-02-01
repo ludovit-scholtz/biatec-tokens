@@ -29,10 +29,6 @@ As the **Business Owner**, your primary responsibility is to drive business grow
 ```bash
 # Review recent commits and activity
 gh repo view scholtz/biatec-tokens --json updatedAt,pullRequests,issues
-
-# Check test coverage and CI status
-npm run test:coverage
-npm run test:e2e
 ```
 
 #### B. Code Quality Review
