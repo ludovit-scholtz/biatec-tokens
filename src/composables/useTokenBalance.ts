@@ -1,6 +1,8 @@
 import { ref, computed, watch } from 'vue'
 import algosdk from 'algosdk'
 import { useWalletManager } from './useWalletManager'
+import { WalletConnectionState } from './walletState'
+import { telemetryService } from '../services/TelemetryService'
 
 export interface TokenBalance {
   assetId: number
@@ -18,6 +20,7 @@ export interface AccountBalance {
   assets: TokenBalance[]
   isLoading: boolean
   error: string | null
+  lastUpdated: Date | null
 }
 
 /**
@@ -25,20 +28,37 @@ export interface AccountBalance {
  * Uses algosdk to query account information including algo and asset balances
  */
 export function useTokenBalance() {
-  const { activeAddress, networkInfo, isConnected } = useWalletManager()
+  const walletManager = useWalletManager()
+  const { activeAddress, networkInfo, isConnected, walletState } = walletManager
   
   const accountBalance = ref<AccountBalance>({
     address: '',
     algoBalance: 0,
     assets: [],
     isLoading: false,
-    error: null
+    error: null,
+    lastUpdated: null,
   })
 
   const isLoading = computed(() => accountBalance.value.isLoading)
   const hasAssets = computed(() => accountBalance.value.assets.length > 0)
   const formattedAlgoBalance = computed(() => {
     return (accountBalance.value.algoBalance / 1_000_000).toFixed(6)
+  })
+
+  const lastUpdatedFormatted = computed(() => {
+    if (!accountBalance.value.lastUpdated) return null
+    const date = accountBalance.value.lastUpdated
+    const now = new Date()
+    const diffMs = now.getTime() - date.getTime()
+    const diffSecs = Math.floor(diffMs / 1000)
+    const diffMins = Math.floor(diffSecs / 60)
+
+    if (diffSecs < 60) return 'Just now'
+    if (diffMins < 60) return `${diffMins}m ago`
+    const diffHours = Math.floor(diffMins / 60)
+    if (diffHours < 24) return `${diffHours}h ago`
+    return date.toLocaleDateString()
   })
 
   /**
@@ -71,7 +91,8 @@ export function useTokenBalance() {
         algoBalance: 0,
         assets: [],
         isLoading: false,
-        error: 'No wallet address available'
+        error: 'No wallet address available',
+        lastUpdated: null,
       }
       return
     }
@@ -79,7 +100,14 @@ export function useTokenBalance() {
     accountBalance.value.isLoading = true
     accountBalance.value.error = null
 
+    const startTime = Date.now()
+
     try {
+      // Update wallet state to fetching balance
+      if (walletState.value.connectionState === WalletConnectionState.CONNECTED) {
+        walletState.value.connectionState = WalletConnectionState.FETCHING_BALANCE
+      }
+
       const algodClient = createAlgodClient()
       const accountInfo = await algodClient.accountInformation(targetAddress).do()
 
@@ -97,12 +125,32 @@ export function useTokenBalance() {
         assetName: asset['asset-name']
       }))
 
+      const lastUpdated = new Date()
+
       accountBalance.value = {
         address: targetAddress,
         algoBalance,
         assets,
         isLoading: false,
-        error: null
+        error: null,
+        lastUpdated,
+      }
+
+      // Update wallet state balance timestamp
+      walletState.value.balanceLastUpdated = lastUpdated
+
+      // Track telemetry
+      const durationMs = Date.now() - startTime
+      telemetryService.trackBalanceFetch({
+        network: networkInfo.value?.id || 'unknown',
+        address: targetAddress,
+        success: true,
+        durationMs,
+      })
+
+      // Return to connected state
+      if (walletState.value.connectionState === WalletConnectionState.FETCHING_BALANCE) {
+        walletState.value.connectionState = WalletConnectionState.CONNECTED
       }
     } catch (error: any) {
       console.error('Error fetching balance:', error)
@@ -111,7 +159,22 @@ export function useTokenBalance() {
         algoBalance: 0,
         assets: [],
         isLoading: false,
-        error: error.message || 'Failed to fetch balance'
+        error: error.message || 'Failed to fetch balance',
+        lastUpdated: accountBalance.value.lastUpdated, // Keep previous timestamp if available
+      }
+
+      // Track telemetry for failure
+      const durationMs = Date.now() - startTime
+      telemetryService.trackBalanceFetch({
+        network: networkInfo.value?.id || 'unknown',
+        address: targetAddress,
+        success: false,
+        durationMs,
+      })
+
+      // Return to connected state even on error
+      if (walletState.value.connectionState === WalletConnectionState.FETCHING_BALANCE) {
+        walletState.value.connectionState = WalletConnectionState.CONNECTED
       }
     }
   }
@@ -153,7 +216,8 @@ export function useTokenBalance() {
         algoBalance: 0,
         assets: [],
         isLoading: false,
-        error: null
+        error: null,
+        lastUpdated: null,
       }
     }
   }, { immediate: true })
@@ -163,6 +227,7 @@ export function useTokenBalance() {
     isLoading,
     hasAssets,
     formattedAlgoBalance,
+    lastUpdatedFormatted,
     fetchBalance,
     getAssetBalance,
     formatAssetBalance,

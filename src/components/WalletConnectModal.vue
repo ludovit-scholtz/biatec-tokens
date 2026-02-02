@@ -67,43 +67,54 @@
 
           <!-- Wallet List -->
           <div class="space-y-3">
-            <div v-if="isConnecting" class="text-center py-8">
+            <!-- Loading State -->
+            <div v-if="isConnecting || isReconnecting || isSwitchingNetwork" class="text-center py-8">
               <i class="pi pi-spin pi-spinner text-4xl text-biatec-accent mb-4"></i>
-              <p class="text-gray-300 font-medium mb-2">Connecting to wallet...</p>
+              <p class="text-gray-300 font-medium mb-2">{{ connectionStateMessage }}</p>
               <p class="text-sm text-gray-400">Please check your wallet app to approve the connection</p>
             </div>
 
-            <div v-else-if="error" class="p-4 bg-red-500/10 border border-red-500/30 rounded-xl mb-4">
+            <!-- Error State -->
+            <div v-else-if="hasFailed && error" class="p-4 bg-red-500/10 border border-red-500/30 rounded-xl mb-4">
               <div class="flex items-start gap-3">
                 <i class="pi pi-exclamation-triangle text-red-400"></i>
                 <div class="flex-1">
                   <p class="text-sm text-red-400 font-medium">Connection Failed</p>
                   <p class="text-xs text-gray-400 mt-1">{{ error }}</p>
-                  <div class="mt-3 space-y-2">
+                  <div v-if="lastError" class="mt-2 text-xs text-gray-500">
+                    Error Code: {{ lastError.diagnosticCode }}
+                  </div>
+                  <div v-if="troubleshootingSteps.length > 0" class="mt-3 space-y-2">
                     <p class="text-xs text-gray-300 font-medium">Troubleshooting:</p>
                     <ul class="text-xs text-gray-400 space-y-1 ml-4 list-disc">
-                      <li>Ensure your wallet app is installed and unlocked</li>
-                      <li>Verify you're on the correct network ({{ getNetworkDisplayName(selectedNetwork) }})</li>
-                      <li>Try refreshing the page and reconnecting</li>
-                      <li>Check if your wallet supports the selected network</li>
-                      <li>Some wallets require approval in the app before connecting</li>
+                      <li v-for="(step, index) in troubleshootingSteps" :key="index">{{ step }}</li>
                     </ul>
                   </div>
-                  <button
-                    @click="error = null"
-                    class="mt-3 px-3 py-1.5 text-xs bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 rounded-lg transition-colors"
-                  >
-                    Try again
-                  </button>
+                  <div class="flex gap-2 mt-3">
+                    <button
+                      @click="handleRetry"
+                      class="px-3 py-1.5 text-xs bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 rounded-lg transition-colors flex items-center gap-2"
+                    >
+                      <i class="pi pi-refresh"></i>
+                      Retry Connection
+                    </button>
+                    <button
+                      @click="error = null"
+                      class="px-3 py-1.5 text-xs bg-gray-500/20 text-gray-400 hover:bg-gray-500/30 rounded-lg transition-colors"
+                    >
+                      Dismiss
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
 
+            <!-- Wallet Buttons -->
             <button
               v-for="wallet in availableWallets"
               :key="wallet.id"
               @click="handleConnect(wallet.id)"
-              :disabled="isConnecting"
+              :disabled="isConnecting || isReconnecting || isSwitchingNetwork"
               class="w-full p-4 rounded-xl text-left transition-all border border-white/10 bg-white/5 hover:bg-white/10 hover:border-biatec-accent/50 hover:shadow-lg hover:shadow-biatec-accent/10 disabled:opacity-50 disabled:cursor-not-allowed group"
             >
               <div class="flex items-center gap-4">
@@ -162,9 +173,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { useWallet } from '@txnlab/use-wallet-vue'
-import { NETWORKS, type NetworkId } from '../composables/useWalletManager'
+import { ref, computed, watch } from 'vue'
+import { useWalletManager, NETWORKS, type NetworkId } from '../composables/useWalletManager'
+import { WalletConnectionState, WalletErrorType } from '../composables/walletState'
 
 interface Props {
   isOpen: boolean
@@ -185,15 +196,59 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<Emits>()
 
-const wallet = useWallet()
-const isConnecting = ref(false)
-const error = ref<string | null>(null)
+const walletManager = useWalletManager()
 const selectedNetwork = ref<NetworkId>(props.defaultNetwork)
 
 const availableNetworks = computed(() => Object.values(NETWORKS))
 
 const availableWallets = computed(() => {
-  return wallet.wallets.value.filter(w => w.isActive)
+  return walletManager.walletManager?.wallets?.value?.filter((w: any) => w.isActive) || []
+})
+
+// Computed state flags
+const isConnecting = computed(() => 
+  walletManager.walletState.value.connectionState === WalletConnectionState.CONNECTING ||
+  walletManager.walletState.value.connectionState === WalletConnectionState.DETECTING
+)
+
+const isReconnecting = computed(() => 
+  walletManager.walletState.value.connectionState === WalletConnectionState.RECONNECTING
+)
+
+const isSwitchingNetwork = computed(() => 
+  walletManager.walletState.value.connectionState === WalletConnectionState.SWITCHING_NETWORK
+)
+
+const hasFailed = computed(() => 
+  walletManager.walletState.value.connectionState === WalletConnectionState.FAILED
+)
+
+const error = computed(() => walletManager.walletState.value.error)
+const lastError = computed(() => walletManager.walletState.value.lastError)
+
+// Connection state message
+const connectionStateMessage = computed(() => {
+  const state = walletManager.walletState.value.connectionState
+  switch (state) {
+    case WalletConnectionState.DETECTING:
+      return 'Detecting wallet provider...'
+    case WalletConnectionState.CONNECTING:
+      return 'Connecting to wallet...'
+    case WalletConnectionState.RECONNECTING:
+      return 'Reconnecting to wallet...'
+    case WalletConnectionState.SWITCHING_NETWORK:
+      return 'Switching network...'
+    case WalletConnectionState.FETCHING_BALANCE:
+      return 'Fetching balance...'
+    default:
+      return 'Please check your wallet app to approve the connection'
+  }
+})
+
+// Get troubleshooting steps if there's an error
+const troubleshootingSteps = computed(() => {
+  if (!lastError.value) return []
+  return walletManager.getTroubleshootingSteps(lastError.value.type)
 })
 
 const getWalletName = (walletId: string): string => {
@@ -244,30 +299,27 @@ const getNetworkDisplayName = (networkId: NetworkId): string => {
 }
 
 const handleConnect = async (walletId: string) => {
-  isConnecting.value = true
-  error.value = null
-
   try {
-    const walletToConnect = wallet.wallets.value.find(w => w.id === walletId)
-    
-    if (!walletToConnect) {
-      throw new Error('Wallet not found')
-    }
-
     // Save selected network to localStorage before connecting
     localStorage.setItem('selected_network', selectedNetwork.value)
 
-    await walletToConnect.connect()
+    // Switch network if different from current
+    if (selectedNetwork.value !== walletManager.currentNetwork.value) {
+      await walletManager.switchNetwork(selectedNetwork.value)
+    }
+
+    // Connect wallet
+    await walletManager.connect(walletId)
 
     // Get active account after connection
-    const activeAccount = wallet.activeAccount.value
+    const activeAddress = walletManager.activeAddress.value
 
-    if (!activeAccount) {
+    if (!activeAddress) {
       throw new Error('No account selected')
     }
 
     emit('connected', {
-      address: activeAccount.address,
+      address: activeAddress,
       walletId: walletId,
       network: selectedNetwork.value,
     })
@@ -275,20 +327,30 @@ const handleConnect = async (walletId: string) => {
     close()
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : 'Failed to connect wallet'
-    error.value = errorMessage
     emit('error', errorMessage)
     console.error('Wallet connection error:', err)
-  } finally {
-    isConnecting.value = false
+  }
+}
+
+const handleRetry = async () => {
+  if (walletManager.walletState.value.activeWallet) {
+    await walletManager.retryConnection(walletManager.walletState.value.activeWallet)
   }
 }
 
 const close = () => {
   if (!isConnecting.value) {
-    error.value = null
     emit('close')
   }
 }
+
+// Watch for network changes
+watch(() => props.defaultNetwork, (newNetwork) => {
+  if (newNetwork) {
+    selectedNetwork.value = newNetwork
+  }
+})
+
 </script>
 
 <style scoped>
