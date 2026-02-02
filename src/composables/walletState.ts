@@ -232,8 +232,6 @@ export function parseWalletError(error: unknown, context?: string): WalletError 
   
   if (message.includes('not found') || message.includes('not available') || message.includes('not detected')) {
     type = WalletErrorType.PROVIDER_NOT_FOUND
-  } else if (message.includes('rejected') || message.includes('denied') || message.includes('cancelled')) {
-    type = WalletErrorType.CONNECTION_REJECTED
   } else if (message.includes('timeout') || message.includes('timed out')) {
     type = WalletErrorType.CONNECTION_TIMEOUT
   } else if (message.includes('network') && message.includes('switch')) {
@@ -244,6 +242,8 @@ export function parseWalletError(error: unknown, context?: string): WalletError 
     type = WalletErrorType.WALLET_LOCKED
   } else if (message.includes('permission')) {
     type = WalletErrorType.PERMISSION_DENIED
+  } else if (message.includes('rejected') || message.includes('denied') || message.includes('cancelled')) {
+    type = WalletErrorType.CONNECTION_REJECTED
   }
 
   return {

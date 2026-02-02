@@ -353,35 +353,6 @@ export function useWalletManager() {
   };
 
   /**
-   * Update wallet state from the wallet manager
-   */
-  const updateWalletState = () => {
-    try {
-      const activeAccount = wallet.activeAccount.value;
-      const walletAccounts = wallet.activeWallet.value?.accounts || [];
-
-      walletState.value = {
-        isConnected: !!activeAccount,
-        activeAddress: activeAccount?.address || null,
-        activeWallet: wallet.activeWallet.value?.id || null,
-        accounts: walletAccounts,
-        isConnecting: false,
-        error: null,
-      };
-
-      // Sync with auth store
-      if (activeAccount) {
-        authStore.connectWallet(activeAccount.address, {
-          name: activeAccount.name || `User ${activeAccount.address.slice(0, 6)}...`,
-        });
-      }
-    } catch (error) {
-      console.error("Error updating wallet state:", error);
-      walletState.value.error = error instanceof Error ? error.message : "Unknown error";
-    }
-  };
-
-  /**
    * Connect to a specific wallet
    */
   const connect = async (walletId?: string) => {
