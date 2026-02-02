@@ -401,13 +401,17 @@
 
 #### Wallet Authentication Flow
 
-- **Issue:** Third step in wizard is "connect your wallet" even if user authenticated with email/password Arc76 account
-- **Impact:** Confusing UX, redundant authentication steps
+- **Issue:** Authentication system doesn't work properly with Arc76 email/password, confusing crypto terminology, and poor user experience
+- **Impact:** Users cannot properly authenticate, platform appears too technical for non-crypto users
 - **Action Items:**
-  - Detect existing Arc76 authentication
-  - Skip wallet connection for authenticated users
-  - Streamline wizard flow based on auth state
-  - Add clear messaging about authentication requirements
+  - Implement proper Arc76 email/password authentication for self-custody accounts
+  - Use Arc14 authentication for secure backend communication
+  - Replace all "Connect wallet" text with "Login", "Sign in", or "Authenticate"
+  - Make the product appear as non-crypto usage - focus on business tokenization, not blockchain terminology
+  - Email/password creates self-custody account automatically
+  - Remove wallet-centric language throughout the UI
+  - Streamline authentication flow to be more like traditional SaaS applications
+  - Test authentication persistence and session management
 
 #### Top Menu Wallet Button Fix
 
@@ -424,6 +428,9 @@
 - [ ] Subscription system fully operational
 - [ ] Backend API integration stable (95%+ success rate)
 - [ ] Token creation wizard UX issues resolved
+- [ ] Arc76 email/password authentication working with Arc14 backend communication
+- [ ] All crypto terminology replaced with business-friendly language
+- [ ] Product appears as traditional SaaS application
 - [ ] Algorand and Ethereum mainnet support complete
 - [ ] Wallet authentication flow streamlined
 - [ ] Top menu wallet button fixed
@@ -448,10 +455,13 @@
 
 1. Fix wallet manager injection issues causing test failures
 2. Resolve UI interaction blockers (glass effects, button accessibility)
-3. Complete backend API integration and error handling
-4. Fix E2E test failures and performance issues
-5. Make subscription system operational for revenue generation
-6. Conduct thorough integration testing before beta launch
+3. Implement proper Arc76 email/password authentication with Arc14 backend communication
+4. Replace crypto terminology ("Connect wallet") with business-friendly terms ("Login", "Sign in")
+5. Make product appear as traditional SaaS application, not crypto-focused
+6. Complete backend API integration and error handling
+7. Fix E2E test failures and performance issues
+8. Make subscription system operational for revenue generation
+9. Conduct thorough integration testing before beta launch
 
 **Revised Timeline:**
 
