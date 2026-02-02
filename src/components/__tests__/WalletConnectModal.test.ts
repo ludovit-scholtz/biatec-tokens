@@ -1,29 +1,30 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { mount } from '@vue/test-utils'
-import { nextTick } from 'vue'
-import WalletConnectModal from '../WalletConnectModal.vue'
+import { describe, it, expect, beforeEach, vi } from "vitest";
+import { mount } from "@vue/test-utils";
+import { nextTick } from "vue";
+import { createTestingPinia } from "@pinia/testing";
+import WalletConnectModal from "../WalletConnectModal.vue";
 
 // Mock the @txnlab/use-wallet-vue module
-const mockConnect = vi.fn().mockResolvedValue(undefined)
+const mockConnect = vi.fn().mockResolvedValue(undefined);
 const mockWallets = [
   {
-    id: 'pera',
+    id: "pera",
     isActive: true,
     connect: mockConnect,
   },
   {
-    id: 'defly',
+    id: "defly",
     isActive: true,
     connect: mockConnect,
   },
   {
-    id: 'kibisis',
+    id: "kibisis",
     isActive: true,
     connect: mockConnect,
   },
-]
+];
 
-vi.mock('@txnlab/use-wallet-vue', () => ({
+vi.mock("@txnlab/use-wallet-vue", () => ({
   useWallet: vi.fn(() => ({
     activeAccount: { value: null },
     activeWallet: { value: null },
@@ -31,187 +32,217 @@ vi.mock('@txnlab/use-wallet-vue', () => ({
       value: mockWallets,
     },
   })),
-}))
+}));
 
-describe('WalletConnectModal', () => {
+describe("WalletConnectModal", () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-  })
+    vi.clearAllMocks();
+  });
 
-  it('should render modal when isOpen is true', async () => {
+  it("should render modal when isOpen is true", async () => {
     const wrapper = mount(WalletConnectModal, {
       props: {
         isOpen: true,
       },
       attachTo: document.body,
-    })
+      global: {
+        plugins: [createTestingPinia()],
+      },
+    });
 
-    await nextTick()
+    await nextTick();
 
-    const modalContent = document.querySelector('.glass-effect')
-    expect(modalContent).toBeTruthy()
-    expect(modalContent?.textContent).toContain('Connect Wallet')
+    const modalContent = document.querySelector(".glass-effect");
+    expect(modalContent).toBeTruthy();
+    expect(modalContent?.textContent).toContain("Connect Wallet");
 
-    wrapper.unmount()
-  })
+    wrapper.unmount();
+  });
 
-  it('should not render modal when isOpen is false', () => {
+  it("should not render modal when isOpen is false", () => {
     const wrapper = mount(WalletConnectModal, {
       props: {
         isOpen: false,
       },
-    })
+      global: {
+        plugins: [createTestingPinia()],
+      },
+    });
 
-    const modalContent = document.querySelector('.glass-effect')
-    expect(modalContent).toBeFalsy()
+    const modalContent = document.querySelector(".glass-effect");
+    expect(modalContent).toBeFalsy();
 
-    wrapper.unmount()
-  })
+    wrapper.unmount();
+  });
 
-  it('should display available wallets', async () => {
+  it("should display available wallets", async () => {
     const wrapper = mount(WalletConnectModal, {
       props: {
         isOpen: true,
       },
       attachTo: document.body,
-    })
+      global: {
+        plugins: [createTestingPinia()],
+      },
+    });
 
-    await nextTick()
+    await nextTick();
 
-    const modalContent = document.body.textContent || ''
-    expect(modalContent).toContain('Pera Wallet')
-    expect(modalContent).toContain('Defly Wallet')
-    expect(modalContent).toContain('Kibisis')
+    const modalContent = document.body.textContent || "";
+    expect(modalContent).toContain("Pera Wallet");
+    expect(modalContent).toContain("Defly Wallet");
+    expect(modalContent).toContain("Kibisis");
 
-    wrapper.unmount()
-  })
+    wrapper.unmount();
+  });
 
-  it('should show network selector when showNetworkSelector is true', async () => {
+  it("should show network selector when showNetworkSelector is true", async () => {
     const wrapper = mount(WalletConnectModal, {
       props: {
         isOpen: true,
         showNetworkSelector: true,
       },
       attachTo: document.body,
-    })
+      global: {
+        plugins: [createTestingPinia()],
+      },
+    });
 
-    await nextTick()
+    await nextTick();
 
-    const modalContent = document.body.textContent || ''
-    expect(modalContent).toContain('Select Network')
-    expect(modalContent).toContain('VOI Mainnet')
-    expect(modalContent).toContain('Aramid Mainnet')
+    const modalContent = document.body.textContent || "";
+    expect(modalContent).toContain("Select Network");
+    expect(modalContent).toContain("VOI Mainnet");
+    expect(modalContent).toContain("Aramid Mainnet");
 
-    wrapper.unmount()
-  })
+    wrapper.unmount();
+  });
 
-  it('should hide network selector when showNetworkSelector is false', async () => {
+  it("should hide network selector when showNetworkSelector is false", async () => {
     const wrapper = mount(WalletConnectModal, {
       props: {
         isOpen: true,
         showNetworkSelector: false,
       },
       attachTo: document.body,
-    })
+      global: {
+        plugins: [createTestingPinia()],
+      },
+    });
 
-    await nextTick()
+    await nextTick();
 
-    const modalContent = document.body.textContent || ''
-    expect(modalContent).not.toContain('Select Network')
+    const modalContent = document.body.textContent || "";
+    expect(modalContent).not.toContain("Select Network");
 
-    wrapper.unmount()
-  })
+    wrapper.unmount();
+  });
 
-  it('should emit close event when close button is clicked', async () => {
+  it("should emit close event when close button is clicked", async () => {
     const wrapper = mount(WalletConnectModal, {
       props: {
         isOpen: true,
       },
       attachTo: document.body,
-    })
+      global: {
+        plugins: [createTestingPinia()],
+      },
+    });
 
-    await nextTick()
+    await nextTick();
 
-    const closeButton = document.querySelector('.pi-times')?.parentElement as HTMLElement
-    expect(closeButton).toBeTruthy()
+    const closeButton = document.querySelector(".pi-times")?.parentElement as HTMLElement;
+    expect(closeButton).toBeTruthy();
 
-    closeButton?.click()
-    await nextTick()
+    closeButton?.click();
+    await nextTick();
 
-    expect(wrapper.emitted('close')).toBeTruthy()
+    expect(wrapper.emitted("close")).toBeTruthy();
 
-    wrapper.unmount()
-  })
+    wrapper.unmount();
+  });
 
-  it('should display wallet descriptions', async () => {
+  it("should display wallet descriptions", async () => {
     const wrapper = mount(WalletConnectModal, {
       props: {
         isOpen: true,
       },
       attachTo: document.body,
-    })
+      global: {
+        plugins: [createTestingPinia()],
+      },
+    });
 
-    await nextTick()
+    await nextTick();
 
-    const modalContent = document.body.textContent || ''
-    expect(modalContent).toContain('Mobile and web wallet')
-    expect(modalContent).toContain('Feature-rich wallet')
+    const modalContent = document.body.textContent || "";
+    expect(modalContent).toContain("Mobile and web wallet");
+    expect(modalContent).toContain("Feature-rich wallet");
 
-    wrapper.unmount()
-  })
+    wrapper.unmount();
+  });
 
-  it('should display Terms of Service information', async () => {
+  it("should display Terms of Service information", async () => {
     const wrapper = mount(WalletConnectModal, {
       props: {
         isOpen: true,
       },
       attachTo: document.body,
-    })
+      global: {
+        plugins: [createTestingPinia()],
+      },
+    });
 
-    await nextTick()
+    await nextTick();
 
-    const modalContent = document.body.textContent || ''
-    expect(modalContent).toContain('Terms of Service')
-    expect(modalContent).toContain('Privacy Policy')
+    const modalContent = document.body.textContent || "";
+    expect(modalContent).toContain("Terms of Service");
+    expect(modalContent).toContain("Privacy Policy");
 
-    wrapper.unmount()
-  })
+    wrapper.unmount();
+  });
 
-  it('should handle wallet connection', async () => {
+  it("should handle wallet connection", async () => {
     const wrapper = mount(WalletConnectModal, {
       props: {
         isOpen: true,
       },
       attachTo: document.body,
-    })
+      global: {
+        plugins: [createTestingPinia()],
+      },
+    });
 
-    await nextTick()
+    await nextTick();
 
     // Find wallet button
-    const buttons = Array.from(document.querySelectorAll('button'))
-    const peraButton = buttons.find(btn => btn.textContent?.includes('Pera Wallet'))
+    const buttons = Array.from(document.querySelectorAll("button"));
+    const peraButton = buttons.find((btn) => btn.textContent?.includes("Pera Wallet"));
 
-    expect(peraButton).toBeTruthy()
+    expect(peraButton).toBeTruthy();
 
-    wrapper.unmount()
-  })
+    wrapper.unmount();
+  });
 
-  it('should emit error event on connection failure', async () => {
-    const errorMessage = 'Connection failed'
-    mockConnect.mockRejectedValueOnce(new Error(errorMessage))
+  it("should emit error event on connection failure", async () => {
+    const errorMessage = "Connection failed";
+    mockConnect.mockRejectedValueOnce(new Error(errorMessage));
 
     const wrapper = mount(WalletConnectModal, {
       props: {
         isOpen: true,
       },
       attachTo: document.body,
-    })
+      global: {
+        plugins: [createTestingPinia()],
+      },
+    });
 
-    await nextTick()
+    await nextTick();
 
     // Simulate connection attempt - this would trigger error handling in the component
     // The component should emit the error event
 
-    wrapper.unmount()
-  })
-})
+    wrapper.unmount();
+  });
+});

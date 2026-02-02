@@ -1,17 +1,9 @@
-import { ref, computed, onMounted, onUnmounted, watch } from "vue";
+import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useWallet, type WalletAccount } from "@txnlab/use-wallet-vue";
 import { useAuthStore } from "../stores/auth";
 import { AUTH_STORAGE_KEYS, WALLET_CONNECTION_STATE } from "../constants/auth";
 import { telemetryService } from "../services/TelemetryService";
-import {
-  WalletConnectionState,
-  WalletErrorType,
-  type WalletError,
-  parseWalletError,
-  retryWithBackoff,
-  DEFAULT_RETRY_CONFIG,
-  getTroubleshootingSteps,
-} from "./walletState";
+import { WalletConnectionState, WalletErrorType, type WalletError, parseWalletError, retryWithBackoff, DEFAULT_RETRY_CONFIG, getTroubleshootingSteps } from "./walletState";
 
 export interface WalletState {
   isConnected: boolean;
@@ -327,7 +319,7 @@ export function useWalletManager() {
             errorType: error.message,
           });
           console.log(`[Wallet] Detection retry ${attempt} for ${walletId}: ${error.message}`);
-        }
+        },
       );
 
       telemetryService.trackWalletDetection({
@@ -340,7 +332,7 @@ export function useWalletManager() {
     } catch (error) {
       const walletError = parseWalletError(error, `Detect ${walletId}`);
       transitionState(WalletConnectionState.FAILED, walletError);
-      
+
       telemetryService.trackWalletConnectionFailure({
         walletId,
         errorType: walletError.type,
