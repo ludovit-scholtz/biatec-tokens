@@ -1,6 +1,16 @@
 import { ref, computed } from "vue";
 import type { EVMNetworkId, EVMNetworkInfo } from "./useWalletManager";
 import { EVM_NETWORKS } from "./useWalletManager";
+import {
+  WalletConnectionState,
+  WalletErrorType,
+  type WalletError,
+  parseWalletError,
+  retryWithBackoff,
+  DEFAULT_RETRY_CONFIG,
+  getTroubleshootingSteps,
+} from "./walletState";
+import { telemetryService } from "../services/TelemetryService";
 
 export interface EVMWalletState {
   isConnected: boolean;
@@ -8,6 +18,9 @@ export interface EVMWalletState {
   chainId: number | null;
   isConnecting: boolean;
   error: string | null;
+  connectionState: WalletConnectionState;
+  lastError: WalletError | null;
+  balanceLastUpdated: Date | null;
 }
 
 /**
@@ -21,7 +34,12 @@ export function useEVMWallet() {
     chainId: null,
     isConnecting: false,
     error: null,
+    connectionState: WalletConnectionState.DISCONNECTED,
+    lastError: null,
+    balanceLastUpdated: null,
   });
+
+  const previousState = ref<WalletConnectionState>(WalletConnectionState.DISCONNECTED);
 
   // Check if ethereum provider is available
   const isEthereumAvailable = computed(() => {
@@ -45,16 +63,97 @@ export function useEVMWallet() {
   });
 
   /**
+   * Transition wallet state and track telemetry
+   */
+  const transitionState = (newState: WalletConnectionState, error?: WalletError) => {
+    const oldState = walletState.value.connectionState;
+    previousState.value = oldState;
+    walletState.value.connectionState = newState;
+
+    if (error) {
+      walletState.value.lastError = error;
+      walletState.value.error = error.message;
+    } else if (newState !== WalletConnectionState.FAILED) {
+      walletState.value.lastError = null;
+      walletState.value.error = null;
+    }
+
+    // Track state transition
+    telemetryService.trackWalletStateTransition({
+      fromState: oldState,
+      toState: newState,
+      walletId: 'metamask',
+      network: currentNetwork.value?.id,
+    });
+
+    console.log(`[EVM Wallet] State transition: ${oldState} → ${newState}`);
+  };
+
+  /**
+   * Detect Ethereum provider with retry logic
+   */
+  const detectProvider = async (): Promise<boolean> => {
+    transitionState(WalletConnectionState.DETECTING);
+
+    try {
+      const result = await retryWithBackoff(
+        async () => {
+          if (!isEthereumAvailable.value) {
+            throw new Error("No Ethereum provider detected");
+          }
+          return true;
+        },
+        DEFAULT_RETRY_CONFIG,
+        (attempt, error) => {
+          telemetryService.trackWalletDetection({
+            walletId: 'metamask',
+            attempt,
+            success: false,
+            errorType: error.message,
+          });
+          console.log(`[EVM Wallet] Detection retry ${attempt}: ${error.message}`);
+        }
+      );
+
+      telemetryService.trackWalletDetection({
+        walletId: 'metamask',
+        attempt: DEFAULT_RETRY_CONFIG.maxRetries,
+        success: true,
+      });
+
+      return result;
+    } catch (error) {
+      const walletError = parseWalletError(error, "Detect Ethereum provider");
+      transitionState(WalletConnectionState.FAILED, walletError);
+      
+      telemetryService.trackWalletConnectionFailure({
+        walletId: 'metamask',
+        errorType: walletError.type,
+        errorMessage: walletError.message,
+        diagnosticCode: walletError.diagnosticCode,
+      });
+
+      return false;
+    }
+  };
+
+  /**
    * Connect to MetaMask or other EVM wallet
    */
   const connect = async () => {
-    if (!isEthereumAvailable.value) {
-      walletState.value.error = "No Ethereum wallet detected. Please install MetaMask or another EVM wallet.";
-      throw new Error(walletState.value.error);
+    // Detect provider first
+    const detected = await detectProvider();
+    if (!detected) {
+      const error = parseWalletError(
+        new Error("No Ethereum wallet detected. Please install MetaMask or another EVM wallet."),
+        "Connect EVM wallet"
+      );
+      transitionState(WalletConnectionState.FAILED, error);
+      throw new Error(error.message);
     }
 
     walletState.value.isConnecting = true;
-    walletState.value.error = null;
+    transitionState(WalletConnectionState.CONNECTING);
 
     try {
       // Request account access
@@ -69,18 +168,36 @@ export function useEVMWallet() {
       const chainIdNum = parseInt(chainIdHex, 16);
 
       walletState.value = {
+        ...walletState.value,
         isConnected: true,
         activeAddress: accounts[0],
         chainId: chainIdNum,
         isConnecting: false,
-        error: null,
       };
+
+      transitionState(WalletConnectionState.CONNECTED);
 
       // Setup event listeners
       setupEventListeners();
+
+      // Track successful connection
+      telemetryService.trackWalletConnect({
+        walletId: 'metamask',
+        network: currentNetwork.value?.id || 'unknown',
+        address: accounts[0],
+      });
     } catch (error) {
       console.error("Failed to connect EVM wallet:", error);
-      walletState.value.error = error instanceof Error ? error.message : "Failed to connect wallet";
+      const walletError = parseWalletError(error, "Connect EVM wallet");
+      transitionState(WalletConnectionState.FAILED, walletError);
+
+      telemetryService.trackWalletConnectionFailure({
+        walletId: 'metamask',
+        errorType: walletError.type,
+        errorMessage: walletError.message,
+        diagnosticCode: walletError.diagnosticCode,
+      });
+
       walletState.value.isConnecting = false;
       throw error;
     }
@@ -96,7 +213,11 @@ export function useEVMWallet() {
       chainId: null,
       isConnecting: false,
       error: null,
+      connectionState: WalletConnectionState.DISCONNECTED,
+      lastError: null,
+      balanceLastUpdated: null,
     };
+    transitionState(WalletConnectionState.DISCONNECTED);
   };
 
   /**
@@ -104,13 +225,20 @@ export function useEVMWallet() {
    */
   const switchNetwork = async (networkId: EVMNetworkId) => {
     if (!isEthereumAvailable.value || !isConnected.value) {
-      throw new Error("Wallet not connected");
+      const error = parseWalletError(new Error("Wallet not connected"), "Switch EVM network");
+      transitionState(WalletConnectionState.FAILED, error);
+      throw new Error(error.message);
     }
 
     const network = EVM_NETWORKS[networkId];
     if (!network) {
-      throw new Error(`Network ${networkId} not found`);
+      const error = parseWalletError(new Error(`Network ${networkId} not found`), "Switch EVM network");
+      transitionState(WalletConnectionState.FAILED, error);
+      throw new Error(error.message);
     }
+
+    const fromNetwork = currentNetwork.value?.id || 'unknown';
+    transitionState(WalletConnectionState.SWITCHING_NETWORK);
 
     try {
       // Try to switch to the network
@@ -120,6 +248,12 @@ export function useEVMWallet() {
       });
 
       walletState.value.chainId = network.chainId;
+      transitionState(WalletConnectionState.CONNECTED);
+
+      telemetryService.trackNetworkSwitch({
+        fromNetwork,
+        toNetwork: networkId,
+      });
     } catch (error: any) {
       // If the network is not added to the wallet, add it
       if (error.code === 4902) {
@@ -138,12 +272,38 @@ export function useEVMWallet() {
           });
 
           walletState.value.chainId = network.chainId;
+          transitionState(WalletConnectionState.CONNECTED);
+
+          telemetryService.trackNetworkSwitch({
+            fromNetwork,
+            toNetwork: networkId,
+          });
         } catch (addError) {
           console.error("Failed to add network:", addError);
+          const walletError = parseWalletError(addError, "Add EVM network");
+          transitionState(WalletConnectionState.FAILED, walletError);
+
+          telemetryService.trackNetworkSwitchFailure({
+            fromNetwork,
+            toNetwork: networkId,
+            errorType: walletError.type,
+            errorMessage: walletError.message,
+          });
+
           throw addError;
         }
       } else {
         console.error("Failed to switch network:", error);
+        const walletError = parseWalletError(error, "Switch EVM network");
+        transitionState(WalletConnectionState.FAILED, walletError);
+
+        telemetryService.trackNetworkSwitchFailure({
+          fromNetwork,
+          toNetwork: networkId,
+          errorType: walletError.type,
+          errorMessage: walletError.message,
+        });
+
         throw error;
       }
     }
@@ -196,18 +356,33 @@ export function useEVMWallet() {
         const chainIdNum = parseInt(chainIdHex, 16);
 
         walletState.value = {
+          ...walletState.value,
           isConnected: true,
           activeAddress: accounts[0],
           chainId: chainIdNum,
           isConnecting: false,
-          error: null,
         };
+
+        transitionState(WalletConnectionState.CONNECTED);
 
         setupEventListeners();
       }
     } catch (error) {
       console.warn("Failed to reconnect EVM wallet:", error);
+      const walletError = parseWalletError(error, "Reconnect EVM wallet");
+      transitionState(WalletConnectionState.FAILED, walletError);
     }
+  };
+
+  /**
+   * Retry connection after failure
+   */
+  const retryConnection = async () => {
+    // Clear previous error
+    walletState.value.error = null;
+    walletState.value.lastError = null;
+
+    await connect();
   };
 
   return {
@@ -225,6 +400,10 @@ export function useEVMWallet() {
     disconnect,
     switchNetwork,
     attemptReconnect,
+    retryConnection,
+
+    // Helper functions
+    getTroubleshootingSteps: (errorType: WalletErrorType) => getTroubleshootingSteps(errorType),
   };
 }
 

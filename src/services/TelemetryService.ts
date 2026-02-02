@@ -67,6 +67,91 @@ export class TelemetryService {
   }
 
   /**
+   * Track wallet state transition
+   */
+  trackWalletStateTransition(data: {
+    fromState: string
+    toState: string
+    walletId?: string
+    network?: string
+  }): void {
+    this.track('wallet_state_transition', {
+      from_state: data.fromState,
+      to_state: data.toState,
+      wallet_id: data.walletId,
+      network: data.network,
+    })
+  }
+
+  /**
+   * Track wallet detection attempt
+   */
+  trackWalletDetection(data: {
+    walletId: string
+    attempt: number
+    success: boolean
+    errorType?: string
+  }): void {
+    this.track('wallet_detection', {
+      wallet_id: data.walletId,
+      attempt: data.attempt,
+      success: data.success,
+      error_type: data.errorType,
+    })
+  }
+
+  /**
+   * Track wallet connection failure
+   */
+  trackWalletConnectionFailure(data: {
+    walletId?: string
+    errorType: string
+    errorMessage: string
+    diagnosticCode?: string
+  }): void {
+    this.track('wallet_connection_failure', {
+      wallet_id: data.walletId,
+      error_type: data.errorType,
+      error_message: data.errorMessage,
+      diagnostic_code: data.diagnosticCode,
+    })
+  }
+
+  /**
+   * Track network switch failure
+   */
+  trackNetworkSwitchFailure(data: {
+    fromNetwork: string
+    toNetwork: string
+    errorType: string
+    errorMessage: string
+  }): void {
+    this.track('network_switch_failure', {
+      from_network: data.fromNetwork,
+      to_network: data.toNetwork,
+      error_type: data.errorType,
+      error_message: data.errorMessage,
+    })
+  }
+
+  /**
+   * Track balance fetch
+   */
+  trackBalanceFetch(data: {
+    network: string
+    address: string
+    success: boolean
+    durationMs?: number
+  }): void {
+    this.track('balance_fetch', {
+      network: data.network,
+      address_prefix: data.address.slice(0, 6),
+      success: data.success,
+      duration_ms: data.durationMs,
+    })
+  }
+
+  /**
    * Get all tracked events (for debugging)
    */
   getEvents(): TelemetryEvent[] {

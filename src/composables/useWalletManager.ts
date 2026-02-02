@@ -3,6 +3,7 @@ import { useWallet, type WalletAccount } from "@txnlab/use-wallet-vue";
 import { useAuthStore } from "../stores/auth";
 import { AUTH_STORAGE_KEYS, WALLET_CONNECTION_STATE } from "../constants/auth";
 import { telemetryService } from "../services/TelemetryService";
+import { WalletConnectionState, WalletErrorType, type WalletError, parseWalletError, retryWithBackoff, DEFAULT_RETRY_CONFIG, getTroubleshootingSteps } from "./walletState";
 
 export interface WalletState {
   isConnected: boolean;
@@ -11,6 +12,9 @@ export interface WalletState {
   accounts: WalletAccount[];
   isConnecting: boolean;
   error: string | null;
+  connectionState: WalletConnectionState;
+  lastError: WalletError | null;
+  balanceLastUpdated: Date | null;
 }
 
 export type ChainType = "AVM" | "EVM";
@@ -177,6 +181,9 @@ export function useWalletManager() {
         accounts: [],
         isConnecting: false,
         error: null,
+        connectionState: WalletConnectionState.DISCONNECTED,
+        lastError: null,
+        balanceLastUpdated: null,
       }),
       currentNetwork: ref<NetworkId>("voi-mainnet"),
       connect: async () => {
@@ -185,6 +192,7 @@ export function useWalletManager() {
       disconnect: async () => {},
       switchNetwork: async () => {},
       reconnect: async () => {},
+      retryConnection: async () => {},
     };
   }
 
@@ -197,10 +205,14 @@ export function useWalletManager() {
     accounts: [],
     isConnecting: false,
     error: null,
+    connectionState: WalletConnectionState.DISCONNECTED,
+    lastError: null,
+    balanceLastUpdated: null,
   });
 
   const currentNetwork = ref<NetworkId>("voi-mainnet");
   const isReconnecting = ref(false);
+  const previousState = ref<WalletConnectionState>(WalletConnectionState.DISCONNECTED);
 
   // Computed properties
   const isConnected = computed(() => (walletAvailable ? !!wallet.activeAccount.value : false));
@@ -214,6 +226,33 @@ export function useWalletManager() {
   });
 
   /**
+   * Transition wallet state and track telemetry
+   */
+  const transitionState = (newState: WalletConnectionState, error?: WalletError) => {
+    const oldState = walletState.value.connectionState;
+    previousState.value = oldState;
+    walletState.value.connectionState = newState;
+
+    if (error) {
+      walletState.value.lastError = error;
+      walletState.value.error = error.message;
+    } else if (newState !== WalletConnectionState.FAILED) {
+      walletState.value.lastError = null;
+      walletState.value.error = null;
+    }
+
+    // Track state transition
+    telemetryService.trackWalletStateTransition({
+      fromState: oldState,
+      toState: newState,
+      walletId: walletState.value.activeWallet || undefined,
+      network: currentNetwork.value,
+    });
+
+    console.log(`[Wallet] State transition: ${oldState} → ${newState}`);
+  };
+
+  /**
    * Update wallet state from the wallet manager
    */
   const updateWalletState = () => {
@@ -221,14 +260,24 @@ export function useWalletManager() {
       const activeAccount = wallet.activeAccount.value;
       const walletAccounts = wallet.activeWallet.value?.accounts || [];
 
+      const wasConnected = walletState.value.isConnected;
+      const isNowConnected = !!activeAccount;
+
       walletState.value = {
-        isConnected: !!activeAccount,
+        ...walletState.value,
+        isConnected: isNowConnected,
         activeAddress: activeAccount?.address || null,
         activeWallet: wallet.activeWallet.value?.id || null,
         accounts: walletAccounts,
         isConnecting: false,
-        error: null,
       };
+
+      // Update connection state
+      if (isNowConnected && !wasConnected) {
+        transitionState(WalletConnectionState.CONNECTED);
+      } else if (!isNowConnected && wasConnected) {
+        transitionState(WalletConnectionState.DISCONNECTED);
+      }
 
       // Sync with auth store
       if (activeAccount) {
@@ -238,7 +287,60 @@ export function useWalletManager() {
       }
     } catch (error) {
       console.error("Error updating wallet state:", error);
-      walletState.value.error = error instanceof Error ? error.message : "Unknown error";
+      const walletError = parseWalletError(error, "Update wallet state");
+      transitionState(WalletConnectionState.FAILED, walletError);
+    }
+  };
+
+  /**
+   * Detect wallet provider with retry logic
+   */
+  const detectWalletProvider = async (walletId: string): Promise<boolean> => {
+    transitionState(WalletConnectionState.DETECTING);
+
+    try {
+      const result = await retryWithBackoff(
+        async () => {
+          const walletToConnect = wallet.wallets.value.find((w: any) => w.id === walletId);
+          if (!walletToConnect) {
+            throw new Error(`Wallet ${walletId} not found`);
+          }
+          if (!walletToConnect.isActive) {
+            throw new Error(`Wallet ${walletId} is not active/installed`);
+          }
+          return true;
+        },
+        DEFAULT_RETRY_CONFIG,
+        (attempt, error) => {
+          telemetryService.trackWalletDetection({
+            walletId,
+            attempt,
+            success: false,
+            errorType: error.message,
+          });
+          console.log(`[Wallet] Detection retry ${attempt} for ${walletId}: ${error.message}`);
+        },
+      );
+
+      telemetryService.trackWalletDetection({
+        walletId,
+        attempt: DEFAULT_RETRY_CONFIG.maxRetries,
+        success: true,
+      });
+
+      return result;
+    } catch (error) {
+      const walletError = parseWalletError(error, `Detect ${walletId}`);
+      transitionState(WalletConnectionState.FAILED, walletError);
+
+      telemetryService.trackWalletConnectionFailure({
+        walletId,
+        errorType: walletError.type,
+        errorMessage: walletError.message,
+        diagnosticCode: walletError.diagnosticCode,
+      });
+
+      return false;
     }
   };
 
@@ -247,10 +349,16 @@ export function useWalletManager() {
    */
   const connect = async (walletId?: string) => {
     walletState.value.isConnecting = true;
-    walletState.value.error = null;
+    transitionState(WalletConnectionState.CONNECTING);
 
     try {
       if (walletId) {
+        // Detect wallet provider with retry
+        const detected = await detectWalletProvider(walletId);
+        if (!detected) {
+          throw new Error(`Unable to detect wallet provider: ${walletId}`);
+        }
+
         // Connect to specific wallet
         const walletToConnect = wallet.wallets.value.find((w: any) => w.id === walletId);
         if (walletToConnect) {
@@ -280,7 +388,16 @@ export function useWalletManager() {
       }
     } catch (error) {
       console.error("Failed to connect wallet:", error);
-      walletState.value.error = error instanceof Error ? error.message : "Failed to connect wallet";
+      const walletError = parseWalletError(error, "Connect wallet");
+      transitionState(WalletConnectionState.FAILED, walletError);
+
+      telemetryService.trackWalletConnectionFailure({
+        walletId,
+        errorType: walletError.type,
+        errorMessage: walletError.message,
+        diagnosticCode: walletError.diagnosticCode,
+      });
+
       walletState.value.isConnecting = false;
       throw error;
     }
@@ -302,7 +419,12 @@ export function useWalletManager() {
         accounts: [],
         isConnecting: false,
         error: null,
+        connectionState: WalletConnectionState.DISCONNECTED,
+        lastError: null,
+        balanceLastUpdated: null,
       };
+
+      transitionState(WalletConnectionState.DISCONNECTED);
 
       // Clear auth store
       await authStore.signOut();
@@ -321,6 +443,8 @@ export function useWalletManager() {
    */
   const switchNetwork = async (networkId: NetworkId) => {
     const fromNetwork = currentNetwork.value;
+    transitionState(WalletConnectionState.SWITCHING_NETWORK);
+
     try {
       const network = NETWORKS[networkId];
       if (!network) {
@@ -348,11 +472,23 @@ export function useWalletManager() {
       // Reconnect if was previously connected
       if (wasConnected && previousWalletId) {
         await connect(previousWalletId);
+      } else {
+        transitionState(WalletConnectionState.DISCONNECTED);
       }
 
       return network;
     } catch (error) {
       console.error("Failed to switch network:", error);
+      const walletError = parseWalletError(error, "Switch network");
+      transitionState(WalletConnectionState.FAILED, walletError);
+
+      telemetryService.trackNetworkSwitchFailure({
+        fromNetwork,
+        toNetwork: networkId,
+        errorType: walletError.type,
+        errorMessage: walletError.message,
+      });
+
       throw error;
     }
   };
@@ -385,10 +521,12 @@ export function useWalletManager() {
       if (savedNetwork && NETWORKS[savedNetwork]) {
         currentNetwork.value = savedNetwork;
       }
+      transitionState(WalletConnectionState.DISCONNECTED);
       return;
     }
 
     isReconnecting.value = true;
+    transitionState(WalletConnectionState.RECONNECTING);
 
     try {
       // Restore network
@@ -402,12 +540,31 @@ export function useWalletManager() {
       console.log("Successfully reconnected to wallet");
     } catch (error) {
       console.warn("Failed to reconnect wallet:", error);
+      const walletError = parseWalletError(error, "Reconnect wallet");
+      transitionState(WalletConnectionState.FAILED, walletError);
+
       // Clear persisted state on reconnection failure
       localStorage.removeItem(AUTH_STORAGE_KEYS.WALLET_CONNECTED);
       localStorage.removeItem(AUTH_STORAGE_KEYS.ACTIVE_WALLET_ID);
     } finally {
       isReconnecting.value = false;
     }
+  };
+
+  /**
+   * Retry connection after failure
+   */
+  const retryConnection = async (walletId?: string) => {
+    const idToUse = walletId || walletState.value.activeWallet || undefined;
+    if (!idToUse) {
+      throw new Error("No wallet ID to retry");
+    }
+
+    // Clear previous error
+    walletState.value.error = null;
+    walletState.value.lastError = null;
+
+    await connect(idToUse);
   };
 
   /**
@@ -464,8 +621,12 @@ export function useWalletManager() {
     switchNetwork,
     setActiveAccount,
     updateWalletState,
+    retryConnection,
 
     // Wallet manager instance for advanced usage
     walletManager: wallet,
+
+    // Helper functions
+    getTroubleshootingSteps: (errorType: WalletErrorType) => getTroubleshootingSteps(errorType),
   };
 }

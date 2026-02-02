@@ -157,29 +157,39 @@ src/
 
 **🚨 CRITICAL TESTING REQUIREMENTS 🚨**
 
-**NEVER finish work with failing tests.** This project maintains strict quality standards where all tests must pass before code changes are accepted. Failing tests indicate potential bugs, broken functionality, or incomplete implementations that could impact users.
+**ABSOLUTELY NEVER FINISH WORK WITH FAILING TESTS UNDER ANY CIRCUMSTANCES.** This project maintains strict quality standards where all tests must pass before code changes are accepted. Failing tests indicate potential bugs, broken functionality, or incomplete implementations that could impact users.
+
+**PAST INCIDENT:** Copilot previously finished work with failing tests, which violated these instructions and could have introduced bugs into production. This must never happen again.
 
 **If tests are failing:**
 
-1. **STOP** what you're doing
-2. **DEBUG** the failing tests immediately
-3. **FIX** the root cause (not just the test symptoms)
-4. **RE-RUN** all tests to ensure they pass
-5. **ONLY THEN** proceed with the work
+1. **IMMEDIATELY STOP** all other work
+2. **DEBUG** the failing tests immediately - do not proceed until root cause is identified
+3. **FIX** the root cause (not just the test symptoms) - ensure the fix is correct and complete
+4. **RE-RUN** all tests to ensure they pass - verify multiple times if needed
+5. **ONLY THEN** proceed with the work or mark it as complete
 
-**Remember:** Test failures are not just technical issues - they represent potential user-facing problems that could break the application in production.
+**Remember:** Test failures are not just technical issues - they represent potential user-facing problems that could break the application in production. Treat test failures as critical blocking issues that must be resolved before any other action.
+
+### Automated Testing Enforcement
+
+- **Before any code changes:** Run tests to establish baseline
+- **After any code changes:** Run tests immediately to catch regressions
+- **Before committing:** Run full test suite
+- **Before PR creation:** Run all tests and ensure coverage thresholds are met
+- **If uncertain about test status:** Run tests again to confirm
 
 ### Pre-Completion Testing Checklist
 
-**MANDATORY: Complete ALL items before marking work as done:**
+**MANDATORY: Complete ALL items before marking work as done. FAILURE TO COMPLETE WILL RESULT IN IMMEDIATE WORK REJECTION:**
 
-- [ ] Run `npm test` (Unit tests) - Ensure 0 failures
+- [ ] Run `npm test` (Unit tests) - Ensure 0 failures, 0 errors
 - [ ] Run `npm run test:coverage` - Ensure coverage meets thresholds:
   - Statements: ≥78%
   - Branches: ≥69%
   - Functions: ≥68.5%
   - Lines: ≥79%
-- [ ] Run `npm run test:e2e` (E2E tests) - Ensure 0 failures
+- [ ] Run `npm run test:e2e` (E2E tests) - Ensure 0 failures, 0 errors
 - [ ] Run `npm run build` - Ensure TypeScript compilation passes
 - [ ] Run `npm run check-typescript-errors-tsc` - Ensure TypeScript compilation without warnings/errors
 - [ ] Run `npm run check-typescript-errors-vue` - Ensure VUE TypeScript compilation without warnings/errors
@@ -189,7 +199,7 @@ src/
 - [ ] Test wallet connectivity for blockchain-related changes
 - [ ] Verify dark mode compatibility for UI changes
 
-**FAILURE TO COMPLETE THIS CHECKLIST WILL RESULT IN REJECTED WORK.**
+**FINAL VERIFICATION:** Before marking any task complete, run the full test suite one final time and document the results.
 
 ### Unit Tests (Vitest)
 

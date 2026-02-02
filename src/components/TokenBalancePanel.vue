@@ -16,6 +16,10 @@
               Showing {{ filteredAssets.length }} of {{ accountBalance.assets.length }} assets
             </span>
           </div>
+          <div v-if="lastUpdatedFormatted" class="mt-1 text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+            <i class="pi pi-clock text-xs"></i>
+            Last updated: {{ lastUpdatedFormatted }}
+          </div>
         </div>
         <div class="flex items-center gap-2">
           <button
@@ -196,7 +200,8 @@ const {
   accountBalance, 
   isLoading, 
   hasAssets, 
-  formattedAlgoBalance, 
+  formattedAlgoBalance,
+  lastUpdatedFormatted,
   refresh 
 } = useTokenBalance()
 
