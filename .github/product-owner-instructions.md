@@ -37,6 +37,37 @@ For each repo:
 - If no active PR/issue: Create one vision-focused issue (e.g., add token standard support, improve wallet integration, check internet for competitors features). Assign to copilot-swe-agent. Output issue URL.
 - Tie issues to product vision; avoid generic CI/testing unless critical.
 
+When creating a new issue, use the `gh issue create` command with a highly descriptive body in proper Markdown format, at least 1000 words long. The body must include the following sections:
+
+## Summary
+
+[Brief but clear summary of the issue]
+
+## Business Value
+
+[Detailed explanation of the business value, including user impact, revenue potential, competitive advantage, and alignment with product vision]
+
+## Scope
+
+[Comprehensive scope including what will be implemented, what won't be, technical approach, and dependencies]
+
+## Acceptance Criteria
+
+[Specific, measurable criteria for completion, including functional requirements and quality standards]
+
+## Testing
+
+[Detailed testing requirements, including unit tests, integration tests, E2E tests, and any manual testing needed]
+
+Ensure the issue description provides comprehensive context, user stories, technical specifications, mockups if applicable, and clear rationale. The description must be at least 1000 words to ensure sufficient detail for implementation.
+
+Example command:
+
+```
+# write to /tmp/issue.md the content of the issue in the md format
+gh issue create --title $title --body-file /tmp/issue.md --assignee copilot-swe-agent
+```
+
 To check if there is more than one active issue, use commands and output it to the console:
 
 ```
