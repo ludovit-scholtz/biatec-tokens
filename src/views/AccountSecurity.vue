@@ -316,7 +316,10 @@
     </div>
 
     <!-- Recovery Modal (placeholder) -->
-    <Modal v-model:isOpen="showRecoveryModal" title="Account Recovery">
+    <Modal :show="showRecoveryModal" @close="showRecoveryModal = false">
+      <template #header>
+        <h3 class="text-xl font-semibold text-white">Account Recovery</h3>
+      </template>
       <div class="space-y-4">
         <p class="text-gray-300">
           Recovery functionality for <strong class="text-white">{{ selectedRecovery?.title }}</strong> will guide you through the process
@@ -399,7 +402,7 @@ function getEventIcon(type: ActivityEventType): string {
   return icons[type] || 'pi pi-info-circle'
 }
 
-function getEventIconClasses(type: ActivityEventType, status: string): string {
+function getEventIconClasses(_type: ActivityEventType, status: string): string {
   if (status === 'failure') {
     return 'bg-red-500/20 text-red-400'
   }
