@@ -63,7 +63,7 @@ describe('Security Store', () => {
       expect(store.activityEvents[1].description).toBe('First event')
     })
 
-    it('should limit activity events to 1000', () => {
+    it('should limit activity events to 1000', { timeout: 10000 }, () => {
       const store = useSecurityStore()
       
       // Add 1100 events

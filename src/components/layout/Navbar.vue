@@ -92,6 +92,9 @@
                   <p class="text-sm font-medium text-gray-900 dark:text-white">{{ authStore.arc76email }}</p>
                   <p class="text-xs text-gray-500 dark:text-gray-400">{{ formatAddress(authStore.account) }}</p>
                 </div>
+                <router-link to="/account/security" @click="showUserMenu = false" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">
+                  Security Center
+                </router-link>
                 <router-link to="/subscription/pricing" @click="showUserMenu = false" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">
                   Subscription
                 </router-link>

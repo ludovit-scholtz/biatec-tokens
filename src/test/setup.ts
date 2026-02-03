@@ -22,6 +22,18 @@ vi.mock("../src/composables/useToast", () => ({
   })),
 }));
 
+// Mock algorand authentication
+vi.mock("algorand-authentication-component-vue", () => ({
+  useAVMAuthentication: vi.fn(() => ({
+    authStore: {
+      isAuthenticated: true,
+      account: "TESTACCOUNT1234567890123456789012345678901234567890",
+      arc76email: "test@example.com",
+    },
+    logout: vi.fn(),
+  })),
+}));
+
 // Stub router-link component
 vi.mock("vue-router", () => {
   const currentRoute = { value: { params: {}, query: {}, path: "/", name: "home" } };
