@@ -454,7 +454,7 @@
 **Immediate Priorities (Next 30 Days):**
 
 1. Remove wallet features, make sure to use the email and password authentication
-2. Improve network selection. Do network selection only in top menu where current network is displayed. Do not use network selection in the token creation wizard nor anywhere else on the website.
+2. Improve network selection. Do network selection only in top menu where current network is displayed. Do not use network selection in the token creation wizard nor anywhere else on the website. Support AVM networks - Algorand Mainnet, Algorand Testnet, VOI mainnet and Aramid mainnet, and EVM networks - Etherum, Base and Arbitrum
 3. Implement proper Arc76 email/password authentication with Arc14 backend communication
 4. Replace crypto terminology ("Connect wallet") with business-friendly terms ("Login", "Sign in")
 5. Make product appear as traditional SaaS application, not crypto-focused
