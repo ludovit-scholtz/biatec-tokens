@@ -178,6 +178,13 @@ describe('Enterprise Guide Integration Tests', () => {
       const wrapper = mount(EnterpriseGuideView, {
         global: {
           plugins: [pinia, router],
+          stubs: {
+            RouterLink: {
+              name: "RouterLink",
+              props: ["to"],
+              template: '<a :href="to"><slot /></a>',
+            },
+          },
         },
       });
 
@@ -202,6 +209,13 @@ describe('Enterprise Guide Integration Tests', () => {
       const wrapper = mount(TokenStandardsView, {
         global: {
           plugins: [pinia, router],
+          stubs: {
+            RouterLink: {
+              name: "RouterLink",
+              props: ["to"],
+              template: '<a :href="to"><slot /></a>',
+            },
+          },
         },
       });
 

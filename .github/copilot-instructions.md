@@ -1,5 +1,15 @@
 # Copilot Instructions for Biatec Tokens
 
+## 🚨 ABSOLUTE PRIORITY: TESTING COMPLIANCE 🚨
+
+**CRITICAL ENFORCEMENT:** Under NO circumstances shall any work be completed with failing tests or insufficient test coverage. Previous violations have resulted in production bugs and must never recur.
+
+- **IMMEDIATE ACTION REQUIRED:** If any test fails or coverage drops below 80% for ANY metric (statements, branches, functions, lines), STOP ALL WORK and fix immediately.
+- **ZERO TOLERANCE:** Failing tests block all progress. Coverage below 80% blocks completion.
+- **VERIFICATION MANDATORY:** Run full test suite and coverage check before ANY code changes and after EVERY change.
+
+**PAST VIOLATIONS:** Copilot has previously finished work with failing tests and reduced coverage, violating these instructions. This has introduced bugs and reduced quality. This MUST NOT happen again.
+
 ## Project Overview
 
 This is a Vue 3 + TypeScript frontend application for managing and deploying tokens on multiple blockchain networks. The application provides a user interface for creating, managing, and deploying various token standards with wallet integration across both EVM chains (Ethereum, Arbitrum, Base) and AVM chains (Algorand mainnet, Algorand testnet, VOI, Aramid).
@@ -185,10 +195,10 @@ src/
 
 - [ ] Run `npm test` (Unit tests) - Ensure 0 failures, 0 errors
 - [ ] Run `npm run test:coverage` - Ensure coverage meets thresholds:
-  - Statements: ≥78%
-  - Branches: ≥69%
-  - Functions: ≥68.5%
-  - Lines: ≥79%
+  - Statements: >80%
+  - Branches: >80%
+  - Functions: >80%
+  - Lines: >80%
 - [ ] Run `npm run test:e2e` (E2E tests) - Ensure 0 failures, 0 errors
 - [ ] Run `npm run build` - Ensure TypeScript compilation passes
 - [ ] Run `npm run check-typescript-errors-tsc` - Ensure TypeScript compilation without warnings/errors
@@ -207,10 +217,10 @@ src/
 - Unit tests are located in `src/` directories alongside components (e.g., `*.test.ts`, `*.spec.ts`)
 - Test files use Vitest with Vue Test Utils for component testing
 - Run `npm run test:coverage` to check test coverage - must meet thresholds:
-  - Statements: ≥78%
-  - Branches: ≥69%
-  - Functions: ≥68.5%
-  - Lines: ≥79%
+  - Statements: >80%
+  - Branches: >80%
+  - Functions: >80%
+  - Lines: >80%
 - Existing test patterns:
   - Component tests: Mock dependencies, test user interactions
   - Store tests: Test state management and actions

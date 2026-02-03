@@ -74,6 +74,13 @@ describe('EnterpriseGuideView Component', () => {
       const wrapper = mount(EnterpriseGuideView, {
         global: {
           plugins: [pinia, router],
+          stubs: {
+            RouterLink: {
+              name: "RouterLink",
+              props: ["to"],
+              template: '<a :href="to"><slot /></a>',
+            },
+          },
         },
       });
 
@@ -91,6 +98,13 @@ describe('EnterpriseGuideView Component', () => {
       const wrapper = mount(EnterpriseGuideView, {
         global: {
           plugins: [pinia, router],
+          stubs: {
+            RouterLink: {
+              name: "RouterLink",
+              props: ["to"],
+              template: '<a :href="to"><slot /></a>',
+            },
+          },
         },
       });
 

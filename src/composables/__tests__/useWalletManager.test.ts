@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
-import { NETWORKS } from '../useWalletManager'
+import { useWalletManager, NETWORKS } from '../useWalletManager'
+import { WalletConnectionState } from '../walletState'
 
 // Mock the @txnlab/use-wallet-vue module
 vi.mock('@txnlab/use-wallet-vue', () => ({
@@ -31,11 +32,45 @@ vi.mock('@txnlab/use-wallet-vue', () => ({
   })),
 }))
 
+// Mock the auth store
+vi.mock('../../stores/auth', () => ({
+  useAuthStore: vi.fn(() => ({
+    connectWallet: vi.fn(),
+    disconnectWallet: vi.fn(),
+  })),
+}))
+
+// Mock telemetry service
+vi.mock('../../services/TelemetryService', () => ({
+  telemetryService: {
+    trackWalletStateTransition: vi.fn(),
+  },
+}))
+
 describe('useWalletManager', () => {
+  let mockWallet: any
+
   beforeEach(() => {
     setActivePinia(createPinia())
     localStorage.clear()
     vi.clearAllMocks()
+
+    mockWallet = {
+      activeAccount: { value: null },
+      activeWallet: { value: null },
+      wallets: {
+        value: [
+          {
+            id: 'pera',
+            isActive: true,
+            connect: vi.fn(),
+            disconnect: vi.fn(),
+            setActiveAccount: vi.fn(),
+            accounts: [],
+          },
+        ],
+      },
+    }
   })
 
   describe('NETWORKS constant', () => {
@@ -213,6 +248,30 @@ describe('useWalletManager', () => {
       // These are critical for transaction signing
       expect(voiNetwork.algodUrl).toMatch(/^https?:\/\//)
       expect(voiNetwork.genesisId).toMatch(/^[a-zA-Z0-9.-]+$/)
+    })
+  })
+
+  describe('useWalletManager composable', () => {
+    it('should initialize with default state', () => {
+      const { walletState, currentNetwork, isConnected, activeAddress, networkInfo } = useWalletManager()
+
+      expect(walletState.value.isConnected).toBe(false)
+      expect(walletState.value.activeAddress).toBe(null)
+      expect(walletState.value.connectionState).toBe(WalletConnectionState.DISCONNECTED)
+      expect(currentNetwork.value).toBe('voi-mainnet')
+      expect(isConnected.value).toBe(false)
+      expect(activeAddress.value).toBe(null)
+      expect(networkInfo.value.id).toBe('voi-mainnet')
+    })
+
+    it('should format address correctly', () => {
+      const { walletState, formattedAddress } = useWalletManager()
+
+      walletState.value.activeAddress = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890'
+      expect(formattedAddress.value).toBe('ABCDEF...7890')
+
+      walletState.value.activeAddress = null
+      expect(formattedAddress.value).toBe(null)
     })
   })
 })
