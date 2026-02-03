@@ -376,7 +376,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch, watchEffect } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import MainLayout from '../layout/MainLayout.vue';
 import { complianceService } from '../services/ComplianceService';
