@@ -33,7 +33,7 @@ const callback = (isLight: boolean) => {
 onMounted(() => {
   themeStore.initTheme(callback);
   console.log("gradient init");
-  gradient.initGradient("#gradient-canvas");
+  // gradient.initGradient("#gradient-canvas");
   console.log("gradient done");
 });
 </script>
