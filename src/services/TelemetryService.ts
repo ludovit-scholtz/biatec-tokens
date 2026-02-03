@@ -236,6 +236,67 @@ export class TelemetryService {
   }
 
   /**
+   * Track security center viewed
+   */
+  trackSecurityCenterViewed(data?: {
+    source?: string
+  }): void {
+    this.track('security_center_viewed', {
+      source: data?.source || 'account_menu',
+    })
+  }
+
+  /**
+   * Track recovery started
+   */
+  trackRecoveryStarted(data: {
+    recoveryType: string
+  }): void {
+    this.track('recovery_started', {
+      recovery_type: data.recoveryType,
+    })
+  }
+
+  /**
+   * Track audit export started
+   */
+  trackAuditExportStarted(data: {
+    format: string
+  }): void {
+    this.track('audit_export_started', {
+      format: data.format,
+    })
+  }
+
+  /**
+   * Track audit export completed
+   */
+  trackAuditExportCompleted(data: {
+    format: string
+    durationMs?: number
+    recordCount?: number
+  }): void {
+    this.track('audit_export_completed', {
+      format: data.format,
+      duration_ms: data.durationMs,
+      record_count: data.recordCount,
+    })
+  }
+
+  /**
+   * Track activity filter applied
+   */
+  trackActivityFilterApplied(data: {
+    filterType: string
+    filterValue: string
+  }): void {
+    this.track('activity_filter_applied', {
+      filter_type: data.filterType,
+      filter_value: data.filterValue,
+    })
+  }
+
+  /**
    * Get all tracked events (for debugging)
    */
   getEvents(): TelemetryEvent[] {

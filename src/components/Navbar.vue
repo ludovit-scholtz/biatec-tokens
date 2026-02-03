@@ -93,6 +93,15 @@
                   <div class="text-sm text-white font-mono break-all">{{ activeAddress }}</div>
                 </div>
                 
+                <router-link
+                  to="/account/security"
+                  @click="showAccountMenu = false"
+                  class="w-full p-3 rounded-lg text-left hover:bg-blue-500/10 transition-colors flex items-center gap-3 text-white mb-1"
+                >
+                  <i class="pi pi-shield"></i>
+                  <span class="font-medium">Security Center</span>
+                </router-link>
+                
                 <button
                   @click="handleDisconnect"
                   class="w-full p-3 rounded-lg text-left hover:bg-red-500/10 transition-colors flex items-center gap-3 text-red-400"
