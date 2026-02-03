@@ -428,6 +428,9 @@ function getStatusVariant(status: string): 'success' | 'error' | 'warning' | 'in
 function formatTimestamp(timestamp: string): string {
   try {
     const date = new Date(timestamp)
+    if (isNaN(date.getTime())) {
+      return 'Invalid Date'
+    }
     const now = new Date()
     const diffMs = now.getTime() - date.getTime()
     const diffMins = Math.floor(diffMs / 60000)
@@ -436,16 +439,15 @@ function formatTimestamp(timestamp: string): string {
     if (diffMins < 60) return `${diffMins}m ago`
     if (diffMins < 1440) return `${Math.floor(diffMins / 60)}h ago`
     
-    // Always include year and time components for consistency
-    return date.toLocaleDateString(undefined, {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    })
+    // Use invariant culture format: DD. MM. YYYY, HH:MM
+    const day = date.getDate()
+    const month = date.getMonth() + 1
+    const year = date.getFullYear()
+    const hours = date.getHours().toString().padStart(2, '0')
+    const minutes = date.getMinutes().toString().padStart(2, '0')
+    return `${day}. ${month}. ${year}, ${hours}:${minutes}`
   } catch {
-    return timestamp
+    return 'Invalid Date'
   }
 }
 
