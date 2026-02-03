@@ -1,10 +1,11 @@
 <template>
   <MainLayout>
     <div class="min-h-screen px-4 py-8">
-      <div class="max-w-4xl mx-auto">
+      <!-- Wizard Container with Solid Background -->
+      <div class="max-w-4xl mx-auto glass-effect rounded-2xl p-8 shadow-2xl border border-white/10">
         <!-- Header -->
         <div class="text-center mb-8">
-          <h1 class="text-4xl font-bold text-blue-600 dark:text-blue-400 mb-4">Create New Token</h1>
+          <h1 class="text-4xl font-bold text-gray-900 dark:text-white mb-4">Create New Token</h1>
           <p class="text-gray-600 dark:text-gray-300 text-lg">Choose a template or token standard and deploy in seconds</p>
         </div>
 
@@ -589,6 +590,7 @@ import { useRouter } from "vue-router";
 import { useTokenStore } from "../stores/tokens";
 import { useSubscriptionStore } from "../stores/subscription";
 import { useComplianceStore } from "../stores/compliance";
+import { telemetryService } from "../services/TelemetryService";
 import MainLayout from "../layout/MainLayout.vue";
 import ComplianceChecklist from "../components/ComplianceChecklist.vue";
 import RwaPresetSelector from "../components/RwaPresetSelector.vue";
@@ -616,6 +618,7 @@ const isCreating = ref(false);
 const validationError = ref<string | null>(null);
 const imageInput = ref<HTMLInputElement>();
 const showComplianceChecklist = ref(false);
+const wizardStartTime = ref<number | null>(null);
 
 // Deployment dialog states
 const showConfirmationDialog = ref(false);
@@ -679,6 +682,13 @@ watch(selectedStandard, (newStandard) => {
 
 // Load saved selections from localStorage on mount
 onMounted(() => {
+  // Track wizard started
+  wizardStartTime.value = Date.now()
+  telemetryService.trackTokenWizardStarted({
+    source: router.currentRoute.value.query.source as string || 'direct',
+    network: selectedNetwork.value || undefined
+  })
+  
   const savedTemplate = localStorage.getItem(TEMPLATE_STORAGE_KEY);
   const savedNetwork = localStorage.getItem(NETWORK_STORAGE_KEY);
   const savedStandard = localStorage.getItem(STANDARD_STORAGE_KEY);
@@ -898,6 +908,18 @@ const executeDeployment = async () => {
 
     // Track successful creation with details
     subscriptionStore.trackTokenCreationSuccess(selectedStandard.value, selectedTemplate.value || undefined, selectedNetwork.value || undefined);
+    
+    // Track wizard completion with analytics
+    if (wizardStartTime.value) {
+      const durationMs = Date.now() - wizardStartTime.value
+      telemetryService.trackTokenWizardCompleted({
+        tokenStandard: selectedStandard.value,
+        tokenType: tokenForm.type,
+        network: selectedNetwork.value || 'unknown',
+        durationMs
+      })
+      wizardStartTime.value = null
+    }
 
     // Give user time to see success state before auto-navigation
     await new Promise(resolve => setTimeout(resolve, 2000));

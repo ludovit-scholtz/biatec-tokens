@@ -42,9 +42,9 @@
         <Card variant="glass" padding="md">
           <div class="text-center">
             <WalletIcon class="w-12 h-12 text-blue-500 mx-auto mb-4" />
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Connect Your Wallet</h3>
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Sign In Required</h3>
             <p class="text-gray-600 dark:text-gray-400 mb-4">
-              Please connect your Algorand wallet to manage your subscription
+              Please sign in to your account to manage your subscription and access premium features
             </p>
           </div>
         </Card>
@@ -214,6 +214,7 @@
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '../../stores/auth'
 import { useSubscriptionStore } from '../../stores/subscription'
+import { telemetryService } from '../../services/TelemetryService'
 import { stripeProducts } from '../../stripe-config'
 import Card from '../../components/ui/Card.vue'
 import Button from '../../components/ui/Button.vue'
@@ -227,6 +228,7 @@ import {
 
 const authStore = useAuthStore()
 const subscriptionStore = useSubscriptionStore()
+const upgradeStartTime = ref<number | null>(null)
 
 const features = [
   { name: 'Token Creation', free: true },
@@ -285,8 +287,18 @@ const handleSubscribe = async () => {
     return
   }
 
+  const currentPlan = subscriptionStore.currentProduct?.name || 'free'
   const monthlyProduct = stripeProducts.find(p => p.interval === 'month')
+  
   if (monthlyProduct) {
+    // Track upgrade started
+    upgradeStartTime.value = Date.now()
+    telemetryService.trackPlanUpgradeStarted({
+      fromPlan: currentPlan,
+      toPlan: monthlyProduct.name,
+      source: 'pricing_page'
+    })
+    
     await subscriptionStore.createCheckoutSession(monthlyProduct.priceId, 'subscription')
   }
 }
