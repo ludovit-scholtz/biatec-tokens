@@ -84,6 +84,13 @@ vi.mock("vue-router", () => {
       template: '<a :href="to"><slot /></a>',
     },
     createRouter: vi.fn(createRouterMock),
+    createWebHistory: vi.fn(() => ({
+      push: vi.fn(),
+      replace: vi.fn(),
+      go: vi.fn(),
+      back: vi.fn(),
+      forward: vi.fn(),
+    })),
     createMemoryHistory: vi.fn(() => ({
       push: vi.fn(),
       replace: vi.fn(),
