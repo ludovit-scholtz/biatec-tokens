@@ -718,7 +718,7 @@ const currentNetworkGuidance = computed(() => (selectedNetwork.value ? tokenStor
 
 const currentStandardDetails = computed(() => (selectedStandard.value ? tokenStore.tokenStandards.find((s) => s.name === selectedStandard.value) : undefined));
 
-const selectNetwork = (network: "VOI" | "Aramid") => {
+const selectNetwork = (network: "VOI" | "Aramid" | null) => {
   selectedNetwork.value = network;
   subscriptionStore.trackGuidanceInteraction();
 };
