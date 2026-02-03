@@ -436,10 +436,11 @@ function formatTimestamp(timestamp: string): string {
     if (diffMins < 60) return `${diffMins}m ago`
     if (diffMins < 1440) return `${Math.floor(diffMins / 60)}h ago`
     
+    // Always include year and time components for consistency
     return date.toLocaleDateString(undefined, {
       month: 'short',
       day: 'numeric',
-      year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined,
+      year: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
     })
