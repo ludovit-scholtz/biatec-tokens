@@ -785,7 +785,7 @@ const validationResult = computed<TokenValidationResult>(() => {
 
 // Check if form is valid for submission
 const canSubmit = computed(() => {
-  return selectedStandard.value && validationResult.value.isValid;
+  return !!(selectedStandard.value && validationResult.value.isValid);
 });
 
 // Dismiss validation error banner (will reappear if form is submitted with errors)

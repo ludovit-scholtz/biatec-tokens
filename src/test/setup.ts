@@ -3,15 +3,48 @@ import { beforeEach, vi } from "vitest";
 // Mock wallet-related composables globally
 vi.mock("../src/composables/useWalletManager", () => ({
   useWalletManager: vi.fn(() => ({
+    walletState: {
+      isConnected: false,
+      activeAddress: null,
+      activeWallet: null,
+      accounts: [],
+      isConnecting: false,
+      error: null,
+      connectionState: 'disconnected',
+      lastError: null,
+      balanceLastUpdated: null,
+    },
+    isConnected: false,
+    activeAddress: null,
+    activeWallet: null,
+    accounts: [],
+    formattedAddress: '',
+    isReconnecting: false,
+    currentNetwork: 'voi-mainnet',
+    networkInfo: {
+      id: 'voi-mainnet',
+      name: 'voi-mainnet',
+      displayName: 'VOI Mainnet',
+      isTestnet: false,
+      chainType: 'AVM',
+      algodUrl: 'https://mainnet-api.voi.network',
+      genesisId: 'voi-mainnet-v1.0',
+    },
+    availableNetworks: [],
+    connect: vi.fn(),
+    disconnect: vi.fn(),
+    switchNetwork: vi.fn(),
+    setActiveAccount: vi.fn(),
+    updateWalletState: vi.fn(),
+    attemptReconnect: vi.fn(),
+    retryConnection: vi.fn(),
     walletManager: {
       isConnected: false,
       address: null,
       connect: vi.fn(),
       disconnect: vi.fn(),
     },
-    algodClient: {
-      getTransactionParams: vi.fn().mockResolvedValue({}),
-    },
+    getTroubleshootingSteps: vi.fn(),
   })),
 }));
 
