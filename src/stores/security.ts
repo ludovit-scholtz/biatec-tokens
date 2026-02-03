@@ -116,7 +116,7 @@ export const useSecurityStore = defineStore('security', () => {
    * Generate a unique event ID
    */
   function generateEventId(): string {
-    return `evt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    return `evt_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`
   }
 
   /**
@@ -274,18 +274,30 @@ export const useSecurityStore = defineStore('security', () => {
    */
   function generateCSV(events: ActivityEvent[]): string {
     const headers = ['Timestamp', 'Event Type', 'Description', 'Status', 'Network', 'Correlation ID']
+    
+    // Helper function to escape CSV values
+    const escapeCSVValue = (value: string): string => {
+      // Escape double quotes by doubling them
+      const escaped = value.replace(/"/g, '""')
+      // Wrap in quotes if contains comma, newline, or quote
+      if (escaped.includes(',') || escaped.includes('\n') || escaped.includes('"')) {
+        return `"${escaped}"`
+      }
+      return escaped
+    }
+    
     const rows = events.map(event => [
-      event.timestamp,
-      event.type,
-      event.description,
-      event.status,
-      event.metadata?.network || '',
-      event.metadata?.correlationId || '',
+      escapeCSVValue(event.timestamp),
+      escapeCSVValue(event.type),
+      escapeCSVValue(event.description),
+      escapeCSVValue(event.status),
+      escapeCSVValue(event.metadata?.network || ''),
+      escapeCSVValue(event.metadata?.correlationId || ''),
     ])
 
     const csvLines = [
       headers.join(','),
-      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+      ...rows.map(row => row.join(','))
     ]
 
     return csvLines.join('\n')
