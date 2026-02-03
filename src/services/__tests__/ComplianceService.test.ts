@@ -14,6 +14,9 @@ vi.mock("../apiClient", () => {
       v1ComplianceMonitoringAuditHealthList: vi.fn(),
       v1ComplianceMonitoringRetentionStatusList: vi.fn(),
       v1ComplianceDetail: vi.fn(),
+      v1IssuerVerificationDetail: vi.fn(),
+      v1ComplianceHealthList: vi.fn(),
+      v1ComplianceNetworksList: vi.fn(),
     },
   };
 
@@ -649,6 +652,363 @@ describe("ComplianceService", () => {
 
       expect(mockApiClient.get).toHaveBeenCalledWith("/v1/compliance/monitoring/export?network=Aramid&assetId=asset456&startDate=2024-01-01&endDate=2024-01-31&format=csv");
       expect(result).toBe(mockCsv);
+    });
+  });
+
+  describe("getMicaComplianceMetrics", () => {
+    it("should get MICA compliance metrics successfully", async () => {
+      const mockMetrics = {
+        tokenId: "123",
+        network: "VOI",
+        totalSupply: "1000000",
+        circulatingSupply: "750000",
+        holderCount: 1250,
+        whitelistCount: 1200,
+        whitelistCoverage: 96.0,
+        recentTransfers: 45,
+        complianceScore: 94,
+        lastUpdated: "2024-01-31T23:59:59Z",
+      };
+
+      mockApiClient.get.mockResolvedValue(mockMetrics);
+
+      const result = await service.getMicaComplianceMetrics("123", "VOI");
+
+      expect(mockApiClient.get).toHaveBeenCalledWith("/v1/compliance/mica-metrics/123?network=VOI");
+      expect(result).toEqual(mockMetrics);
+    });
+
+    it("should handle API errors gracefully", async () => {
+      mockApiClient.get.mockRejectedValue(new Error("API Error"));
+
+      await expect(service.getMicaComplianceMetrics("123", "VOI")).rejects.toThrow("API Error");
+    });
+  });
+
+  describe("getWhitelistCoverageMetrics", () => {
+    it("should get whitelist coverage metrics successfully", async () => {
+      const mockComplianceStatus = {
+        tokenId: "123",
+        network: "VOI",
+        whitelistEnabled: true,
+        whitelistCount: 1200,
+        complianceScore: 94,
+      };
+
+      const mockWhitelistMetrics = {
+        totalAddresses: 1250,
+        activeAddresses: 1200,
+        pendingAddresses: 45,
+        removedAddresses: 5,
+        enforcementRate: 96.0,
+        recentViolations: 2,
+        lastUpdated: "2024-01-31T23:59:59Z",
+      };
+
+      mockApiClient.api.v1ComplianceDetail.mockResolvedValue({ data: mockComplianceStatus });
+      mockApiClient.api.v1ComplianceMonitoringMetricsList.mockResolvedValue({ data: { whitelistEnforcement: mockWhitelistMetrics } });
+
+      const result = await service.getWhitelistCoverageMetrics("123", "VOI");
+
+      expect(result.totalAddresses).toBe(1250);
+      expect(result.activeAddresses).toBe(1200);
+      expect(result.pendingAddresses).toBe(45);
+      expect(result.coveragePercentage).toBe(96.0);
+      expect(result.recentlyRemoved).toBe(5);
+    });
+
+    it("should return mock data on API error", async () => {
+      mockApiClient.api.v1ComplianceDetail.mockRejectedValue(new Error("API Error"));
+
+      const result = await service.getWhitelistCoverageMetrics("123", "VOI");
+
+      expect(result.totalAddresses).toBe(856);
+      expect(result.activeAddresses).toBe(812);
+      expect(result.pendingAddresses).toBe(44);
+      expect(result.coveragePercentage).toBe(94.9);
+      expect(result.recentlyAdded).toBe(5);
+      expect(result.recentlyRemoved).toBe(3);
+    });
+  });
+
+  describe("getIssuerStatus", () => {
+    it("should get issuer status successfully", async () => {
+      const mockApiResponse = {
+        overallStatus: 0, // Verified
+        isProfileComplete: true,
+        missingFields: [],
+      };
+
+      mockApiClient.api.v1IssuerVerificationDetail.mockResolvedValue({ data: mockApiResponse });
+
+      const result = await service.getIssuerStatus("issuer123");
+
+      expect(mockApiClient.api.v1IssuerVerificationDetail).toHaveBeenCalledWith("issuer123");
+      expect(result.issuerAddress).toBe("issuer123");
+      expect(result.isVerified).toBe(true);
+      expect(result.status).toBe("verified");
+      expect(result.missingFields).toEqual([]);
+    });
+
+    it("should handle unverified issuer with missing fields", async () => {
+      const mockApiResponse = {
+        overallStatus: 1, // Not verified
+        isProfileComplete: false,
+        missingFields: ["legalName", "registrationNumber"],
+      };
+
+      mockApiClient.api.v1IssuerVerificationDetail.mockResolvedValue({ data: mockApiResponse });
+
+      const result = await service.getIssuerStatus("issuer123");
+
+      expect(result.isVerified).toBe(false);
+      expect(result.status).toBe("incomplete");
+      expect(result.missingFields).toEqual(["legalName", "registrationNumber"]);
+    });
+
+    it("should return mock data on API error", async () => {
+      mockApiClient.api.v1IssuerVerificationDetail.mockRejectedValue(new Error("API Error"));
+
+      const result = await service.getIssuerStatus("issuer123");
+
+      expect(result.issuerAddress).toBe("issuer123");
+      expect(result.isVerified).toBe(true);
+      expect(result.status).toBe("verified");
+      expect(result.legalName).toBe("Demo Issuer Ltd.");
+      expect(result.registrationNumber).toBe("GB123456789");
+      expect(result.jurisdiction).toBe("United Kingdom");
+      expect(result.regulatoryLicense).toBe("FCA-123456");
+    });
+  });
+
+  describe("getRwaRiskFlags", () => {
+    it("should get RWA risk flags successfully", async () => {
+      const mockApiResponse = {
+        nonCompliantTokens: 3,
+      };
+
+      mockApiClient.api.v1ComplianceHealthList.mockResolvedValue({ data: mockApiResponse });
+
+      const result = await service.getRwaRiskFlags("VOI");
+
+      expect(mockApiClient.api.v1ComplianceHealthList).toHaveBeenCalledWith({
+        network: "VOI",
+        issuerAddress: undefined,
+      });
+      expect(result.totalFlags).toBe(1);
+      expect(result.criticalFlags).toBe(0);
+      expect(result.highFlags).toBe(1);
+      expect(result.mediumFlags).toBe(0);
+      expect(result.lowFlags).toBe(0);
+      expect(result.recentFlags).toHaveLength(1);
+      expect(result.recentFlags[0].severity).toBe("high");
+      expect(result.recentFlags[0].title).toBe("Non-compliant tokens detected");
+    });
+
+    it("should return mock data on API error", async () => {
+      mockApiClient.api.v1ComplianceHealthList.mockRejectedValue(new Error("API Error"));
+
+      const result = await service.getRwaRiskFlags();
+
+      expect(result.totalFlags).toBe(2);
+      expect(result.criticalFlags).toBe(0);
+      expect(result.highFlags).toBe(1);
+      expect(result.mediumFlags).toBe(1);
+      expect(result.lowFlags).toBe(0);
+      expect(result.recentFlags).toHaveLength(2);
+      expect(result.recentFlags[0].id).toBe("risk-1");
+      expect(result.recentFlags[0].severity).toBe("high");
+      expect(result.recentFlags[1].id).toBe("risk-2");
+      expect(result.recentFlags[1].severity).toBe("medium");
+    });
+  });
+
+  describe("getNetworkHealth", () => {
+    it("should get network health successfully", async () => {
+      const mockApiResponse = {
+        networks: [
+          {
+            network: "voimain-v1.0",
+            isOnline: true,
+            averageResponseTime: 45,
+            lastChecked: "2024-01-31T23:59:59Z",
+            knownIssues: [],
+          },
+          {
+            network: "aramidmain-v1.0",
+            isOnline: true,
+            averageResponseTime: 52,
+            lastChecked: "2024-01-31T23:59:59Z",
+            knownIssues: [],
+          },
+        ],
+      };
+
+      mockApiClient.api.v1ComplianceNetworksList.mockResolvedValue({ data: mockApiResponse });
+
+      const result = await service.getNetworkHealth();
+
+      expect(mockApiClient.api.v1ComplianceNetworksList).toHaveBeenCalled();
+      expect(result.networks).toHaveLength(2);
+      expect(result.networks[0].network).toBe("VOI");
+      expect(result.networks[0].isHealthy).toBe(true);
+      expect(result.networks[0].status).toBe("operational");
+      expect(result.networks[0].responseTime).toBe(45);
+      expect(result.networks[1].network).toBe("Aramid");
+      expect(result.networks[1].isHealthy).toBe(true);
+      expect(result.networks[1].status).toBe("operational");
+      expect(result.networks[1].responseTime).toBe(52);
+      expect(result.overallHealth).toBe("healthy");
+    });
+
+    it("should handle degraded network health", async () => {
+      const mockApiResponse = {
+        networks: [
+          {
+            network: "voimain-v1.0",
+            isOnline: true,
+            averageResponseTime: 45,
+            lastChecked: "2024-01-31T23:59:59Z",
+            knownIssues: [],
+          },
+          {
+            network: "aramidmain-v1.0",
+            isOnline: false,
+            averageResponseTime: null,
+            lastChecked: "2024-01-31T23:59:59Z",
+            knownIssues: ["Network maintenance"],
+          },
+        ],
+      };
+
+      mockApiClient.api.v1ComplianceNetworksList.mockResolvedValue({ data: mockApiResponse });
+
+      const result = await service.getNetworkHealth();
+
+      expect(result.networks[0].isHealthy).toBe(true);
+      expect(result.networks[0].status).toBe("operational");
+      expect(result.networks[1].isHealthy).toBe(false);
+      expect(result.networks[1].status).toBe("down");
+      expect(result.overallHealth).toBe("degraded");
+    });
+
+    it("should return mock data on API error", async () => {
+      mockApiClient.api.v1ComplianceNetworksList.mockRejectedValue(new Error("API Error"));
+
+      const result = await service.getNetworkHealth();
+
+      expect(result.networks).toHaveLength(2);
+      expect(result.networks[0].network).toBe("VOI");
+      expect(result.networks[0].isHealthy).toBe(true);
+      expect(result.networks[0].status).toBe("operational");
+      expect(result.networks[0].responseTime).toBe(45);
+      expect(result.networks[1].network).toBe("Aramid");
+      expect(result.networks[1].isHealthy).toBe(true);
+      expect(result.networks[1].status).toBe("operational");
+      expect(result.networks[1].responseTime).toBe(52);
+      expect(result.overallHealth).toBe("healthy");
+    });
+  });
+
+  describe("getSubscriptionTierGating", () => {
+    it("should get subscription tier gating for free tier", async () => {
+      const result = await service.getSubscriptionTierGating("free");
+
+      expect(result.currentTier).toBe("free");
+      expect(result.features).toHaveLength(5);
+      expect(result.upgradableFeatures).toBe(5); // All features are upgradable for free tier
+
+      const advancedAnalytics = result.features.find(f => f.feature === "Advanced Compliance Analytics");
+      expect(advancedAnalytics?.enabled).toBe(false);
+      expect(advancedAnalytics?.requiredTier).toBe("enterprise");
+
+      const automatedExports = result.features.find(f => f.feature === "Automated Audit Exports");
+      expect(automatedExports?.enabled).toBe(false);
+      expect(automatedExports?.requiredTier).toBe("professional");
+    });
+
+    it("should get subscription tier gating for professional tier", async () => {
+      const result = await service.getSubscriptionTierGating("professional");
+
+      expect(result.currentTier).toBe("professional");
+      expect(result.upgradableFeatures).toBe(3); // Only enterprise features are upgradable
+
+      const automatedExports = result.features.find(f => f.feature === "Automated Audit Exports");
+      expect(automatedExports?.enabled).toBe(true);
+
+      const advancedAnalytics = result.features.find(f => f.feature === "Advanced Compliance Analytics");
+      expect(advancedAnalytics?.enabled).toBe(false);
+    });
+
+    it("should get subscription tier gating for enterprise tier", async () => {
+      const result = await service.getSubscriptionTierGating("enterprise");
+
+      expect(result.currentTier).toBe("enterprise");
+      expect(result.upgradableFeatures).toBe(0); // All features enabled
+
+      result.features.forEach(feature => {
+        expect(feature.enabled).toBe(true);
+      });
+    });
+  });
+
+  describe("getKycProviderStatus", () => {
+    it("should get KYC provider status successfully", async () => {
+      const mockApiResponse = {
+        // Mock compliance health data
+      };
+
+      mockApiClient.api.v1ComplianceHealthList.mockResolvedValue({ data: mockApiResponse });
+
+      const result = await service.getKycProviderStatus("VOI");
+
+      expect(mockApiClient.api.v1ComplianceHealthList).toHaveBeenCalledWith({
+        network: "VOI",
+        issuerAddress: undefined,
+      });
+      expect(result.providers).toHaveLength(5);
+      expect(result.totalCoverage).toBe(78.8);
+      expect(result.activeProviders).toBe(3);
+      expect(result.staleProviders).toBe(2);
+      expect(result.failedProviders).toBe(2);
+      expect(result.integrationComplete).toBe(60);
+
+      // Check specific provider details
+      const jumio = result.providers.find(p => p.name === "Jumio Verification");
+      expect(jumio?.status).toBe("connected");
+      expect(jumio?.coverage).toBe(92);
+      expect(jumio?.jurisdiction).toEqual(["US", "EU", "UK", "CA"]);
+
+      const trulioo = result.providers.find(p => p.name === "Trulioo GlobalGateway");
+      expect(trulioo?.status).toBe("error");
+      expect(trulioo?.isStale).toBe(true);
+      expect(trulioo?.errorMessage).toBe("API rate limit exceeded");
+    });
+
+    it("should return mock data on API error", async () => {
+      mockApiClient.api.v1ComplianceHealthList.mockRejectedValue(new Error("API Error"));
+
+      const result = await service.getKycProviderStatus();
+
+      expect(result.providers).toHaveLength(5);
+      expect(result.totalCoverage).toBe(69.4);
+      expect(result.activeProviders).toBe(2);
+      expect(result.staleProviders).toBe(2);
+      expect(result.failedProviders).toBe(2);
+      expect(result.integrationComplete).toBe(60);
+
+      // Verify all providers have expected structure
+      result.providers.forEach(provider => {
+        expect(provider).toHaveProperty("id");
+        expect(provider).toHaveProperty("name");
+        expect(provider).toHaveProperty("status");
+        expect(provider).toHaveProperty("lastSyncTime");
+        expect(provider).toHaveProperty("jurisdiction");
+        expect(provider).toHaveProperty("coverage");
+        expect(provider).toHaveProperty("checksPerformed");
+        expect(provider).toHaveProperty("failedChecks");
+        expect(provider).toHaveProperty("isStale");
+      });
     });
   });
 });

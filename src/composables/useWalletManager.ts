@@ -621,6 +621,7 @@ export function useWalletManager() {
     switchNetwork,
     setActiveAccount,
     updateWalletState,
+    attemptReconnect,
     retryConnection,
 
     // Wallet manager instance for advanced usage
