@@ -376,7 +376,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, watch, watchEffect } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import MainLayout from '../layout/MainLayout.vue';
 import { complianceService } from '../services/ComplianceService';
@@ -407,13 +407,37 @@ const error = ref<string | null>(null);
 
 // Filters from URL params with type safety
 const filters = ref<ComplianceMonitoringFilters>({
-  network: (route.query.network && isNetwork(route.query.network as string))
-    ? route.query.network as Network
-    : (route.query.network === 'all' ? 'all' : 'all'),
-  assetId: route.query.assetId as string,
-  startDate: route.query.startDate as string,
-  endDate: route.query.endDate as string,
+  network: (() => {
+    const networkValue = Array.isArray(route.query.network) ? route.query.network[0] : route.query.network;
+    return (networkValue && isNetwork(networkValue))
+      ? networkValue as Network
+      : (networkValue === 'all' ? 'all' : 'all');
+  })(),
+  assetId: (Array.isArray(route.query.assetId) ? route.query.assetId[0] : route.query.assetId) || '',
+  startDate: (Array.isArray(route.query.startDate) ? route.query.startDate[0] : route.query.startDate) || '',
+  endDate: (Array.isArray(route.query.endDate) ? route.query.endDate[0] : route.query.endDate) || '',
 });
+
+// Watch for route query changes
+watch(
+  () => route.query,
+  (newQuery) => {
+    const networkValue = Array.isArray(newQuery.network) ? newQuery.network[0] : newQuery.network;
+    const assetIdValue = Array.isArray(newQuery.assetId) ? newQuery.assetId[0] : newQuery.assetId;
+    const startDateValue = Array.isArray(newQuery.startDate) ? newQuery.startDate[0] : newQuery.startDate;
+    const endDateValue = Array.isArray(newQuery.endDate) ? newQuery.endDate[0] : newQuery.endDate;
+    
+    filters.value = {
+      network: (networkValue && isNetwork(networkValue))
+        ? networkValue as Network
+        : (networkValue === 'all' ? 'all' : 'all'),
+      assetId: assetIdValue || '',
+      startDate: startDateValue || '',
+      endDate: endDateValue || '',
+    };
+  },
+  { immediate: false }
+);
 
 // Computed
 const hasActiveFilters = computed(() => {
@@ -587,19 +611,12 @@ onMounted(() => {
   loadData();
 });
 
-// Watch for route query changes
+// Watch for route query changes to load data
 watch(
   () => route.query,
-  (newQuery) => {
-    filters.value = {
-      network: (newQuery.network && isNetwork(newQuery.network as string))
-        ? newQuery.network as Network
-        : (newQuery.network === 'all' ? 'all' : 'all'),
-      assetId: newQuery.assetId as string,
-      startDate: newQuery.startDate as string,
-      endDate: newQuery.endDate as string,
-    };
+  () => {
     loadData();
-  }
+  },
+  { immediate: false }
 );
 </script>

@@ -46,6 +46,7 @@
               v-model="searchQuery"
               type="text"
               placeholder="Search addresses..."
+              data-testid="search-input"
               class="w-full px-4 py-2 pl-10 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-biatec-accent"
             />
             <i class="pi pi-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
@@ -53,7 +54,7 @@
         </div>
 
         <!-- Status Filter -->
-        <select v-model="statusFilter" class="px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:border-biatec-accent">
+        <select v-model="statusFilter" data-testid="status-filter" class="px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:border-biatec-accent">
           <option value="">All Status</option>
           <option value="active">Active</option>
           <option value="pending">Pending</option>
@@ -167,7 +168,7 @@
       </template>
 
       <div class="space-y-4">
-        <Input v-model="newAddress" label="Address" placeholder="Enter wallet address" :error="addressError" required />
+        <Input v-model="newAddress" label="Address" placeholder="Enter wallet address" :error="addressError" data-testid="address-input" required />
         <div class="space-y-2">
           <label class="block text-sm font-medium text-gray-300"> Notes (optional) </label>
           <textarea

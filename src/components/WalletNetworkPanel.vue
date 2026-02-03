@@ -19,6 +19,7 @@
       <button
         @click="emit('connect-wallet')"
         class="btn-primary px-6 py-3 rounded-xl font-semibold inline-flex items-center gap-2"
+        data-testid="connect-wallet-btn"
       >
         <i class="pi pi-link"></i>
         <span>Sign In</span>

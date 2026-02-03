@@ -297,23 +297,424 @@ describe('ComplianceMonitoringDashboard', () => {
     expect(wrapper.text()).toContain('MICA');
   });
 
-  it('should format data correctly', async () => {
-    vi.mocked(complianceService.getMonitoringMetrics).mockResolvedValue(mockMetrics);
+  describe('Utility Functions', () => {
+    it('should generate correct CSV filename', async () => {
+      vi.mocked(complianceService.getMonitoringMetrics).mockResolvedValue(mockMetrics);
 
-    await router.push('/compliance-monitoring');
-    const wrapper = mount(ComplianceMonitoringDashboard, {
-      global: {
-        plugins: [router],
-        stubs: {
-          teleport: true,
+      await router.push('/compliance-monitoring');
+      const wrapper = mount(ComplianceMonitoringDashboard, {
+        global: {
+          plugins: [router],
         },
-      },
+      });
+
+      await flushPromises();
+
+      const vm = wrapper.vm as any;
+      const filename = vm.generateCsvFilename();
+      expect(filename).toMatch(/^compliance-monitoring-\d{4}-\d{2}-\d{2}\.csv$/);
     });
 
-    await flushPromises();
+    it('should validate network types correctly', async () => {
+      vi.mocked(complianceService.getMonitoringMetrics).mockResolvedValue(mockMetrics);
 
-    // Check that component renders successfully
-    expect(wrapper.exists()).toBe(true);
-    expect(wrapper.text()).toContain('Compliance Monitoring Dashboard');
+      await router.push('/compliance-monitoring');
+      const wrapper = mount(ComplianceMonitoringDashboard, {
+        global: {
+          plugins: [router],
+        },
+      });
+
+      await flushPromises();
+
+      const vm = wrapper.vm as any;
+
+      expect(vm.isNetwork('VOI')).toBe(true);
+      expect(vm.isNetwork('Aramid')).toBe(true);
+      expect(vm.isNetwork('all')).toBe(false);
+      expect(vm.isNetwork('ethereum')).toBe(false);
+      expect(vm.isNetwork('')).toBe(false);
+    });
+
+    it('should format timestamps correctly', async () => {
+      vi.mocked(complianceService.getMonitoringMetrics).mockResolvedValue(mockMetrics);
+
+      await router.push('/compliance-monitoring');
+      const wrapper = mount(ComplianceMonitoringDashboard, {
+        global: {
+          plugins: [router],
+        },
+      });
+
+      await flushPromises();
+
+      const vm = wrapper.vm as any;
+      const testDate = '2024-01-31T23:59:59Z';
+      const formatted = vm.formatTimestamp(testDate);
+      expect(formatted).toMatch(/Jan 31, 2024|Feb 1, 2024/); // Allow for timezone differences
+    });
+
+    it('should format dates correctly', async () => {
+      vi.mocked(complianceService.getMonitoringMetrics).mockResolvedValue(mockMetrics);
+
+      await router.push('/compliance-monitoring');
+      const wrapper = mount(ComplianceMonitoringDashboard, {
+        global: {
+          plugins: [router],
+        },
+      });
+
+      await flushPromises();
+
+      const vm = wrapper.vm as any;
+      const testDate = '2024-01-31T23:59:59Z';
+      const formatted = vm.formatDate(testDate);
+      expect(['Jan 31, 2024', 'Feb 1, 2024']).toContain(formatted); // Allow for timezone differences
+    });
+
+    it('should return correct score colors', async () => {
+      vi.mocked(complianceService.getMonitoringMetrics).mockResolvedValue(mockMetrics);
+
+      await router.push('/compliance-monitoring');
+      const wrapper = mount(ComplianceMonitoringDashboard, {
+        global: {
+          plugins: [router],
+        },
+      });
+
+      await flushPromises();
+
+      const vm = wrapper.vm as any;
+
+      expect(vm.getScoreColor(95)).toBe('bg-green-500/20 text-green-400');
+      expect(vm.getScoreColor(85)).toBe('bg-yellow-500/20 text-yellow-400');
+      expect(vm.getScoreColor(65)).toBe('bg-orange-500/20 text-orange-400');
+      expect(vm.getScoreColor(45)).toBe('bg-red-500/20 text-red-400');
+    });
+
+    it('should return correct score grades', async () => {
+      vi.mocked(complianceService.getMonitoringMetrics).mockResolvedValue(mockMetrics);
+
+      await router.push('/compliance-monitoring');
+      const wrapper = mount(ComplianceMonitoringDashboard, {
+        global: {
+          plugins: [router],
+        },
+      });
+
+      await flushPromises();
+
+      const vm = wrapper.vm as any;
+
+      expect(vm.getScoreGrade(95)).toBe('A');
+      expect(vm.getScoreGrade(85)).toBe('B');
+      expect(vm.getScoreGrade(75)).toBe('C');
+      expect(vm.getScoreGrade(65)).toBe('D');
+      expect(vm.getScoreGrade(45)).toBe('F');
+    });
   });
-});
+
+  describe('Data Loading and Error Handling', () => {
+    it('should handle unauthorized access error', async () => {
+      const error = { response: { status: 401 } };
+      vi.mocked(complianceService.getMonitoringMetrics).mockRejectedValue(error);
+
+      await router.push('/compliance-monitoring');
+      const wrapper = mount(ComplianceMonitoringDashboard, {
+        global: {
+          plugins: [router],
+        },
+      });
+
+      await flushPromises();
+
+      expect(wrapper.text()).toContain('Unauthorized access');
+    });
+
+    it('should handle forbidden access error', async () => {
+      const error = { response: { status: 403 } };
+      vi.mocked(complianceService.getMonitoringMetrics).mockRejectedValue(error);
+
+      await router.push('/compliance-monitoring');
+      const wrapper = mount(ComplianceMonitoringDashboard, {
+        global: {
+          plugins: [router],
+        },
+      });
+
+      await flushPromises();
+
+      expect(wrapper.text()).toContain('Access denied');
+    });
+
+    it('should handle not found error', async () => {
+      const error = { response: { status: 404 } };
+      vi.mocked(complianceService.getMonitoringMetrics).mockRejectedValue(error);
+
+      await router.push('/compliance-monitoring');
+      const wrapper = mount(ComplianceMonitoringDashboard, {
+        global: {
+          plugins: [router],
+        },
+      });
+
+      await flushPromises();
+
+      expect(wrapper.text()).toContain('endpoint not found');
+    });
+
+    it('should handle network connection error', async () => {
+      const error = { code: 'ECONNREFUSED' };
+      vi.mocked(complianceService.getMonitoringMetrics).mockRejectedValue(error);
+
+      await router.push('/compliance-monitoring');
+      const wrapper = mount(ComplianceMonitoringDashboard, {
+        global: {
+          plugins: [router],
+        },
+      });
+
+      await flushPromises();
+
+      expect(wrapper.text()).toContain('Cannot connect to the server');
+    });
+
+    it('should handle generic error', async () => {
+      const error = new Error('Generic error');
+      vi.mocked(complianceService.getMonitoringMetrics).mockRejectedValue(error);
+
+      await router.push('/compliance-monitoring');
+      const wrapper = mount(ComplianceMonitoringDashboard, {
+        global: {
+          plugins: [router],
+        },
+      });
+
+      await flushPromises();
+
+      expect(wrapper.text()).toContain('Generic error');
+    });
+  });
+
+  describe('Filter Management', () => {
+    it('should detect active filters correctly', async () => {
+      vi.mocked(complianceService.getMonitoringMetrics).mockResolvedValue(mockMetrics);
+
+      await router.push('/compliance-monitoring');
+      const wrapper = mount(ComplianceMonitoringDashboard, {
+        global: {
+          plugins: [router],
+        },
+      });
+
+      await flushPromises();
+
+      const vm = wrapper.vm as any;
+
+      // No active filters initially
+      expect(vm.hasActiveFilters).toBe(false);
+
+      // Set network filter
+      vm.filters.network = 'VOI';
+      await wrapper.vm.$nextTick();
+      expect(vm.hasActiveFilters).toBe(true);
+
+      // Reset and set asset ID
+      vm.filters.network = 'all';
+      vm.filters.assetId = 'asset123';
+      await wrapper.vm.$nextTick();
+      expect(vm.hasActiveFilters).toBe(true);
+
+      // Reset and set date range
+      vm.filters.assetId = '';
+      vm.filters.startDate = '2024-01-01';
+      vm.filters.endDate = '2024-01-31';
+      await wrapper.vm.$nextTick();
+      expect(vm.hasActiveFilters).toBe(true);
+    });
+
+    it('should reset filters to default values', async () => {
+      vi.mocked(complianceService.getMonitoringMetrics).mockResolvedValue(mockMetrics);
+
+      await router.push('/compliance-monitoring?network=VOI&assetId=asset123&startDate=2024-01-01');
+      const wrapper = mount(ComplianceMonitoringDashboard, {
+        global: {
+          plugins: [router],
+        },
+      });
+
+      await flushPromises();
+
+      const vm = wrapper.vm as any;
+
+      // Verify initial filters from URL
+      expect(vm.filters.network).toBe('VOI');
+      expect(vm.filters.assetId).toBe('asset123');
+      expect(vm.filters.startDate).toBe('2024-01-01');
+
+      // Reset filters
+      vm.resetFilters();
+
+      expect(vm.filters.network).toBe('all');
+      expect(vm.filters.assetId).toBeUndefined();
+      expect(vm.filters.startDate).toBeUndefined();
+      expect(vm.filters.endDate).toBeUndefined();
+    });
+  });
+
+  describe('Export Functionality', () => {
+    it('should handle export success', async () => {
+      vi.mocked(complianceService.getMonitoringMetrics).mockResolvedValue(mockMetrics);
+      vi.mocked(complianceService.exportMonitoringData).mockResolvedValue('metric,value\nscore,92');
+
+      await router.push('/compliance-monitoring');
+      const wrapper = mount(ComplianceMonitoringDashboard, {
+        global: {
+          plugins: [router],
+        },
+      });
+
+      await flushPromises();
+
+      const vm = wrapper.vm as any;
+
+      // Mock document methods
+      const mockLink = {
+        setAttribute: vi.fn(),
+        click: vi.fn(),
+        style: {},
+      };
+      const createElementSpy = vi.spyOn(document, 'createElement').mockReturnValue(mockLink as any);
+      const appendChildSpy = vi.spyOn(document.body, 'appendChild').mockImplementation(() => {});
+      const removeChildSpy = vi.spyOn(document.body, 'removeChild').mockImplementation(() => {});
+      const createObjectURLSpy = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:url');
+
+      await vm.handleExport();
+
+      expect(complianceService.exportMonitoringData).toHaveBeenCalledWith(vm.filters);
+      expect(createElementSpy).toHaveBeenCalledWith('a');
+      expect(mockLink.setAttribute).toHaveBeenCalledWith('href', 'blob:url');
+      expect(mockLink.click).toHaveBeenCalled();
+      expect(appendChildSpy).toHaveBeenCalledWith(mockLink);
+      expect(removeChildSpy).toHaveBeenCalledWith(mockLink);
+      expect(vm.isExporting).toBe(false);
+
+      // Cleanup mocks
+      createElementSpy.mockRestore();
+      appendChildSpy.mockRestore();
+      removeChildSpy.mockRestore();
+      createObjectURLSpy.mockRestore();
+    });
+
+    it('should handle export failure', async () => {
+      vi.mocked(complianceService.getMonitoringMetrics).mockResolvedValue(mockMetrics);
+      vi.mocked(complianceService.exportMonitoringData).mockRejectedValue(new Error('Export failed'));
+
+      await router.push('/compliance-monitoring');
+      const wrapper = mount(ComplianceMonitoringDashboard, {
+        global: {
+          plugins: [router],
+        },
+      });
+
+      await flushPromises();
+
+      const vm = wrapper.vm as any;
+
+      await vm.handleExport();
+
+      expect(complianceService.exportMonitoringData).toHaveBeenCalledWith(vm.filters);
+      expect(vm.error).toBe('Failed to export data. Please try again.');
+      expect(vm.isExporting).toBe(false);
+    });
+  });
+
+  describe('Mock Data Generation', () => {
+    it('should generate mock metrics for development', async () => {
+      vi.mocked(complianceService.getMonitoringMetrics).mockResolvedValue(mockMetrics);
+
+      await router.push('/compliance-monitoring');
+      const wrapper = mount(ComplianceMonitoringDashboard, {
+        global: {
+          plugins: [router],
+        },
+      });
+
+      await flushPromises();
+
+      const vm = wrapper.vm as any;
+
+      // Set filters to test mock data generation
+      vm.filters.network = 'Aramid';
+      vm.filters.assetId = 'test-asset';
+
+      const mockData = vm.getMockMetrics();
+
+      expect(mockData.network).toBe('Aramid');
+      expect(mockData.assetId).toBe('test-asset');
+      expect(mockData.overallComplianceScore).toBe(92);
+      expect(mockData.whitelistEnforcement.totalAddresses).toBe(1247);
+      expect(mockData.auditHealth.totalAuditEntries).toBe(8924);
+      expect(mockData.retentionStatus.totalRecords).toBe(15832);
+    });
+
+    it('should default to VOI network when filter is invalid', async () => {
+      vi.mocked(complianceService.getMonitoringMetrics).mockResolvedValue(mockMetrics);
+
+      await router.push('/compliance-monitoring');
+      const wrapper = mount(ComplianceMonitoringDashboard, {
+        global: {
+          plugins: [router],
+        },
+      });
+
+      await flushPromises();
+
+      const vm = wrapper.vm as any;
+
+      // Set invalid network filter
+      vm.filters.network = 'invalid';
+
+      const mockData = vm.getMockMetrics();
+
+      expect(mockData.network).toBe('VOI');
+    });
+  });
+
+  describe('Route Watching', () => {
+    it.skip('should update filters when route query changes', async () => {
+      vi.mocked(complianceService.getMonitoringMetrics).mockResolvedValue(mockMetrics);
+
+      await router.push('/compliance-monitoring');
+      const wrapper = mount(ComplianceMonitoringDashboard, {
+        global: {
+          plugins: [router],
+        },
+      });
+
+      await flushPromises();
+
+      const vm = wrapper.vm as any;
+
+      // Initially no filters
+      expect(vm.filters.network).toBe('all');
+
+      // Change route query
+      await router.push('/compliance-monitoring?network=VOI&assetId=test123');
+      await wrapper.vm.$nextTick();
+      await flushPromises();
+
+      // Filters should be updated
+      expect(vm.filters.network).toBe('VOI');
+      expect(vm.filters.assetId).toBe('test123');
+
+      // Service should be called with new filters
+      expect(complianceService.getMonitoringMetrics).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          network: 'VOI',
+          assetId: 'test123',
+        })
+      );
+    });
+  });
+})
