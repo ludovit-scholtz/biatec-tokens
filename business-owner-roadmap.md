@@ -445,16 +445,17 @@
 
 **Immediate Critical Issues:**
 
-1. **Wallet Integration Failures**: Wallet manager injection issues causing test failures and potential runtime errors
+1. **Wallet Integration Failures**: Remove wallet features, make sure to use the email and password authentication
 2. **UI Interaction Problems**: Glass effects blocking user interactions, preventing form completion
 3. **Backend Integration Issues**: API connectivity problems preventing token deployment
 4. **Performance Problems**: E2E test timeouts indicating slow page loads and network issues
 5. **Subscription System**: Payment processing not operational, no revenue generation possible
+6. **Network selection**: Improve network seleciton
 
 **Immediate Priorities (Next 30 Days):**
 
-1. Fix wallet manager injection issues causing test failures
-2. Resolve UI interaction blockers (glass effects, button accessibility)
+1. Remove wallet features, make sure to use the email and password authentication
+2. Improve network selection. Do network selection only in top menu where current network is displayed. Do not use network selection in the token creation wizard nor anywhere else on the website.
 3. Implement proper Arc76 email/password authentication with Arc14 backend communication
 4. Replace crypto terminology ("Connect wallet") with business-friendly terms ("Login", "Sign in")
 5. Make product appear as traditional SaaS application, not crypto-focused

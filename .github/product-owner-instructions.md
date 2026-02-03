@@ -47,6 +47,10 @@ When creating a new issue, use the `gh issue create` command with a highly descr
 
 [Detailed explanation of the business value, including user impact, revenue potential, competitive advantage, and alignment with product vision]
 
+## Product overview
+
+[Link to business-owner-roadmap.md file]
+
 ## Scope
 
 [Comprehensive scope including what will be implemented, what won't be, technical approach, and dependencies]
