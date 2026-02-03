@@ -175,7 +175,7 @@ export const useSecurityStore = defineStore('security', () => {
    * Fetch transaction history from backend
    */
   async function fetchTransactionHistory(
-    filters?: {
+    _filters?: {
       network?: string
       startDate?: string
       endDate?: string
