@@ -477,4 +477,623 @@ AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA,KYC Passed,John Doe,t
       expect(component.entries.length).toBeGreaterThan(0);
     }
   });
+
+  describe('Function Tests', () => {
+    it('addAddress validates required fields', async () => {
+      const wrapper = mount(MicaWhitelistManagement, {
+        props: {
+          tokenId: 'test-token-123',
+          network: 'VOI',
+        },
+        global: {
+          stubs: {
+            Modal: true,
+            Input: true,
+          },
+        },
+      });
+
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      const component = wrapper.vm as any;
+
+      // Test missing address
+      component.newAddress = '';
+      component.newAddressReason = 'Test reason';
+      await component.addAddress();
+      expect(component.addressError).toBe('Address is required');
+
+      // Test missing reason
+      component.newAddress = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
+      component.newAddressReason = '';
+      await component.addAddress();
+      expect(component.addressError).toBe('Reason is required for MICA compliance');
+
+      // Test invalid address format
+      component.newAddress = 'invalid-address';
+      component.newAddressReason = 'Test reason';
+      await component.addAddress();
+      expect(component.addressError).toBe('Invalid address format');
+    });
+
+    it('addAddress successfully adds valid address', async () => {
+      vi.mocked(whitelistService.addAddress).mockResolvedValue(undefined);
+
+      const wrapper = mount(MicaWhitelistManagement, {
+        props: {
+          tokenId: 'test-token-123',
+          network: 'VOI',
+        },
+        global: {
+          stubs: {
+            Modal: true,
+            Input: true,
+          },
+        },
+      });
+
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      const component = wrapper.vm as any;
+      component.newAddress = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
+      component.newAddressReason = 'KYC Verified';
+      component.newAddressRequester = 'John Doe';
+      component.newAddressKycVerified = true;
+      component.newAddressComplianceChecks = {
+        sanctionsScreening: true,
+        amlVerification: true,
+        accreditedInvestor: false,
+      };
+
+      await component.addAddress();
+
+      expect(whitelistService.addAddress).toHaveBeenCalledWith('test-token-123', 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', {
+        reason: 'KYC Verified',
+        requester: 'John Doe',
+        jurisdictionCode: '',
+        kycVerified: true,
+        complianceChecks: {
+          sanctionsScreening: true,
+          amlVerification: true,
+          accreditedInvestor: false,
+        },
+        notes: '',
+      });
+      expect(component.showAddModal).toBe(false);
+    });
+
+    it('closeAddModal resets form data', async () => {
+      const wrapper = mount(MicaWhitelistManagement, {
+        props: {
+          tokenId: 'test-token-123',
+          network: 'VOI',
+        },
+        global: {
+          stubs: {
+            Modal: true,
+            Input: true,
+          },
+        },
+      });
+
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      const component = wrapper.vm as any;
+      component.showAddModal = true;
+      component.newAddress = 'test-address';
+      component.newAddressReason = 'test-reason';
+      component.newAddressKycVerified = true;
+
+      component.closeAddModal();
+
+      expect(component.showAddModal).toBe(false);
+      expect(component.newAddress).toBe('');
+      expect(component.newAddressReason).toBe('');
+      expect(component.newAddressKycVerified).toBe(false);
+      expect(component.addressError).toBe('');
+    });
+
+    it('confirmRemove sets up removal modal', async () => {
+      const wrapper = mount(MicaWhitelistManagement, {
+        props: {
+          tokenId: 'test-token-123',
+          network: 'VOI',
+        },
+        global: {
+          stubs: {
+            Modal: true,
+            Input: true,
+          },
+        },
+      });
+
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      const component = wrapper.vm as any;
+      component.confirmRemove('test-address-123');
+
+      expect(component.showRemoveModal).toBe(true);
+      expect(component.addressToRemove).toBe('test-address-123');
+      expect(component.removeReason).toBe('');
+    });
+
+    it('removeAddress validates reason requirement', async () => {
+      const wrapper = mount(MicaWhitelistManagement, {
+        props: {
+          tokenId: 'test-token-123',
+          network: 'VOI',
+        },
+        global: {
+          stubs: {
+            Modal: true,
+            Input: true,
+          },
+        },
+      });
+
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      const component = wrapper.vm as any;
+      component.addressToRemove = 'test-address';
+      component.removeReason = '';
+
+      await component.removeAddress();
+
+      expect(whitelistService.removeAddress).not.toHaveBeenCalled();
+    });
+
+    it('removeAddress successfully removes address', async () => {
+      vi.mocked(whitelistService.removeAddress).mockResolvedValue(undefined);
+
+      const wrapper = mount(MicaWhitelistManagement, {
+        props: {
+          tokenId: 'test-token-123',
+          network: 'VOI',
+        },
+        global: {
+          stubs: {
+            Modal: true,
+            Input: true,
+          },
+        },
+      });
+
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      const component = wrapper.vm as any;
+      component.addressToRemove = 'test-address';
+      component.removeReason = 'User request';
+
+      await component.removeAddress();
+
+      expect(whitelistService.removeAddress).toHaveBeenCalledWith('test-token-123', 'test-address');
+      expect(component.showRemoveModal).toBe(false);
+      expect(component.addressToRemove).toBe('');
+      expect(component.removeReason).toBe('');
+    });
+
+    it('validateCsvData validates CSV content', async () => {
+      const mockValidationResults = [
+        { valid: true, row: 2, address: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA' },
+        { valid: false, row: 3, address: 'invalid', error: 'Invalid address format' },
+      ];
+
+      vi.mocked(whitelistService.validateCsv).mockResolvedValue(mockValidationResults);
+
+      const wrapper = mount(MicaWhitelistManagement, {
+        props: {
+          tokenId: 'test-token-123',
+          network: 'VOI',
+        },
+        global: {
+          stubs: {
+            Modal: true,
+            Input: true,
+          },
+        },
+      });
+
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      const component = wrapper.vm as any;
+      component.csvData = 'address,reason\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA,test';
+
+      await component.validateCsvData();
+
+      expect(whitelistService.validateCsv).toHaveBeenCalledWith('address,reason\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA,test');
+      expect(component.validationResults).toEqual(mockValidationResults);
+    });
+
+    it('importCsv requires enterprise subscription', async () => {
+      vi.mocked(useSubscriptionStore).mockReturnValue({
+        isActive: false,
+      } as any);
+
+      const wrapper = mount(MicaWhitelistManagement, {
+        props: {
+          tokenId: 'test-token-123',
+          network: 'VOI',
+        },
+        global: {
+          stubs: {
+            Modal: true,
+            Input: true,
+          },
+        },
+      });
+
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      const component = wrapper.vm as any;
+      component.csvData = 'address,reason\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA,test';
+
+      await component.importCsv();
+
+      expect(whitelistService.importFromCsv).not.toHaveBeenCalled();
+    });
+
+    it('closeImportModal resets import data', async () => {
+      const wrapper = mount(MicaWhitelistManagement, {
+        props: {
+          tokenId: 'test-token-123',
+          network: 'VOI',
+        },
+        global: {
+          stubs: {
+            Modal: true,
+            Input: true,
+          },
+        },
+      });
+
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      const component = wrapper.vm as any;
+      component.showImportModal = true;
+      component.csvData = 'test,csv,data';
+      component.validationResults = [{ valid: true, row: 1, address: 'test' }];
+
+      component.closeImportModal();
+
+      expect(component.showImportModal).toBe(false);
+      expect(component.csvData).toBe('');
+      expect(component.validationResults).toEqual([]);
+    });
+
+    it('exportReport requires enterprise subscription', async () => {
+      vi.mocked(useSubscriptionStore).mockReturnValue({
+        isActive: false,
+      } as any);
+
+      const wrapper = mount(MicaWhitelistManagement, {
+        props: {
+          tokenId: 'test-token-123',
+          network: 'VOI',
+        },
+        global: {
+          stubs: {
+            Modal: true,
+            Input: true,
+          },
+        },
+      });
+
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      const component = wrapper.vm as any;
+
+      await component.exportReport('json');
+
+      expect(whitelistService.exportComplianceReport).not.toHaveBeenCalled();
+    });
+
+    it('viewDetails sets selected entry and shows modal', async () => {
+      const wrapper = mount(MicaWhitelistManagement, {
+        props: {
+          tokenId: 'test-token-123',
+          network: 'VOI',
+        },
+        global: {
+          stubs: {
+            Modal: true,
+            Input: true,
+          },
+        },
+      });
+
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      const component = wrapper.vm as any;
+      const testEntry = { ...mockEntries[0] };
+
+      component.viewDetails(testEntry);
+
+      expect(component.selectedEntry).toEqual(testEntry);
+      expect(component.showDetailsModal).toBe(true);
+    });
+
+    it('copyAddress copies to clipboard successfully', async () => {
+      const mockClipboard = {
+        writeText: vi.fn().mockResolvedValue(undefined),
+      };
+      Object.defineProperty(navigator, 'clipboard', {
+        value: mockClipboard,
+        writable: true,
+      });
+
+      const wrapper = mount(MicaWhitelistManagement, {
+        props: {
+          tokenId: 'test-token-123',
+          network: 'VOI',
+        },
+        global: {
+          stubs: {
+            Modal: true,
+            Input: true,
+          },
+        },
+      });
+
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      const component = wrapper.vm as any;
+
+      await component.copyAddress('test-address-123');
+
+      expect(navigator.clipboard.writeText).toHaveBeenCalledWith('test-address-123');
+    });
+
+    it('copyAddress handles clipboard error', async () => {
+      const mockClipboard = {
+        writeText: vi.fn().mockRejectedValue(new Error('Clipboard error')),
+      };
+      Object.defineProperty(navigator, 'clipboard', {
+        value: mockClipboard,
+        writable: true,
+      });
+
+      const wrapper = mount(MicaWhitelistManagement, {
+        props: {
+          tokenId: 'test-token-123',
+          network: 'VOI',
+        },
+        global: {
+          stubs: {
+            Modal: true,
+            Input: true,
+          },
+        },
+      });
+
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      const component = wrapper.vm as any;
+
+      await component.copyAddress('test-address-123');
+
+      expect(navigator.clipboard.writeText).toHaveBeenCalledWith('test-address-123');
+    });
+
+    it('formatAddress shortens long addresses', async () => {
+      const wrapper = mount(MicaWhitelistManagement, {
+        props: {
+          tokenId: 'test-token-123',
+          network: 'VOI',
+        },
+        global: {
+          stubs: {
+            Modal: true,
+            Input: true,
+          },
+        },
+      });
+
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      const component = wrapper.vm as any;
+
+      const longAddress = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABBBBBBBBBB';
+      const result = component.formatAddress(longAddress);
+
+      expect(result).toBe('AAAAAAAAAA...BBBBBBBB');
+    });
+
+    it('formatAddress returns short addresses unchanged', async () => {
+      const wrapper = mount(MicaWhitelistManagement, {
+        props: {
+          tokenId: 'test-token-123',
+          network: 'VOI',
+        },
+        global: {
+          stubs: {
+            Modal: true,
+            Input: true,
+          },
+        },
+      });
+
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      const component = wrapper.vm as any;
+
+      const shortAddress = 'SHORT123';
+      const result = component.formatAddress(shortAddress);
+
+      expect(result).toBe('SHORT123');
+    });
+
+    it('formatDate formats dates correctly', async () => {
+      const wrapper = mount(MicaWhitelistManagement, {
+        props: {
+          tokenId: 'test-token-123',
+          network: 'VOI',
+        },
+        global: {
+          stubs: {
+            Modal: true,
+            Input: true,
+          },
+        },
+      });
+
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      const component = wrapper.vm as any;
+
+      const dateStr = '2024-01-15T14:30:00Z';
+      const result = component.formatDate(dateStr);
+
+      expect(result).toContain('Jan 15, 2024');
+      expect(result).toMatch(/2:30|03:30/);
+    });
+
+    it('statusBadgeClass returns correct classes for different statuses', async () => {
+      const wrapper = mount(MicaWhitelistManagement, {
+        props: {
+          tokenId: 'test-token-123',
+          network: 'VOI',
+        },
+        global: {
+          stubs: {
+            Modal: true,
+            Input: true,
+          },
+        },
+      });
+
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      const component = wrapper.vm as any;
+
+      expect(component.statusBadgeClass('active')).toBe('bg-green-500/20 text-green-400 border border-green-500/30');
+      expect(component.statusBadgeClass('pending')).toBe('bg-yellow-500/20 text-yellow-400 border border-yellow-500/30');
+      expect(component.statusBadgeClass('removed')).toBe('bg-red-500/20 text-red-400 border border-red-500/30');
+      expect(component.statusBadgeClass('unknown')).toBe('bg-gray-500/20 text-gray-400 border border-gray-500/30');
+    });
+  });
+
+  describe('Computed Properties', () => {
+    it('filteredEntries filters by search query', async () => {
+      const wrapper = mount(MicaWhitelistManagement, {
+        props: {
+          tokenId: 'test-token-123',
+          network: 'VOI',
+        },
+        global: {
+          stubs: {
+            Modal: true,
+            Input: true,
+          },
+        },
+      });
+
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      const component = wrapper.vm as any;
+      component.searchQuery = 'John';
+
+      const filtered = component.filteredEntries;
+      expect(filtered.length).toBeGreaterThan(0);
+      expect(filtered[0].requester).toContain('John');
+    });
+
+    it('filteredEntries filters by status', async () => {
+      const wrapper = mount(MicaWhitelistManagement, {
+        props: {
+          tokenId: 'test-token-123',
+          network: 'VOI',
+        },
+        global: {
+          stubs: {
+            Modal: true,
+            Input: true,
+          },
+        },
+      });
+
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      const component = wrapper.vm as any;
+      component.statusFilter = 'active';
+
+      const filtered = component.filteredEntries;
+      expect(filtered.every((entry: any) => entry.status === 'active')).toBe(true);
+    });
+
+    it('filteredEntries filters by KYC status', async () => {
+      const wrapper = mount(MicaWhitelistManagement, {
+        props: {
+          tokenId: 'test-token-123',
+          network: 'VOI',
+        },
+        global: {
+          stubs: {
+            Modal: true,
+            Input: true,
+          },
+        },
+      });
+
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      const component = wrapper.vm as any;
+      component.kycFilter = 'verified';
+
+      const filtered = component.filteredEntries;
+      expect(filtered.every((entry: any) => entry.kycVerified === true)).toBe(true);
+    });
+
+    it('statistics calculates correct metrics', async () => {
+      const wrapper = mount(MicaWhitelistManagement, {
+        props: {
+          tokenId: 'test-token-123',
+          network: 'VOI',
+        },
+        global: {
+          stubs: {
+            Modal: true,
+            Input: true,
+          },
+        },
+      });
+
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      const component = wrapper.vm as any;
+      const stats = component.statistics;
+
+      expect(stats.total).toBe(2);
+      expect(stats.active).toBe(1);
+      expect(stats.kycVerified).toBe(1);
+      expect(stats.complianceScore).toBeGreaterThanOrEqual(0);
+      expect(stats.complianceScore).toBeLessThanOrEqual(100);
+    });
+
+    it('validCount and invalidCount work correctly', async () => {
+      const wrapper = mount(MicaWhitelistManagement, {
+        props: {
+          tokenId: 'test-token-123',
+          network: 'VOI',
+        },
+        global: {
+          stubs: {
+            Modal: true,
+            Input: true,
+          },
+        },
+      });
+
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      const component = wrapper.vm as any;
+      component.validationResults = [
+        { valid: true, row: 1, address: 'addr1' },
+        { valid: true, row: 2, address: 'addr2' },
+        { valid: false, row: 3, address: 'addr3' },
+      ];
+
+      expect(component.validCount).toBe(2);
+      expect(component.invalidCount).toBe(1);
+    });
+  });
 });

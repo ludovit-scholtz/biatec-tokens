@@ -12,6 +12,7 @@ import AttestationsDashboard from "../views/AttestationsDashboard.vue";
 import TokenStandardsView from "../views/TokenStandardsView.vue";
 import EnterpriseGuideView from "../views/EnterpriseGuideView.vue";
 import Marketplace from "../views/Marketplace.vue";
+import AccountSecurity from "../views/AccountSecurity.vue";
 import { AUTH_STORAGE_KEYS, WALLET_CONNECTION_STATE } from "../constants/auth";
 
 // Subscription views
@@ -94,6 +95,12 @@ const router = createRouter({
       path: "/attestations",
       name: "AttestationsDashboard",
       component: AttestationsDashboard,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: "/account/security",
+      name: "AccountSecurity",
+      component: AccountSecurity,
       meta: { requiresAuth: true },
     },
     // Subscription routes

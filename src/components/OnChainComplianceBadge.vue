@@ -2,6 +2,7 @@
   <div>
     <!-- Badge Display -->
     <div 
+      data-testid="compliance-badge"
       :class="[
         'inline-flex items-center gap-2 px-3 py-1.5 rounded-lg cursor-pointer transition-all',
         badgeClasses,
@@ -10,15 +11,15 @@
       @click="showDetails = !showDetails"
       :title="badgeTitle"
     >
-      <i :class="[badgeIcon, 'text-sm']"></i>
-      <span class="text-xs font-semibold">{{ badgeLabel }}</span>
-      <i v-if="hasArtifacts" class="pi pi-chevron-down text-xs transition-transform" :class="{ 'rotate-180': showDetails }"></i>
+      <i data-testid="badge-icon" :class="[badgeIcon, 'text-sm']"></i>
+      <span data-testid="badge-label" class="text-xs font-semibold">{{ badgeLabel }}</span>
+      <i data-testid="chevron-icon" v-if="hasArtifacts" class="pi pi-chevron-down text-xs transition-transform" :class="{ 'rotate-180': showDetails }"></i>
     </div>
 
     <!-- Drill-down Details Modal -->
     <teleport to="body">
       <transition name="fade">
-        <div v-if="showDetails" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" @click.self="showDetails = false">
+        <div data-testid="modal-backdrop" v-if="showDetails" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" @click.self="showDetails = false">
           <div class="glass-effect rounded-2xl p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto" @click.stop>
             <!-- Header -->
             <div class="flex items-start justify-between mb-6">
@@ -27,11 +28,11 @@
                   <i :class="[badgeIcon, 'text-biatec-accent']"></i>
                   On-Chain Compliance Status
                 </h2>
-                <p class="text-sm text-gray-400 mt-1">
+                <p data-testid="token-id-display" class="text-sm text-gray-400 mt-1">
                   {{ tokenId }} on {{ network }}
                 </p>
               </div>
-              <button @click="showDetails = false" class="p-2 hover:bg-white/10 rounded-lg transition-colors">
+              <button data-testid="close-modal" @click="showDetails = false" class="p-2 hover:bg-white/10 rounded-lg transition-colors">
                 <i class="pi pi-times text-gray-400"></i>
               </button>
             </div>
@@ -40,10 +41,11 @@
             <div class="mb-6 p-4 bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20 rounded-lg">
               <div class="flex items-center justify-between mb-2">
                 <span class="text-sm text-gray-300">MICA Readiness Score</span>
-                <span :class="['text-2xl font-bold', scoreColor]">{{ complianceScore }}%</span>
+                <span data-testid="compliance-score" :class="['text-2xl font-bold', scoreColor]">{{ complianceScore }}%</span>
               </div>
               <div class="relative h-2 bg-gray-700 rounded-full overflow-hidden">
                 <div 
+                  data-testid="score-bar"
                   :class="['absolute inset-y-0 left-0 rounded-full transition-all duration-500', scoreGradient]"
                   :style="{ width: `${complianceScore}%` }"
                 ></div>

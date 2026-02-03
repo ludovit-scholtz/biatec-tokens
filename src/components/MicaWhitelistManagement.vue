@@ -48,6 +48,7 @@
               v-model="searchQuery"
               type="text"
               placeholder="Search addresses..."
+              data-testid="search-input"
               class="w-full px-4 py-2 pl-10 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-biatec-accent"
             />
             <i class="pi pi-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
@@ -55,7 +56,7 @@
         </div>
 
         <!-- Status Filter -->
-        <select v-model="statusFilter" class="px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:border-biatec-accent">
+        <select v-model="statusFilter" class="px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:border-biatec-accent" data-testid="status-filter">
           <option value="">All Status</option>
           <option value="active">Active</option>
           <option value="pending">Pending</option>
@@ -63,7 +64,7 @@
         </select>
 
         <!-- KYC Filter -->
-        <select v-model="kycFilter" class="px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:border-biatec-accent">
+        <select v-model="kycFilter" class="px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:border-biatec-accent" data-testid="kyc-filter">
           <option value="">All KYC Status</option>
           <option value="verified">KYC Verified</option>
           <option value="not-verified">Not Verified</option>

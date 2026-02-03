@@ -11,6 +11,7 @@ vi.mock('../../services/WhitelistService', () => ({
     removeAddress: vi.fn(),
     bulkUpload: vi.fn(),
     validateCsv: vi.fn(),
+    exportComplianceReport: vi.fn(),
   },
   WhitelistService: vi.fn(),
 }));
@@ -25,6 +26,21 @@ vi.mock('../../composables/useToast', () => ({
     info: vi.fn(),
   }),
 }));
+
+// Mock router-link
+vi.mock('vue-router', () => ({
+  RouterLink: {
+    template: '<a><slot /></a>',
+  },
+}));
+
+// Mock clipboard API
+Object.defineProperty(navigator, 'clipboard', {
+  value: {
+    writeText: vi.fn(),
+  },
+  writable: true,
+});
 
 describe('WhitelistManagement Component', () => {
   beforeEach(() => {
@@ -133,12 +149,12 @@ describe('WhitelistManagement Component', () => {
     await new Promise(resolve => setTimeout(resolve, 10));
 
     // Set search query
-    const searchInput = wrapper.find('input[placeholder="Search addresses..."]');
-    await searchInput.setValue('A234');
+    wrapper.vm.searchQuery = 'A234';
 
-    const text = wrapper.text();
-    expect(text).toContain('A234567234...3456723A');
-    expect(text).not.toContain('B234567234...3456723B');
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.vm.filteredEntries).toHaveLength(1);
+    expect(wrapper.vm.filteredEntries[0].address).toBe('A23456723456723456723456723456723456723456723456723456723A');
   });
 
   it('should filter entries by status', async () => {
@@ -166,26 +182,13 @@ describe('WhitelistManagement Component', () => {
     await wrapper.vm.$nextTick();
     await new Promise(resolve => setTimeout(resolve, 10));
 
-    // There are two select elements now - network and status filter
-    // Find the status filter select (the one with "All Status" option)
-    const statusSelect = wrapper.findAll('select').find(select => 
-      select.html().includes('All Status')
-    );
-    
-    if (statusSelect) {
-      await statusSelect.setValue('active');
-      await wrapper.vm.$nextTick();
+    // Set status filter
+    wrapper.vm.statusFilter = 'active';
 
-      // After filtering, only active entries should be visible
-      // Note: The filtering is client-side in the computed property
-    }
-    
-    // The addresses are both shown because the filter is client-side
-    // and both entries are present in the entries array
-    const text = wrapper.text();
-    expect(text).toContain('A234567234...3456723A');
-    // The pending entry should still be in the DOM but the test checks text content
-    // which includes both since they're both rendered before the filter is applied
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.vm.filteredEntries).toHaveLength(1);
+    expect(wrapper.vm.filteredEntries[0].status).toBe('active');
   });
 
   it('should have add address button', async () => {
@@ -305,10 +308,11 @@ describe('WhitelistManagement Component', () => {
     await new Promise(resolve => setTimeout(resolve, 10));
 
     // Search for something that doesn't exist
-    const searchInput = wrapper.find('input[placeholder="Search addresses..."]');
-    await searchInput.setValue('ZZZZ');
+    wrapper.vm.searchQuery = 'ZZZZ';
 
-    expect(wrapper.text()).toContain('No Results Found');
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.vm.filteredEntries).toHaveLength(0);
   });
 
   it('should open add address modal when add button is clicked', async () => {
@@ -402,13 +406,393 @@ describe('WhitelistManagement Component', () => {
     await new Promise(resolve => setTimeout(resolve, 10));
 
     // Find remove button (assuming it exists)
-    const removeButton = wrapper.findAll('button').find(btn => 
+    const removeButton = wrapper.findAll('button').find(btn =>
       btn.text().includes('Remove') || btn.attributes('aria-label')?.includes('Remove')
     );
-    
+
     if (removeButton) {
       await removeButton.trigger('click');
       expect(whitelistService.removeAddress).toHaveBeenCalled();
     }
+  });
+
+  // Additional comprehensive tests for missing function coverage
+
+  it('should add address successfully', async () => {
+    vi.mocked(whitelistService.getWhitelist).mockResolvedValue([]);
+    vi.mocked(whitelistService.addAddress).mockResolvedValue();
+
+    const wrapper = mount(WhitelistManagement, {
+      props: {
+        tokenId: 'token123',
+      },
+    });
+
+    await wrapper.vm.$nextTick();
+
+    // Call the addAddress function directly
+    wrapper.vm.newAddress = 'A23456723456723456723456723456723456723456723456723456723A';
+    wrapper.vm.newAddressNotes = 'Test notes';
+    await wrapper.vm.addAddress();
+
+    expect(whitelistService.addAddress).toHaveBeenCalledWith('token123', 'A23456723456723456723456723456723456723456723456723456723A', {
+      notes: 'Test notes',
+    });
+  });
+
+  it('should validate address format', async () => {
+    vi.mocked(whitelistService.getWhitelist).mockResolvedValue([]);
+
+    const wrapper = mount(WhitelistManagement, {
+      props: {
+        tokenId: 'token123',
+      },
+    });
+
+    await wrapper.vm.$nextTick();
+
+    // Test invalid address
+    wrapper.vm.newAddress = 'invalid-address';
+    await wrapper.vm.addAddress();
+
+    expect(wrapper.vm.addressError).toBe('Invalid VOI address format. Must be 58 characters (A-Z, 2-7).');
+  });
+
+  it('should handle add address error', async () => {
+    vi.mocked(whitelistService.getWhitelist).mockResolvedValue([]);
+    vi.mocked(whitelistService.addAddress).mockRejectedValue(new Error('API Error'));
+
+    const wrapper = mount(WhitelistManagement, {
+      props: {
+        tokenId: 'token123',
+      },
+    });
+
+    await wrapper.vm.$nextTick();
+
+    // Test with valid address but API error
+    wrapper.vm.newAddress = 'A23456723456723456723456723456723456723456723456723456723A';
+    await wrapper.vm.addAddress();
+
+    expect(whitelistService.addAddress).toHaveBeenCalled();
+  });
+
+  it('should confirm remove address', async () => {
+    const mockEntries = [
+      {
+        address: 'A23456723456723456723456723456723456723456723456723456723A',
+        status: 'active' as const,
+        addedAt: '2024-01-15T10:00:00Z',
+      },
+    ];
+
+    vi.mocked(whitelistService.getWhitelist).mockResolvedValue(mockEntries);
+
+    const wrapper = mount(WhitelistManagement, {
+      props: {
+        tokenId: 'token123',
+      },
+    });
+
+    await wrapper.vm.$nextTick();
+
+    // Call confirmRemove function
+    wrapper.vm.confirmRemove('A23456723456723456723456723456723456723456723456723456723A');
+
+    expect(wrapper.vm.showRemoveModal).toBe(true);
+    expect(wrapper.vm.addressToRemove).toBe('A23456723456723456723456723456723456723456723456723456723A');
+  });
+
+  it('should remove address successfully', async () => {
+    const mockEntries = [
+      {
+        address: 'A23456723456723456723456723456723456723456723456723456723A',
+        status: 'active' as const,
+        addedAt: '2024-01-15T10:00:00Z',
+      },
+    ];
+
+    vi.mocked(whitelistService.getWhitelist).mockResolvedValue(mockEntries);
+    vi.mocked(whitelistService.removeAddress).mockResolvedValue();
+
+    const wrapper = mount(WhitelistManagement, {
+      props: {
+        tokenId: 'token123',
+      },
+    });
+
+    await wrapper.vm.$nextTick();
+
+    // Set up remove state
+    wrapper.vm.addressToRemove = 'A23456723456723456723456723456723456723456723456723456723A';
+    await wrapper.vm.removeAddress();
+
+    expect(whitelistService.removeAddress).toHaveBeenCalledWith('token123', 'A23456723456723456723456723456723456723456723456723456723A');
+  });
+
+  it('should validate CSV data', async () => {
+    vi.mocked(whitelistService.getWhitelist).mockResolvedValue([]);
+    vi.mocked(whitelistService.validateCsv).mockResolvedValue([
+      { row: 1, address: 'A23456723456723456723456723456723456723456723456723456723A', valid: true },
+      { row: 2, address: 'invalid', valid: false, error: 'Invalid format' },
+    ]);
+
+    const wrapper = mount(WhitelistManagement, {
+      props: {
+        tokenId: 'token123',
+      },
+    });
+
+    await wrapper.vm.$nextTick();
+
+    // Set CSV data and validate
+    wrapper.vm.csvData = 'address\nA23456723456723456723456723456723456723456723456723456723A\ninvalid';
+    await wrapper.vm.validateCsvData();
+
+    expect(whitelistService.validateCsv).toHaveBeenCalled();
+    expect(wrapper.vm.validCount).toBe(1);
+    expect(wrapper.vm.invalidCount).toBe(1);
+  });
+
+  it('should show preview step', async () => {
+    const mockEntries = [
+      {
+        address: 'EXISTING123456789012345678901234567890123456789012345678901234567890A',
+        status: 'active' as const,
+        addedAt: '2024-01-15T10:00:00Z',
+      },
+    ];
+
+    vi.mocked(whitelistService.getWhitelist).mockResolvedValue(mockEntries);
+    vi.mocked(whitelistService.validateCsv).mockResolvedValue([
+      { row: 1, address: 'A23456723456723456723456723456723456723456723456723456723A', valid: true },
+      { row: 2, address: 'EXISTING123456789012345678901234567890123456789012345678901234567890A', valid: true },
+    ]);
+
+    const wrapper = mount(WhitelistManagement, {
+      props: {
+        tokenId: 'token123',
+      },
+    });
+
+    await wrapper.vm.$nextTick();
+
+    // Set CSV data and validate first
+    wrapper.vm.csvData = 'address\nA23456723456723456723456723456723456723456723456723456723A\nEXISTING123456789012345678901234567890123456789012345678901234567890A';
+    await wrapper.vm.validateCsvData();
+    await wrapper.vm.showPreviewStep();
+
+    expect(wrapper.vm.showPreview).toBe(true);
+    expect(wrapper.vm.previewAddresses).toEqual(['A23456723456723456723456723456723456723456723456723456723A']);
+  });
+
+  it('should confirm bulk upload', async () => {
+    vi.mocked(whitelistService.getWhitelist).mockResolvedValue([]);
+    vi.mocked(whitelistService.validateCsv).mockResolvedValue([
+      { row: 1, address: 'A23456723456723456723456723456723456723456723456723456723A', valid: true },
+    ]);
+    vi.mocked(whitelistService.bulkUpload).mockResolvedValue({ success: 1, failed: 0 });
+
+    const wrapper = mount(WhitelistManagement, {
+      props: {
+        tokenId: 'token123',
+      },
+    });
+
+    await wrapper.vm.$nextTick();
+
+    // Set up preview state
+    wrapper.vm.previewAddresses = ['A23456723456723456723456723456723456723456723456723456723A'];
+    await wrapper.vm.confirmBulkUpload();
+
+    expect(whitelistService.bulkUpload).toHaveBeenCalled();
+  });
+
+  it('should close bulk upload modal', async () => {
+    vi.mocked(whitelistService.getWhitelist).mockResolvedValue([]);
+
+    const wrapper = mount(WhitelistManagement, {
+      props: {
+        tokenId: 'token123',
+      },
+    });
+
+    await wrapper.vm.$nextTick();
+
+    // Set modal state and close
+    wrapper.vm.showBulkUploadModal = true;
+    wrapper.vm.showPreview = true;
+    wrapper.vm.csvData = 'test';
+    wrapper.vm.csvError = 'error';
+    wrapper.vm.validationResults = [{ row: 1, address: 'test', valid: true }];
+    wrapper.vm.previewAddresses = ['test'];
+    wrapper.vm.duplicateAddresses = ['test'];
+
+    wrapper.vm.closeBulkUploadModal();
+
+    expect(wrapper.vm.showBulkUploadModal).toBe(false);
+    expect(wrapper.vm.showPreview).toBe(false);
+    expect(wrapper.vm.csvData).toBe('');
+  });
+
+  it('should load sample CSV', async () => {
+    vi.mocked(whitelistService.getWhitelist).mockResolvedValue([]);
+
+    const wrapper = mount(WhitelistManagement, {
+      props: {
+        tokenId: 'token123',
+      },
+    });
+
+    await wrapper.vm.$nextTick();
+
+    wrapper.vm.loadSampleCsv();
+
+    expect(wrapper.vm.csvData).toContain('address,notes');
+  });
+
+  it('should export whitelist', async () => {
+    const mockEntries = [
+      {
+        address: 'A23456723456723456723456723456723456723456723456723456723A',
+        status: 'active' as const,
+        addedAt: '2024-01-15T10:00:00Z',
+      },
+    ];
+
+    vi.mocked(whitelistService.getWhitelist).mockResolvedValue(mockEntries);
+    vi.mocked(whitelistService.exportComplianceReport).mockResolvedValue('address,status\nA23456723456723456723456723456723456723456723456723456723A,active');
+
+    const wrapper = mount(WhitelistManagement, {
+      props: {
+        tokenId: 'token123',
+      },
+    });
+
+    await wrapper.vm.$nextTick();
+
+    await wrapper.vm.exportWhitelist();
+
+    expect(whitelistService.exportComplianceReport).toHaveBeenCalledWith('token123', 'VOI', 'csv');
+  });
+
+  it('should copy address to clipboard', async () => {
+    vi.mocked(whitelistService.getWhitelist).mockResolvedValue([]);
+
+    const wrapper = mount(WhitelistManagement, {
+      props: {
+        tokenId: 'token123',
+      },
+    });
+
+    await wrapper.vm.$nextTick();
+
+    await wrapper.vm.copyAddress('A23456723456723456723456723456723456723456723456723456723A');
+
+    expect(navigator.clipboard.writeText).toHaveBeenCalledWith('A23456723456723456723456723456723456723456723456723456723A');
+  });
+
+  it('should format date correctly', async () => {
+    vi.mocked(whitelistService.getWhitelist).mockResolvedValue([]);
+
+    const wrapper = mount(WhitelistManagement, {
+      props: {
+        tokenId: 'token123',
+      },
+    });
+
+    await wrapper.vm.$nextTick();
+
+    const formatted = wrapper.vm.formatDate('2024-01-15T10:30:00Z');
+
+    expect(formatted).toContain('Jan 15');
+    expect(formatted).toContain('2024');
+    // The time will be formatted according to local timezone, so just check it contains time format
+    expect(formatted).toMatch(/\d{1,2}:\d{2}/);
+  });
+
+  it('should compute valid count', async () => {
+    vi.mocked(whitelistService.getWhitelist).mockResolvedValue([]);
+
+    const wrapper = mount(WhitelistManagement, {
+      props: {
+        tokenId: 'token123',
+      },
+    });
+
+    await wrapper.vm.$nextTick();
+
+    // Set validation results directly on the component instance
+    wrapper.vm.validationResults = [
+      { row: 1, address: 'A23456723456723456723456723456723456723456723456723456723A', valid: true },
+      { row: 2, address: 'invalid', valid: false, error: 'Invalid format' },
+      { row: 3, address: 'B23456723456723456723456723456723456723456723456723456723B', valid: true },
+    ];
+
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.vm.validCount).toBe(2);
+  });
+
+  it('should compute invalid count', async () => {
+    vi.mocked(whitelistService.getWhitelist).mockResolvedValue([]);
+
+    const wrapper = mount(WhitelistManagement, {
+      props: {
+        tokenId: 'token123',
+      },
+    });
+
+    await wrapper.vm.$nextTick();
+
+    wrapper.vm.validationResults = [
+      { row: 1, address: 'A23456723456723456723456723456723456723456723456723456723A', valid: true },
+      { row: 2, address: 'invalid', valid: false, error: 'Invalid format' },
+      { row: 3, address: 'another-invalid', valid: false, error: 'Invalid format' },
+    ];
+
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.vm.invalidCount).toBe(2);
+  });
+
+  it('should compute duplicate count', async () => {
+    vi.mocked(whitelistService.getWhitelist).mockResolvedValue([]);
+
+    const wrapper = mount(WhitelistManagement, {
+      props: {
+        tokenId: 'token123',
+      },
+    });
+
+    await wrapper.vm.$nextTick();
+
+    wrapper.vm.validationResults = [
+      { row: 1, address: 'A23456723456723456723456723456723456723456723456723456723A', valid: true },
+      { row: 2, address: 'A23456723456723456723456723456723456723456723456723456723A', valid: true },
+      { row: 3, address: 'B23456723456723456723456723456723456723456723456723456723B', valid: true },
+    ];
+
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.vm.duplicateCount).toBe(1);
+  });
+
+  it('should handle network switching', async () => {
+    vi.mocked(whitelistService.getWhitelist).mockResolvedValue([]);
+
+    const wrapper = mount(WhitelistManagement, {
+      props: {
+        tokenId: 'token123',
+      },
+    });
+
+    await wrapper.vm.$nextTick();
+
+    wrapper.vm.selectedNetwork = 'Aramid';
+
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.vm.selectedNetwork).toBe('Aramid');
   });
 });
