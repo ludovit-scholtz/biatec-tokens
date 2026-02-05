@@ -13,6 +13,7 @@ import TokenStandardsView from "../views/TokenStandardsView.vue";
 import EnterpriseGuideView from "../views/EnterpriseGuideView.vue";
 import Marketplace from "../views/Marketplace.vue";
 import AccountSecurity from "../views/AccountSecurity.vue";
+import DiscoveryDashboard from "../views/DiscoveryDashboard.vue";
 import { AUTH_STORAGE_KEYS, WALLET_CONNECTION_STATE } from "../constants/auth";
 
 // Subscription views
@@ -47,10 +48,15 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
-      path: "/wallet",
-      name: "WalletDashboard",
+      path: "/account",
+      name: "AccountDashboard",
       component: WalletDashboard,
       meta: { requiresAuth: true },
+    },
+    // Backward compatibility redirect
+    {
+      path: "/wallet",
+      redirect: "/account",
     },
     {
       path: "/tokens/:id",
@@ -72,6 +78,11 @@ const router = createRouter({
       path: "/marketplace",
       name: "Marketplace",
       component: Marketplace,
+    },
+    {
+      path: "/discovery",
+      name: "DiscoveryDashboard",
+      component: DiscoveryDashboard,
     },
     {
       path: "/settings",
