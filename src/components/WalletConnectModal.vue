@@ -31,8 +31,11 @@
                   <div class="flex-1">
                     <div class="flex items-center gap-2 mb-1">
                       <div class="text-white font-semibold">{{ network.displayName }}</div>
-                      <span v-if="!network.isTestnet" class="px-2 py-0.5 text-xs font-medium rounded-full bg-green-500/20 text-green-400 border border-green-500/30"> 
+                      <span v-if="!network.isTestnet && !network.isAdvanced" class="px-2 py-0.5 text-xs font-medium rounded-full bg-green-500/20 text-green-400 border border-green-500/30"> 
                         ✓ {{ AUTH_UI_COPY.RECOMMENDED }} 
+                      </span>
+                      <span v-else-if="network.isAdvanced" class="px-2 py-0.5 text-xs font-medium rounded-full bg-purple-500/20 text-purple-400 border border-purple-500/30"> 
+                        Advanced
                       </span>
                       <span v-else class="px-2 py-0.5 text-xs font-medium rounded-full bg-yellow-500/20 text-yellow-400 border border-yellow-500/30"> 
                         {{ AUTH_UI_COPY.TESTNET_LABEL }} 
@@ -332,7 +335,7 @@ const handleConnect = async (walletId: string) => {
       await walletManager.switchNetwork(selectedNetwork.value);
     }
 
-    // Connect wallet
+    // Authenticate
     await walletManager.connect(walletId);
 
     // Get active account after connection
@@ -350,9 +353,9 @@ const handleConnect = async (walletId: string) => {
 
     close();
   } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : "Failed to connect wallet";
+    const errorMessage = err instanceof Error ? err.message : "Failed to authenticate";
     emit("error", errorMessage);
-    console.error("Wallet connection error:", err);
+    console.error("Authentication error:", err);
   }
 };
 
