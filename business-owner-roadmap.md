@@ -148,6 +148,54 @@
 
 ---
 
+## MVP Blockers
+
+### Critical Issues Preventing Launch
+
+**Wallet Integration Failures:** Multiple wallet providers (Pera, Defly, Exodus, Kibisis, Lute Connect) experiencing injection failures during authentication, causing sign-in process to fail.
+
+**Backend Connectivity Problems:** API endpoints for user authentication and transaction processing are not responding correctly, blocking user login and token deployment workflows.
+
+**UI/UX Navigation Issues:** Users cannot properly navigate through authentication screens and token creation flows, leading to incomplete user journeys.
+
+### Required Playwright E2E Test Coverage
+
+To validate fixes and ensure MVP stability, implement comprehensive end-to-end tests for the following critical user scenarios:
+
+1. **Network Persistence on Website Load**
+   - User visits the website
+   - Verify network selector shows last used network or defaults to Algorand
+   - Confirm localStorage maintains network preference across sessions
+
+2. **Email/Password Authentication Without Wallets**
+   - User clicks "Sign In" button
+   - Verify no wallet connection options are displayed
+   - Verify email and password input fields appear
+   - User enters valid credentials and submits
+   - Verify ARC76 account is calculated automatically
+   - Verify user is marked as authenticated
+   - Verify ARC14 authorization transaction is created
+   - Verify successful backend connection and API response validation
+
+3. **Token Creation Flow with Authentication**
+   - Start new browser session
+   - User clicks "Create Token" from top navigation menu
+   - Verify redirect to authentication screen
+   - User fills in email and password fields
+   - Verify successful authentication and redirect to token creation page
+   - Test network switching functionality from top menu dropdown
+   - User creates a simple ASA token on Algorand testnet
+   - Verify successful token deployment and transaction confirmation
+
+### Priority Action Items
+
+- **URGENT:** Resolve wallet injection failures to enable authentication
+- **HIGH:** Fix backend API connectivity for user sessions and transactions
+- **MEDIUM:** Implement network persistence and ARC76/ARC14 integrations
+- **MEDIUM:** Complete authentication UI/UX flows
+
+---
+
 ## Technical Debt & Infrastructure (Ongoing) - 60% Complete 🟡
 
 ### Performance Optimization - 65% Complete 🟡
@@ -258,219 +306,6 @@
 - [ ] 3,500 paying customers (0 achieved - major delays expected)
 - [ ] $3.5M ARR achieved (0 achieved - no current customers)
 - [ ] Enterprise marketplace launched (Cannot launch without working platform)
-
----
-
-## Resource Allocation & Budget
-
-### Development Team (2025 Budget: $1.2M)
-
-- **Senior Full-Stack Developer** (2): $200K each
-- **DevOps Engineer** (1): $120K
-- **QA Engineer** (1): $100K
-- **Product Manager** (1): $150K
-- **UI/UX Designer** (1): $100K
-- **Legal/Compliance Officer** (0.5 FTE): $75K
-
-### Infrastructure & Tools ($300K)
-
-- **Cloud Infrastructure:** $150K (AWS/GCP)
-- **Development Tools:** $50K (Licenses, CI/CD)
-- **Security & Compliance:** $100K (Audits, certifications)
-
-### Marketing & Sales ($400K)
-
-- **Digital Marketing:** $150K
-- **Content Creation:** $75K
-- **Sales Development:** $100K
-- **Events & Conferences:** $75K
-
-### Operations ($200K)
-
-- **Customer Support:** $100K
-- **Legal & Insurance:** $50K
-- **Administrative:** $50K
-
----
-
-## Competitive Analysis & Differentiation
-
-### Key Competitors
-
-1. **Algorand ASA Platform** - Basic token creation, no compliance
-2. **Pera Wallet** - Wallet only, limited token features
-3. **Token Mint** - Generic token creation, no RWA focus
-
-### Our Advantages
-
-- **Regulatory Compliance:** First platform with built-in MICA compliance
-- **Enterprise Features:** Comprehensive audit trails and reporting
-- **Multi-Network Support:** VOI + Aramid + Ethereum integration
-- **Developer Experience:** Best-in-class UX for token creation
-
-### Market Positioning
-
-- **Price:** Premium positioning ($99/month professional tier)
-- **Target Market:** Regulated issuers, financial institutions
-- **Value Proposition:** "Compliant tokenization made simple"
-
----
-
-## Go-to-Market Strategy
-
-### Phase 1: Beta Launch (Q1 2025) ✅
-
-- **Target:** 100 beta users from Algorand community
-- **Channels:** Discord, Reddit, Twitter, Algorand forums
-- **Messaging:** "First MICA-compliant tokenization platform"
-
-### Phase 2: Enterprise Focus (Q2 2025) 🟡
-
-- **Target:** Financial institutions, RWA issuers
-- **Channels:** LinkedIn, industry conferences, direct sales
-- **Messaging:** "Enterprise-grade compliance for digital assets"
-
-### Phase 3: Market Expansion (Q3-Q4 2025) 🔴
-
-- **Target:** International markets, broader DeFi community
-- **Channels:** Paid advertising, partnerships, content marketing
-- **Messaging:** "The complete tokenization solution"
-
----
-
-## Conclusion & Next Steps
-
-**Current Status:** MVP development significantly delayed due to critical UX issues, incomplete backend integration, and non-functional subscription system. No customers acquired. Platform requires substantial fixes before beta launch possible.
-
-**Immediate Priorities:**
-
-1. Fix critical UX issues (transparent wizard background, readability)
-2. Complete backend integration and API connectivity
-3. Implement working subscription/payment system
-4. Fix wallet connection flow and authentication issues
-5. Correct top menu wallet button behavior
-6. Prioritize Algorand and Ethereum mainnet support over testnets
-
-**Business Outlook:** Challenging with significant technical debt and missing core functionality. MVP launch delayed to Q2 2025. Revenue targets for 2025 unrealistic given current state. Focus must shift to achieving functional MVP before pursuing advanced features.
-
----
-
-## Short Term Implementation Plan (Q1 2026)
-
-### Critical MVP Blockers - Priority 1 (Complete by March 2026)
-
-#### Subscription System Implementation
-
-- **Issue:** No working subscription plan - users cannot purchase or access paid features
-- **Impact:** Zero revenue generation, no customer acquisition possible
-- **Action Items:**
-  - Integrate Stripe payment processing
-  - Implement subscription tiers ($29 basic, $99 professional, $299 enterprise)
-  - Add payment flow validation and error handling
-  - Test end-to-end subscription lifecycle
-
-#### Backend Integration Fixes
-
-- **Issue:** Web application not working properly with backend - API connectivity issues
-- **Impact:** Core functionality broken, token deployment fails
-- **Action Items:**
-  - Debug and fix API communication layer
-  - Implement proper error handling for failed requests
-  - Add backend health monitoring
-  - Test all API endpoints for reliability
-
-#### UX/UI Critical Fixes
-
-- **Issue:** Token creation wizard has transparent background and is not readable
-- **Impact:** Users cannot complete token creation process
-- **Action Items:**
-  - Fix wizard background opacity and contrast
-  - Ensure readability across all themes (light/dark)
-  - Test wizard on different screen sizes and browsers
-  - Add proper loading states and error messages
-
-#### Network Support Prioritization
-
-- **Issue:** Only Voi and Aramid supported, main chains should be Algorand and Ethereum
-- **Impact:** Limited user adoption, testnet-only functionality
-- **Action Items:**
-  - Prioritize Algorand mainnet deployment support
-  - Add Ethereum mainnet (Ethereum, Base, Arbitrum) support
-  - Deprecating Voi/Aramid as primary networks
-  - Update network selection UI to reflect priorities
-
-#### Wallet Authentication Flow
-
-- **Issue:** Authentication system doesn't work properly with Arc76 email/password, confusing crypto terminology, and poor user experience
-- **Impact:** Users cannot properly authenticate, platform appears too technical for non-crypto users
-- **Action Items:**
-  - Implement proper Arc76 email/password authentication for self-custody accounts
-  - Use Arc14 authentication for secure backend communication
-  - Replace all "Connect wallet" text with "Login", "Sign in", or "Authenticate"
-  - Make the product appear as non-crypto usage - focus on business tokenization, not blockchain terminology
-  - Email/password creates self-custody account automatically
-  - Remove wallet-centric language throughout the UI
-  - Streamline authentication flow to be more like traditional SaaS applications
-  - Test authentication persistence and session management
-
-#### Top Menu Wallet Button Fix
-
-- **Issue:** Clicking wallet button in top menu launches new token creation wizard (wrong behavior)
-- **Impact:** Unexpected navigation, poor user experience
-- **Action Items:**
-  - Fix wallet button to show wallet connection modal
-  - Remove incorrect token creation launch
-  - Add proper wallet status display
-  - Test wallet button functionality across all pages
-
-### MVP Completion Milestones (March 2026)
-
-- [ ] Subscription system fully operational
-- [ ] Backend API integration stable (95%+ success rate)
-- [ ] Token creation wizard UX issues resolved
-- [ ] Arc76 email/password authentication working with Arc14 backend communication
-- [ ] All crypto terminology replaced with business-friendly language
-- [ ] Product appears as traditional SaaS application
-- [ ] Algorand and Ethereum mainnet support complete
-- [ ] Wallet authentication flow streamlined
-- [ ] Top menu wallet button fixed
-- [ ] Beta user testing completed with 50 users
-- [ ] First paying customer acquired
-
----
-
-## Conclusion & Next Steps
-
-**Current Status:** MVP development significantly delayed due to critical integration issues, wallet connectivity problems, UI/UX blockers, and incomplete backend integration. Subscription system partially implemented but not operational. No paying customers acquired. Platform requires substantial fixes before beta launch possible.
-
-**Immediate Critical Issues:**
-
-1. **Wallet Integration Failures**: Remove wallet features, make sure to use the email and password authentication
-2. **UI Interaction Problems**: Glass effects blocking user interactions, preventing form completion
-3. **Backend Integration Issues**: API connectivity problems preventing token deployment
-4. **Performance Problems**: E2E test timeouts indicating slow page loads and network issues
-5. **Subscription System**: Payment processing not operational, no revenue generation possible
-
-**Immediate Priorities (Next 30 Days):**
-
-1. Remove wallet features, make sure to use the email and password authentication
-2. Improve network selection. Do network selection only in top menu where current network is displayed. Do not use network selection in the token creation wizard nor anywhere else on the website. Support AVM networks - Algorand Mainnet, Algorand Testnet, VOI mainnet and Aramid mainnet, and EVM networks - Etherum, Base and Arbitrum
-3. Implement proper Arc76 email/password authentication with Arc14 backend communication
-4. Replace crypto terminology ("Connect wallet") with business-friendly terms ("Login", "Sign in")
-5. Make product appear as traditional SaaS application, not crypto-focused
-6. Complete backend API integration and error handling
-7. Fix E2E test failures and performance issues
-8. Make subscription system operational for revenue generation
-9. Conduct thorough integration testing before beta launch
-
-**Revised Timeline:**
-
-- **Q1 2025**: MVP stabilization and bug fixes (45% → 65% complete)
-- **Q2 2025**: Beta launch and first customer acquisition (65% → 80% complete)
-- **Q3 2025**: Enterprise compliance completion (80% → 90% complete)
-- **Q4 2025**: Full market launch and revenue scaling (90% → 100% complete)
-
-**Business Impact:** Current delays have pushed revenue generation from Q1 2025 to Q2-Q3 2025. Focus must shift immediately to product stabilization over feature development. Without a working MVP, all downstream business objectives are at risk.
 
 ---
 
