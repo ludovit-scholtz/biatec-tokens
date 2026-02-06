@@ -4,11 +4,15 @@
 
 **Business Vision:** Biatec Tokens is a comprehensive tokenization platform specializing in regulated Real-World Asset (RWA) tokens in multichain environment. Our mission is to democratize compliant token issuance while ensuring enterprise-grade security and regulatory compliance.
 
+**Target Audience:** Non-crypto native persons - traditional businesses and enterprises who need regulated token issuance without requiring blockchain or wallet knowledge.
+
+**Authentication Approach:** Email and password authentication only - no wallet connectors anywhere on the web. Token creation and deployment handled entirely by backend services.
+
 **Revenue Model:** Subscription-based SaaS with tiered pricing ($29/month basic, $99/month professional, $299/month enterprise). Target: 1,000 paying customers in Year 1, generating $2.5M ARR.
 
 **Market Opportunity:** $50B+ RWA tokenization market by 2025, with MICA regulation creating demand for compliant platforms. Current competitors lack comprehensive compliance tooling.
 
-**Current Status:** MVP development significantly delayed due to critical integration issues, wallet connectivity problems, and UI/UX blockers. Subscription system partially implemented but not operational. No paying customers acquired. Platform requires substantial fixes before beta launch possible.
+**Current Status:** MVP development significantly delayed due to critical integration issues, authentication problems, and UI/UX blockers. Subscription system partially implemented but not operational. No paying customers acquired. Platform requires substantial fixes before beta launch possible.
 
 ---
 
@@ -17,18 +21,19 @@
 ### Core Token Creation & Deployment - 50% Complete 🟡
 
 - **Multi-Token Standard Support** (80%): ASA, ARC3, ARC200, ERC20, ERC721 - Basic support exists but integration issues
+- **Backend Token Creation Service** (30%): All token creation and deployment handled by backend - API structure exists, deployment logic incomplete
 - **Multi-Network Deployment** (30%): Algorand Mainnet, Ethereum mainnet (Ethereum, Base, Arbitrum), VOI Testnet, Aramid Testnet - Main chains partially supported, test failures indicate issues
 - **Smart Contract Templates** (70%): 15+ pre-built templates with validation - Templates exist but UX issues prevent proper use
 - **Real-time Deployment Status** (40%): Basic transaction monitoring, incomplete - Backend integration problems
 - **Batch Deployment** (20%): Multiple tokens in single transaction, not fully tested - Not implemented
 
-### Wallet Integration - 40% Complete 🔴
+### Backend Token Creation & Authentication - 40% Complete 🔴
 
-- **Multi-Wallet Support** (60%): Pera, Defly, Exodus, Kibisis, Lute Connect - Wallets supported but injection failures in tests
-- **Network Switching** (30%): Basic VOI ↔ Aramid transitions, main chains incomplete - Recent fixes but still problematic
-- **Wallet Balance Display** (50%): Real-time asset tracking, partial - Basic functionality exists
-- **Transaction History** (40%): Basic audit trail, incomplete - Partial implementation
-- **Wallet Recovery** (10%): Backup and restore functionality, not implemented - Not started
+- **Email/Password Authentication** (60%): Secure user authentication without wallet requirements - Basic implementation exists but ARC76 integration incomplete
+- **Backend Token Deployment** (30%): All token creation handled server-side - Basic API structure exists, deployment logic incomplete
+- **ARC76 Account Management** (20%): Automatic account derivation from user credentials - Framework exists but not fully implemented
+- **Transaction Processing** (40%): Backend handles all blockchain interactions - Partial implementation with integration issues
+- **Security & Compliance** (50%): Enterprise-grade security for token operations - Basic security measures in place
 
 ### Basic Compliance Features - 60% Complete 🟡
 
@@ -152,11 +157,23 @@
 
 ### Critical Issues Preventing Launch
 
-**Wallet Integration Failures:** Multiple wallet providers (Pera, Defly, Exodus, Kibisis, Lute Connect) experiencing injection failures during authentication, causing sign-in process to fail.
+**Authentication System Failures:** Email/password authentication not working properly, ARC76 account derivation incomplete, preventing user access to the platform.
 
-**Backend Connectivity Problems:** API endpoints for user authentication and transaction processing are not responding correctly, blocking user login and token deployment workflows.
+**Backend Token Creation Issues:** Backend service for token deployment not fully operational, blocking the core token creation workflow.
 
 **UI/UX Navigation Issues:** Users cannot properly navigate through authentication screens and token creation flows, leading to incomplete user journeys.
+
+**Sign-in Network Selection Issue:** When clicking sign-in, network selection still appears inappropriately.
+
+**Top Menu Network Display:** Network selection in top menu shows "Not connected" - remove this display as frontend should work without wallet connection requirement.
+
+**Create Token Wizard Issue:** Clicking "Create Token" in menu triggers wizard popup - remove wizard and show login page instead. Remove routing by showOnboarding parameter and implement proper page routes.
+
+**Mock Data Usage:** Application displays mock data (e.g., hardcoded recent activity) - remove all mock data for final MVP readiness.
+
+**Token Standards AVM Issue:** When selecting AVM chains in token standards, all standards disappear.
+
+**Email/Password Authentication Failure:** Sign-in using email and password does not work. Implement ARC76 to show account as the only authentication method.
 
 ### Required Playwright E2E Test Coverage
 
@@ -169,30 +186,36 @@ To validate fixes and ensure MVP stability, implement comprehensive end-to-end t
 
 2. **Email/Password Authentication Without Wallets**
    - User clicks "Sign In" button
-   - Verify no wallet connection options are displayed
+   - Verify no wallet connection options are displayed anywhere
    - Verify email and password input fields appear
    - User enters valid credentials and submits
    - Verify ARC76 account is calculated automatically
    - Verify user is marked as authenticated
-   - Verify ARC14 authorization transaction is created
    - Verify successful backend connection and API response validation
 
-3. **Token Creation Flow with Authentication**
+3. **Token Creation Flow with Backend Processing**
    - Start new browser session
    - User clicks "Create Token" from top navigation menu
    - Verify redirect to authentication screen
    - User fills in email and password fields
    - Verify successful authentication and redirect to token creation page
-   - Test network switching functionality from top menu dropdown
-   - User creates a simple ASA token on Algorand testnet
-   - Verify successful token deployment and transaction confirmation
+   - User fills token creation form
+   - Verify form submission triggers backend token creation
+   - Verify successful token deployment confirmation from backend service
+
+4. **No Wallet Connectors Test**
+   - User navigates through entire application
+   - Verify no wallet connection buttons, dialogs, or options appear anywhere
+   - Verify all interactions use email/password authentication only
 
 ### Priority Action Items
 
-- **URGENT:** Resolve wallet injection failures to enable authentication
-- **HIGH:** Fix backend API connectivity for user sessions and transactions
-- **MEDIUM:** Implement network persistence and ARC76/ARC14 integrations
-- **MEDIUM:** Complete authentication UI/UX flows
+- **URGENT:** Implement working email/password authentication with ARC76 account derivation
+- **HIGH:** Complete backend token creation service and deployment workflow
+- **HIGH:** Remove all wallet connectors and wallet-related UI elements from the application
+- **MEDIUM:** Implement proper page routing without showOnboarding parameters
+- **MEDIUM:** Remove all mock data and ensure real backend integration
+- **MEDIUM:** Fix token standards display for AVM chains
 
 ---
 
