@@ -212,6 +212,7 @@ import { useRoute, useRouter } from "vue-router";
 import { useThemeStore } from "../../stores/theme";
 import { useSubscriptionStore } from "../../stores/subscription";
 import { useAVMAuthentication } from "algorand-authentication-component-vue";
+import { AUTH_STORAGE_KEYS } from "../../constants/auth";
 import { HomeIcon, PlusCircleIcon, ChartBarIcon, Cog6ToothIcon, SunIcon, MoonIcon, Bars3Icon, XMarkIcon, ChevronDownIcon, WalletIcon } from "@heroicons/vue/24/outline";
 import WalletConnectModal from "../WalletConnectModal.vue";
 import WalletStatusBadge from "../WalletStatusBadge.vue";
@@ -266,8 +267,15 @@ const handleWalletClick = () => {
 
 const handleWalletConnected = (_data: { address: string; walletId: string; network: string }) => {
   showWalletModal.value = false;
+  
+  // Check if there's a redirect path stored (AC #6)
+  const redirectPath = localStorage.getItem(AUTH_STORAGE_KEYS.REDIRECT_AFTER_AUTH);
+  if (redirectPath) {
+    localStorage.removeItem(AUTH_STORAGE_KEYS.REDIRECT_AFTER_AUTH);
+    router.push(redirectPath);
+  }
+  
   // The Arc76 authentication component will handle the authentication
-  // This just closes the modal
 };
 
 const handleStatusBadgeClick = () => {
