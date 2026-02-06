@@ -75,8 +75,9 @@
 
         <!-- Account Section -->
         <div class="flex items-center space-x-4">
-          <!-- Network Switcher -->
-          <NetworkSwitcher class="hidden sm:flex" />
+          <!-- Network Switcher - Hidden per MVP requirements (email/password auth only) -->
+          <!-- Users don't need to see network status in wallet-free mode -->
+          <!-- <NetworkSwitcher class="hidden sm:flex" /> -->
           
           <!-- Account Button -->
           <div class="relative">
@@ -122,15 +123,17 @@
           </div>
         </div>
 
-        <!-- Login Modal -->
+        <!-- Sign-In Modal (Email/Password) -->
         <WalletConnectModal
           :is-open="showWalletModal"
+          :show-network-selector="false"
           @close="showWalletModal = false"
           @connected="handleConnected"
         />
 
-        <!-- Onboarding Wizard -->
+        <!-- Onboarding Wizard (Legacy - Hidden) -->
         <WalletOnboardingWizard
+          v-if="false"
           :is-open="showOnboardingWizard"
           @close="showOnboardingWizard = false"
           @complete="handleConnected"
@@ -192,12 +195,13 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useWalletManager } from '../composables/useWalletManager'
-import { AUTH_STORAGE_KEYS, WALLET_CONNECTION_STATE } from '../constants/auth'
+// AUTH_STORAGE_KEYS removed - no longer used in this component
 import { AUTH_UI_COPY } from '../constants/uiCopy'
 import { telemetryService } from '../services/TelemetryService'
 import WalletConnectModal from './WalletConnectModal.vue'
 import WalletOnboardingWizard from './WalletOnboardingWizard.vue'
-import NetworkSwitcher from './NetworkSwitcher.vue'
+// NetworkSwitcher removed per MVP requirements (wallet-free mode)
+// import NetworkSwitcher from './NetworkSwitcher.vue'
 
 const { isConnected, activeAddress, formattedAddress, disconnect, walletState } = useWalletManager()
 
@@ -207,10 +211,7 @@ const showOnboardingWizard = ref(false)
 const showAccountMenu = ref(false)
 const loginStartTime = ref<number | null>(null)
 
-// Check if user has completed onboarding before
-const hasCompletedOnboarding = computed(() => {
-  return localStorage.getItem(AUTH_STORAGE_KEYS.ONBOARDING_COMPLETED) === WALLET_CONNECTION_STATE.CONNECTED
-})
+// hasCompletedOnboarding removed - no longer used per wallet-free mode
 
 const authButtonText = computed(() => {
   if (walletState.value.isConnecting) return AUTH_UI_COPY.SIGNING_IN
@@ -231,13 +232,8 @@ const handleWalletClick = () => {
     loginStartTime.value = Date.now()
     telemetryService.trackLoginStarted({ source: 'navbar' })
     
-    // Show authentication modal when not authenticated
-    // Show onboarding wizard for first-time users, otherwise simple modal
-    if (hasCompletedOnboarding.value) {
-      showWalletModal.value = true
-    } else {
-      showOnboardingWizard.value = true
-    }
+    // Show authentication modal for all users (email/password)
+    showWalletModal.value = true
   }
 }
 
