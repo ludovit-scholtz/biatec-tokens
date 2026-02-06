@@ -46,7 +46,9 @@
             <span class="text-xs font-medium text-green-700 dark:text-green-300">{{ subscriptionStore.currentProduct.name }}</span>
           </div>
 
-          <!-- Wallet Status Badge -->
+          <!-- Wallet Status Badge - Hidden for MVP wallet-free authentication (AC #4) -->
+          <!-- Per business-owner-roadmap.md: "remove this display as frontend should work without wallet connection requirement" -->
+          <!-- Uncomment the section below and the handler functions if wallet UI is needed in the future
           <div class="hidden sm:block">
             <WalletStatusBadge
               :connection-state="walletManager.walletState?.value?.connectionState"
@@ -59,8 +61,9 @@
               @error-click="handleErrorClick"
             />
           </div>
+          -->
 
-          <!-- Wallet Connection Button (when not authenticated) -->
+          <!-- Sign In Button (when not authenticated) -->
           <div v-if="!authStore.isAuthenticated">
             <button
               @click="handleWalletClick"
@@ -215,7 +218,7 @@ import { useAVMAuthentication } from "algorand-authentication-component-vue";
 import { AUTH_STORAGE_KEYS } from "../../constants/auth";
 import { HomeIcon, PlusCircleIcon, ChartBarIcon, Cog6ToothIcon, SunIcon, MoonIcon, Bars3Icon, XMarkIcon, ChevronDownIcon, WalletIcon } from "@heroicons/vue/24/outline";
 import WalletConnectModal from "../WalletConnectModal.vue";
-import WalletStatusBadge from "../WalletStatusBadge.vue";
+// import WalletStatusBadge from "../WalletStatusBadge.vue"; // Hidden for MVP wallet-free auth (AC #4)
 import WalletRecoveryPanel from "../WalletRecoveryPanel.vue";
 import WalletDiagnosticsPanel from "../WalletDiagnosticsPanel.vue";
 import { useWalletManager } from "../../composables/useWalletManager";
@@ -278,6 +281,9 @@ const handleWalletConnected = (_data: { address: string; walletId: string; netwo
   // The Arc76 authentication component will handle the authentication
 };
 
+// Handler functions for WalletStatusBadge - Currently commented out as badge is hidden for MVP
+// Uncomment these if WalletStatusBadge is re-enabled in the future
+/*
 const handleStatusBadgeClick = () => {
   // If not connected, show wallet modal
   if (!walletManager.isConnected?.value) {
@@ -291,6 +297,8 @@ const handleStatusBadgeClick = () => {
 const handleErrorClick = () => {
   showDiagnosticsPanel.value = true;
 };
+*/
+
 
 const handleRecoveryReconnect = async (data: { walletId: string; networkId: any }) => {
   try {
