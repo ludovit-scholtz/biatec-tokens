@@ -175,6 +175,14 @@
 
 **Email/Password Authentication Failure:** Sign-in using email and password does not work. Implement ARC76 to show account as the only authentication method.
 
+**E2E Test Suite Non-Compliance:** Playwright tests fail to comply with MVP blockers:
+- Tests still use wallet-related localStorage keys (`wallet_connected`, `active_wallet_id`) contradicting no-wallet requirement
+- Onboarding checklist interferes with user interactions, indicating wallet-related onboarding steps still present
+- Token creation wizard tests exist but MVP requires removing wizard and showing login page
+- No proper ARC76 authentication testing - tests mock but don't validate actual email/password to ARC76 account derivation
+- Network selectors still visible in tests, contradicting "Not connected" removal requirement
+- Test failures due to UI blocking suggest incomplete removal of wallet-related components
+
 ### Required Playwright E2E Test Coverage
 
 To validate fixes and ensure MVP stability, implement comprehensive end-to-end tests for the following critical user scenarios:
@@ -208,11 +216,21 @@ To validate fixes and ensure MVP stability, implement comprehensive end-to-end t
    - Verify no wallet connection buttons, dialogs, or options appear anywhere
    - Verify all interactions use email/password authentication only
 
+**CRITICAL TEST IMPROVEMENTS REQUIRED:**
+
+- **Remove Wallet-Related Test Code:** Eliminate all `wallet_connected`, `active_wallet_id`, and wallet-related localStorage mocking from tests
+- **Fix Onboarding Checklist Blocking:** Remove or fix onboarding checklist that interferes with user interactions
+- **Remove Token Creation Wizard Tests:** Replace wizard tests with direct login page navigation tests
+- **Implement ARC76 Authentication Testing:** Add tests that validate actual email/password to ARC76 account derivation
+- **Network Selector Visibility Tests:** Add tests ensuring "Not connected" and network selectors are properly hidden
+- **Mock Data Removal Validation:** Add tests confirming no hardcoded mock data appears in UI
+
 ### Priority Action Items
 
 - **URGENT:** Implement working email/password authentication with ARC76 account derivation
 - **HIGH:** Complete backend token creation service and deployment workflow
 - **HIGH:** Remove all wallet connectors and wallet-related UI elements from the application
+- **HIGH:** Fix E2E test suite to comply with MVP blockers - remove wallet-related code and fix onboarding interference
 - **MEDIUM:** Implement proper page routing without showOnboarding parameters
 - **MEDIUM:** Remove all mock data and ensure real backend integration
 - **MEDIUM:** Fix token standards display for AVM chains
@@ -332,5 +350,5 @@ To validate fixes and ensure MVP stability, implement comprehensive end-to-end t
 
 ---
 
-**Last Updated:** February 2, 2026
-**Next Review:** March 1, 2026</content>
+**Last Updated:** February 9, 2026
+**Next Review:** February 16, 2026</content>
