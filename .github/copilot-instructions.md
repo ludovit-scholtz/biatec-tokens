@@ -418,3 +418,96 @@ expect(isVisible || true).toBe(true); // Pass if element not found
 - Subscription/payment features integrated with Stripe (see `stripe-config.ts`)
 - The project deploys to a staging environment via SSH (configured in GitHub Actions)
 - Uses Vite for fast development and optimized production builds
+
+## 🚨 PR COMPLETION REQUIREMENTS 🚨
+
+**CRITICAL:** Work is NOT complete until ALL of the following are done. Previous violations resulted in incomplete PRs and wasted review cycles.
+
+### Definition of Done Checklist
+
+**EVERY PR MUST:**
+
+- [ ] **Tests Pass Locally**
+  - Run `npm test` - verify 2779+ unit tests pass
+  - Run `npm run test:e2e` - verify 271+ E2E tests pass
+  - Run `npm run build` - verify build succeeds
+  - Document specific pass counts in PR description
+
+- [ ] **CI Passes on GitHub**
+  - Check workflow runs for your branch
+  - Verify all checks are green
+  - If CI fails, investigate and fix immediately
+  - Never claim work is complete with failing CI
+
+- [ ] **Business Value Documented**
+  - For infrastructure/CI changes: Create business value document
+  - Explain what problem is being solved
+  - Quantify impact (time saved, risk reduced, etc.)
+  - Include risk assessment
+  - Template: See `DEPENDABOT_CI_FIX_BUSINESS_VALUE_FEB10_2026.md`
+
+- [ ] **Issue Linked**
+  - Link PR to tracking issue
+  - If no issue exists, create one
+  - Issue should explain business context and priority
+
+- [ ] **PR Marked Ready for Review**
+  - Remove draft status when work is complete
+  - Draft = work in progress
+  - Ready = complete and requesting review
+
+- [ ] **Documentation Updated**
+  - Update relevant docs if needed
+  - Update Copilot instructions if process improvement identified
+  - Add memory if pattern should be remembered
+
+- [ ] **Code Review Completed**
+  - Run `code_review` tool
+  - Address all valid feedback
+  - Re-run after significant changes
+
+- [ ] **Security Scan Completed**
+  - Run `codeql_checker` tool
+  - Fix any vulnerabilities found
+  - Include security summary in PR description
+
+### Infrastructure/CI Change Requirements
+
+For workflow, CI/CD, or infrastructure changes, ALSO include:
+
+- [ ] **Business Value Document** (see template above)
+- [ ] **Risk Assessment**
+  - What could go wrong?
+  - What's the impact?
+  - How is it mitigated?
+- [ ] **Verification Plan**
+  - How will you verify it works?
+  - What metrics will you track?
+  - When will you know it's successful?
+- [ ] **Rollback Plan**
+  - How to revert if needed
+  - What's the rollback risk?
+
+### Why This Matters
+
+**Past Violations:**
+- PR #318 (Feb 10 2026): Marked draft, no business value doc, no issue link
+- Result: Product Owner blocked review, required rework
+- Cost: Additional review cycles, delayed dependency updates
+
+**Impact of Incomplete Work:**
+- Wastes reviewer time
+- Blocks other work
+- Reduces team trust
+- Delays value delivery
+- Creates technical debt
+
+### Enforcement
+
+If a PR is submitted without meeting ALL checklist items:
+1. Product Owner will block review
+2. PR will be marked as incomplete
+3. Copilot will be asked to complete the work
+4. Process improvement review will be triggered
+
+**Remember**: "Tests pass" ≠ "Work complete". Complete = all checklist items checked.
