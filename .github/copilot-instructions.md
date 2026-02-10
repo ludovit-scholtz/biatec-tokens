@@ -145,7 +145,7 @@ src/
 
 ### DO NOT:
 
-- Modify `.github/workflows/` files unless specifically requested
+- Modify `.github/workflows/` files unless specifically requested (Exception: fixing Dependabot PR permission issues - see CI/Workflow section below)
 - Change network configurations in `main.ts` without explicit instruction
 - Remove or modify security-related code (wallet connections, authentication)
 - Modify deployment scripts or SSH configurations
@@ -162,6 +162,73 @@ src/
 - Test wallet integrations when modifying blockchain-related code
 - Keep dark mode support in mind for UI changes
 - Use existing UI components from `src/components/ui/` before creating new ones
+
+## CI Workflows and Dependabot PRs
+
+### Understanding CI Failures
+
+**CRITICAL:** Not all CI failures indicate test failures. Always investigate the root cause:
+
+1. **Check if tests actually failed** by examining the test output, not just the workflow status
+2. **Look for permission errors** like "Resource not accessible by integration" (common with Dependabot PRs)
+3. **Identify the failing step** - it might not be the tests themselves
+
+### Dependabot PR Handling
+
+**Issue:** GitHub Actions running on Dependabot PRs have restricted permissions and cannot post comments.
+
+**Symptom:**
+```
+RequestError [HttpError]: Resource not accessible by integration
+Status: 403 Forbidden
+```
+
+**Solution:** Add actor check to comment actions in workflow files:
+
+```yaml
+- name: Comment PR with Test Results
+  if: always() && github.event_name == 'pull_request' && github.actor != 'dependabot[bot]'
+```
+
+**When to Apply:**
+- Any workflow step that posts comments on PRs
+- Any workflow step that updates PR descriptions
+- Any workflow step that creates issues or comments
+
+**Example Files:**
+- `.github/workflows/playwright.yml` (line 52)
+- `.github/workflows/unit-tests.yml` (if applicable)
+
+### CI Failure Investigation Protocol
+
+When CI fails on dependency update PRs:
+
+1. **Check GitHub Actions logs** for actual error
+2. **Verify test results** - they may have passed despite workflow failure
+3. **Look for permission errors** in comment/update steps
+4. **Apply Dependabot actor check** if permission error found
+5. **Re-run tests locally** to confirm they pass
+6. **Document the fix** in commit message
+
+### Dependency Update Verification
+
+For ALL dependency updates (including automated Dependabot PRs):
+
+1. **Install dependencies:** `npm install`
+2. **Run unit tests:** `npm test` (expect 2779+ passing)
+3. **Run E2E tests:** `npm run test:e2e` (expect 271+ passing)
+4. **Run build:** `npm run build` (must succeed)
+5. **Check TypeScript:** `npm run check-typescript-errors-tsc` and `npm run check-typescript-errors-vue`
+6. **Create business value document** explaining what changed and why it matters
+7. **Document test results** with specific pass counts
+8. **Fix any CI workflow issues** (like Dependabot comment permissions)
+
+**Never approve dependency updates without:**
+- Understanding what changed (review release notes)
+- Verifying tests pass locally
+- Documenting business value and risk assessment
+- Fixing any CI workflow issues that prevent proper validation
+
 
 ## Testing and Validation
 
