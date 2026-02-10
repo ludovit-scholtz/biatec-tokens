@@ -163,6 +163,71 @@ src/
 - Keep dark mode support in mind for UI changes
 - Use existing UI components from `src/components/ui/` before creating new ones
 
+## Dependency Updates and Package Management
+
+### Handling Dependency Bump PRs
+
+When handling dependency update PRs (Dependabot, Renovate, or manual updates):
+
+1. **ALWAYS verify changes are minimal and expected**
+   - Review `package.json` and `package-lock.json` changes
+   - Confirm only intended dependencies were updated
+   - Check for major/minor/patch version changes
+
+2. **Run complete test suite locally BEFORE committing**
+   - `npm install` - Install updated dependencies
+   - `npm test` - Run unit tests (must pass 100%)
+   - `npm run test:e2e` - Run E2E tests (must pass 100%)
+   - `npm run build` - Verify build succeeds
+   - `npm run check-typescript-errors-tsc` - Verify TypeScript
+   - `npm run check-typescript-errors-vue` - Verify Vue TypeScript
+
+3. **Verify CI passes in GitHub Actions**
+   - Check GitHub Actions workflows complete successfully
+   - If CI fails but local passes, investigate environment differences:
+     - Timing issues (increase timeouts if needed)
+     - Browser versions (Playwright)
+     - Node version differences
+     - Network/API availability
+   - Fix CI-specific issues before marking PR complete
+
+4. **Document test results in PR**
+   - Include local test pass counts
+   - Note any skipped tests and reasons
+   - Document CI workflow status
+   - Mention if any flaky tests were stabilized
+
+5. **Security and compatibility review**
+   - Check release notes for security fixes
+   - Note any breaking changes (should be rare for patch updates)
+   - Verify ecosystem compatibility
+   - Run security audit: `npm audit`
+
+6. **NEVER merge with failing CI**
+   - If CI fails, investigate and fix immediately
+   - Do not assume CI failures are "transient" without verification
+   - Rerun workflows if needed to confirm stability
+   - If tests are flaky, stabilize them before merging
+
+### Common Dependency Update Issues
+
+- **Playwright version updates**: May require browser reinstall with `npx playwright install --with-deps chromium`
+- **Vue updates**: May affect reactivity or component behavior - verify E2E tests pass
+- **TypeScript updates**: May introduce stricter type checking - fix all type errors
+- **Testing library updates**: May change test behavior - verify all tests still pass
+
+### Quality Bar for Dependency Updates
+
+Even "simple" dependency bumps must meet full quality standards:
+- ✅ All unit tests pass (2700+ tests expected)
+- ✅ All E2E tests pass (270+ tests expected)
+- ✅ Build succeeds without warnings
+- ✅ TypeScript compiles without errors
+- ✅ CI workflows pass in GitHub Actions
+- ✅ No new security vulnerabilities introduced
+
+**Remember:** Dependency updates can introduce subtle breaking changes even in patch versions. Treat them with the same rigor as code changes.
+
 ## Testing and Validation
 
 **🚨 CRITICAL TESTING REQUIREMENTS 🚨**
