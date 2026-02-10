@@ -344,7 +344,7 @@
 
 **Immediate Priorities:**
 
-1. Fix critical UX issues (transparent wizard background, readability)
+1. Fix critical UX issues double authorization
 2. Complete backend integration and API connectivity
 3. Implement working subscription/payment system
 4. Fix wallet connection flow and authentication issues
@@ -413,16 +413,6 @@
   - Streamline authentication flow to be more like traditional SaaS applications
   - Test authentication persistence and session management
 
-#### Top Menu Wallet Button Fix
-
-- **Issue:** Clicking wallet button in top menu launches new token creation wizard (wrong behavior)
-- **Impact:** Unexpected navigation, poor user experience
-- **Action Items:**
-  - Fix wallet button to show wallet connection modal
-  - Remove incorrect token creation launch
-  - Add proper wallet status display
-  - Test wallet button functionality across all pages
-
 ### MVP Completion Milestones (March 2026)
 
 - [ ] Subscription system fully operational
@@ -445,7 +435,7 @@
 
 **Immediate Critical Issues:**
 
-1. **Wallet Integration Failures**: Wallet manager injection issues causing test failures and potential runtime errors
+1. **Authentication**: After filling in the email and password, another email password submission is required. remove showAuth=true and use only algorand-authentication-component-vue for arc14 authentication.
 2. **UI Interaction Problems**: Glass effects blocking user interactions, preventing form completion
 3. **Backend Integration Issues**: API connectivity problems preventing token deployment
 4. **Performance Problems**: E2E test timeouts indicating slow page loads and network issues
