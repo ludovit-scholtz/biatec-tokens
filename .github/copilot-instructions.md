@@ -184,11 +184,15 @@ When handling dependency update PRs (Dependabot, Renovate, or manual updates):
 
 3. **Verify CI passes in GitHub Actions**
    - Check GitHub Actions workflows complete successfully
+   - **NEVER merge with failing CI** - investigate and fix immediately
    - If CI fails but local passes, investigate environment differences:
      - Timing issues (increase timeouts if needed)
      - Browser versions (Playwright)
      - Node version differences
      - Network/API availability
+   - Do not assume CI failures are "transient" without verification
+   - Rerun workflows if needed to confirm stability
+   - If tests are flaky, stabilize them before merging
    - Fix CI-specific issues before marking PR complete
 
 4. **Document test results in PR**
@@ -202,12 +206,6 @@ When handling dependency update PRs (Dependabot, Renovate, or manual updates):
    - Note any breaking changes (should be rare for patch updates)
    - Verify ecosystem compatibility
    - Run security audit: `npm audit`
-
-6. **NEVER merge with failing CI**
-   - If CI fails, investigate and fix immediately
-   - Do not assume CI failures are "transient" without verification
-   - Rerun workflows if needed to confirm stability
-   - If tests are flaky, stabilize them before merging
 
 ### Common Dependency Update Issues
 
