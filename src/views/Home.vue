@@ -18,7 +18,6 @@
           <LandingEntryModule
             v-if="shouldShowLandingEntry"
             @email-signup="handleEmailSignup"
-            @wallet-connect="handleWalletConnectFromLanding"
           />
 
           <!-- CTA Buttons (for authenticated users) -->
@@ -108,14 +107,6 @@
       @connected="handleAuthComplete" 
     />
     
-    <!-- Wallet Onboarding Wizard (Legacy - Hidden) -->
-    <WalletOnboardingWizard 
-      v-if="false"
-      :is-open="showOnboardingWizard" 
-      @close="showOnboardingWizard = false" 
-      @complete="handleOnboardingComplete" 
-    />
-    
     <!-- Onboarding Checklist (Persistent) -->
     <OnboardingChecklist />
   </MainLayout>
@@ -134,7 +125,6 @@ import Card from "../components/ui/Card.vue";
 import Badge from "../components/ui/Badge.vue";
 import MainLayout from "../layout/MainLayout.vue";
 import WalletConnectModal from "../components/WalletConnectModal.vue";
-import WalletOnboardingWizard from "../components/WalletOnboardingWizard.vue";
 import LandingEntryModule from "../components/LandingEntryModule.vue";
 import OnboardingChecklist from "../components/OnboardingChecklist.vue";
 import { PlusCircleIcon, ChartBarIcon, BoltIcon, ShieldCheckIcon, GlobeAltIcon } from "@heroicons/vue/24/outline";
@@ -146,7 +136,6 @@ const route = useRoute();
 const { isConnected } = useWalletManager();
 
 const showAuthModal = ref(false);
-const showOnboardingWizard = ref(false);
 
 const shouldShowLandingEntry = computed(() => {
   return !isConnected.value && !onboardingStore.state.hasSeenWelcome;
@@ -185,10 +174,6 @@ const handleEmailSignup = () => {
   router.push({ name: 'DiscoveryDashboard' });
 };
 
-const handleWalletConnectFromLanding = () => {
-  showAuthModal.value = true;
-};
-
 const handleCreateToken = () => {
   if (isConnected.value) {
     router.push("/create");
@@ -213,21 +198,6 @@ const handleDiscoverTokens = () => {
 
 const handleAuthComplete = () => {
   showAuthModal.value = false;
-  onboardingStore.markStepComplete('connect-wallet');
-
-  // Check if there's a redirect destination
-  const redirectPath = localStorage.getItem(AUTH_STORAGE_KEYS.REDIRECT_AFTER_AUTH);
-  if (redirectPath) {
-    localStorage.removeItem(AUTH_STORAGE_KEYS.REDIRECT_AFTER_AUTH);
-    router.push(redirectPath);
-  } else {
-    // Default to create token page after authentication
-    router.push("/create");
-  }
-};
-
-const handleOnboardingComplete = () => {
-  showOnboardingWizard.value = false;
   onboardingStore.markStepComplete('connect-wallet');
 
   // Check if there's a redirect destination
