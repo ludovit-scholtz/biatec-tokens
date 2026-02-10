@@ -411,6 +411,247 @@ expect(isVisible || true).toBe(true); // Pass if element not found
 - **Problem**: Tests don't properly isolate state between runs
 - **Solution**: Clear localStorage in `beforeEach` hooks and mock required state
 
+## 🚨 CI Workflow Verification & Dependency Updates 🚨
+
+### Critical CI Workflow Requirements
+
+**ABSOLUTE REQUIREMENT:** Before completing any PR (especially dependency updates), you MUST verify that CI workflows will actually run on the branch.
+
+**PAST INCIDENT:** Multiple PRs were completed without verifying CI status, resulting in "No status checks" situations where tests weren't actually running. This violated quality standards and could have introduced bugs.
+
+### CI Workflow Branch Pattern Verification
+
+**Check FIRST, before making any changes:**
+
+1. **Identify the branch pattern** of your PR (e.g., `copilot/**`, `dependabot/**`, `main`, `develop`)
+2. **Review workflow configuration** in `.github/workflows/` to ensure your branch pattern is included:
+   ```yaml
+   on:
+     pull_request:
+       branches:
+         - main
+         - develop
+         - 'dependabot/**'  # ← Required for Dependabot PRs
+         - 'copilot/**'     # ← Required for Copilot PRs
+   ```
+3. **If your branch pattern is NOT included:**
+   - ✅ Update workflow files FIRST before any other work
+   - ✅ Commit and push the workflow changes
+   - ✅ Verify CI runs are triggered in GitHub Actions
+
+### "No Status Checks" Investigation Protocol
+
+If you see "No status checks" or CI not running:
+
+1. **DO NOT ASSUME TESTS PASSED** - No CI status means no testing occurred
+2. **Check workflow branch patterns** in `.github/workflows/test.yml` and `playwright.yml`
+3. **Verify your branch name** matches one of the configured patterns
+4. **Update workflows if needed** to include your branch pattern
+5. **Run tests locally** as verification: `npm test` and `npm run test:e2e`
+6. **Document test results** in PR description with specific counts
+
+### CI Workflow Files Requiring Branch Patterns
+
+**Files to check:**
+- `.github/workflows/test.yml` - Unit test workflow
+- `.github/workflows/playwright.yml` - E2E test workflow
+- `.github/workflows/build-fe.yml` - Build workflow
+
+**Required patterns for all PR types:**
+```yaml
+pull_request:
+  branches:
+    - main
+    - develop
+    - 'dependabot/**'
+    - 'copilot/**'
+```
+
+### Dependabot PR Special Considerations
+
+**Critical for Dependabot PRs:**
+
+1. **Comment Actions Must Skip Dependabot**
+   - Dependabot PRs have restricted permissions
+   - Workflows that post PR comments will fail with 403 errors
+   - Always add: `&& github.actor != 'dependabot[bot]'` to comment conditions
+   
+   Example:
+   ```yaml
+   - name: Comment PR with Results
+     if: always() && github.event_name == 'pull_request' && github.actor != 'dependabot[bot]'
+   ```
+
+2. **CI Status vs. Test Status**
+   - "CI failed" does NOT always mean tests failed
+   - Check actual test output: Look for "X passed (Y.Ym)" in logs
+   - Permission errors (403) are infrastructure issues, not test failures
+
+### Dependency Update Protocol
+
+**MANDATORY STEPS for ALL dependency updates (no exceptions):**
+
+#### 1. Pre-Update Analysis
+- [ ] Identify what dependency is being updated and version change
+- [ ] Research release notes/changelog for the new version
+- [ ] Identify if there are breaking changes or security fixes
+- [ ] Assess impact on wallet integration, token creation, or core flows
+
+#### 2. Local Testing (BEFORE committing anything)
+- [ ] Run `npm ci` to install updated dependencies
+- [ ] Run `npm test` - Expect 2779+ tests passing
+- [ ] Run `npm run test:e2e` - Expect 271+ tests passing
+- [ ] Run `npm run build` - Must succeed with no errors
+- [ ] Document exact test counts and any failures
+
+#### 3. CI Workflow Verification
+- [ ] Check if workflows will run on your branch pattern
+- [ ] Update workflow files if branch pattern missing
+- [ ] Verify workflows are triggered after first commit
+- [ ] Check GitHub Actions UI for actual test execution
+- [ ] If "No status checks", investigate immediately (don't ignore)
+
+#### 4. Business Value Documentation (REQUIRED)
+- [ ] Create `DEPENDENCY_UPDATE_<NAME>_<VERSION>.md` with:
+  - What changed (features, security, fixes)
+  - Why it matters to users (not just technical details)
+  - Risk assessment (security, stability, compatibility)
+  - Testing results (unit, E2E, build)
+  - Rollback plan with estimated time
+  - Product roadmap alignment (user trust, compliance, friction reduction)
+  - Cost-benefit analysis with ROI estimate
+  - Success metrics and monitoring plan
+
+#### 5. Issue Documentation (REQUIRED)
+- [ ] Create `ISSUE_<NAME>_<VERSION>.md` with:
+  - Business value statement (customer impact)
+  - Product vision alignment (low-friction experience, trust, compliance)
+  - Target audience (who benefits and how)
+  - Success criteria and acceptance criteria
+  - Risk assessment with mitigation strategies
+  - Timeline and cost-benefit analysis
+  - Communication plan and monitoring metrics
+
+#### 6. PR Description (REQUIRED)
+- [ ] Link to business value document
+- [ ] Link to issue document
+- [ ] Summary of changes (what, why, impact)
+- [ ] Test results (exact counts: "2779/2798 unit, 271/279 E2E")
+- [ ] Manual verification summary
+- [ ] Rollback plan
+- [ ] Configuration changes (if any)
+- [ ] Migration steps (if any)
+
+#### 7. Final Verification (BEFORE marking PR ready)
+- [ ] All tests passing locally (verify 2-3 times)
+- [ ] CI workflows successfully executed in GitHub Actions
+- [ ] No failing test jobs (check workflow logs)
+- [ ] Build successful (no TypeScript errors)
+- [ ] Business value document complete and comprehensive
+- [ ] Issue document complete with ROI analysis
+- [ ] PR marked "Ready for Review" (not draft)
+
+### Documentation Requirements for Dependency Updates
+
+**EVERY dependency update MUST include:**
+
+1. **Technical Documentation** (300+ lines)
+   - Executive summary with key benefits
+   - What changed (features, fixes, security updates)
+   - Why it matters (business impact, not just technical)
+   - Trade-offs and considerations
+   - Rollback plan with steps and timing
+   - Testing results with exact counts
+   - Configuration requirements
+   - Impact on current users
+   - Migration and deployment steps
+   - Risk assessment (technical, security, user impact, business)
+   - Product roadmap alignment (detailed analysis)
+   - Cost-benefit analysis with ROI
+
+2. **Business Case Documentation** (200+ lines)
+   - Issue type and priority
+   - Business value statement
+   - Customer-facing impact (problem and solution)
+   - Product vision alignment (all key pillars)
+   - Target audience (who benefits)
+   - Success criteria (must/should/could have)
+   - Acceptance criteria (functional, non-functional, security)
+   - Technical implementation summary
+   - Risks and mitigation (detailed for each risk)
+   - Timeline and effort estimate
+   - Cost-benefit analysis with Year 1 ROI
+   - Dependencies and prerequisites
+   - Related issues and context
+   - Communication plan
+   - Monitoring and validation plan
+
+3. **Test Evidence**
+   - Exact test counts: "2779/2798 unit passing (19 skipped)"
+   - Exact E2E counts: "271/279 E2E passing (8 skipped)"
+   - Build time: "SUCCESS in 11.62s"
+   - Coverage metrics: "Statements: 99.3%, Branches: 80.1%, Functions: 98.7%, Lines: 99.4%"
+   - Manual test checklist with specific scenarios verified
+
+### Why Documentation Matters
+
+**Product Owner Perspective:**
+- Dependency updates affect user experience and system reliability
+- Business value must be clear to justify the change
+- Risk assessment informs deployment timing and rollback readiness
+- ROI analysis supports prioritization decisions
+- Product roadmap alignment ensures strategic coherence
+
+**Development Team Perspective:**
+- Comprehensive docs prevent "why did we upgrade?" questions
+- Rollback plans reduce incident response time
+- Test evidence provides confidence in changes
+- Risk analysis helps anticipate issues
+
+**Support Team Perspective:**
+- Understanding user impact helps with ticket triage
+- Known issues documented upfront
+- Success metrics help measure support burden changes
+
+### Common Pitfalls to Avoid
+
+❌ **NEVER:**
+- Finish work without verifying CI actually ran
+- Assume "no CI status" means tests passed (it means they didn't run!)
+- Skip business value documentation for "simple" dependency updates
+- Mark PR as complete with failing tests (even if CI shows green due to workflow issues)
+- Ignore "No status checks" warnings in PR
+- Complete work without comprehensive testing evidence
+- Skip ROI analysis for dependency updates
+
+✅ **ALWAYS:**
+- Verify CI workflows will run BEFORE starting work
+- Run tests locally even if CI is configured
+- Create comprehensive business value documentation
+- Create detailed issue linking to product vision
+- Document exact test counts and pass/fail status
+- Provide clear rollback plan with timing
+- Include cost-benefit analysis with ROI
+- Mark PR "Ready for Review" only when ALL requirements met
+
+### Quality Standards Enforcement
+
+**This section was added because:**
+- Previous dependency update PRs were completed without CI verification
+- "No status checks" situations were ignored, leading to untested changes
+- Business value was not documented, making review difficult
+- Risk assessment was missing, creating uncertainty about deployment
+- ROI analysis was absent, preventing prioritization decisions
+
+**These mistakes MUST NOT happen again.**
+
+**Enforcement:**
+- All PRs without complete documentation will be REJECTED
+- All PRs without CI verification will be REJECTED
+- All PRs with "No status checks" must investigate and fix workflows
+- All dependency updates must include business value analysis
+- All changes must have comprehensive testing evidence
+
 ## Additional Notes
 
 - The application uses Vue Router for navigation
