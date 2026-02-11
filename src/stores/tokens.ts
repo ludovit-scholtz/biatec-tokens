@@ -51,7 +51,7 @@ export interface TokenTemplate {
 }
 
 export interface NetworkGuidance {
-  name: "VOI" | "Aramid";
+  name: "VOI" | "Aramid" | "Algorand" | "AlgorandTestnet" | "Ethereum" | "Arbitrum" | "Base" | "Sepolia";
   displayName: string;
   description: string;
   fees: {
@@ -696,6 +696,148 @@ export const useTokenStore = defineStore("tokens", () => {
         micaRelevance: "Aramid is optimized for MICA-compliant tokens. E-money tokens and asset-referenced tokens require authorization and reserve management.",
       },
       bestFor: ["Payment systems", "Stablecoins", "Security tokens", "Cross-border transfers", "Regulated assets"],
+    },
+    {
+      name: "Algorand",
+      displayName: "Algorand Mainnet",
+      description: "Pure proof-of-stake blockchain with instant finality and low fees",
+      fees: {
+        creation: "~0.001 ALGO",
+        transaction: "~0.001 ALGO",
+        description: "Algorand offers predictable low fees and instant finality for secure token deployments",
+      },
+      metadataHosting: {
+        recommended: ["IPFS", "Arweave", "Pinata", "NFT.Storage"],
+        description: "Use established IPFS gateways or permanent storage solutions for token metadata.",
+      },
+      compliance: {
+        considerations: [
+          "Ensure proper disclosure for all token types",
+          "KYC/AML for security and payment tokens",
+          "Maintain regulatory compliance in target jurisdictions",
+          "Consider securities regulations for fractional NFTs",
+        ],
+        micaRelevance: "Algorand mainnet supports MICA-compliant token issuance. Follow EU regulations for tokens marketed in Europe.",
+      },
+      bestFor: ["Enterprise tokens", "NFT collections", "DeFi protocols", "Secure asset tokenization"],
+    },
+    {
+      name: "AlgorandTestnet",
+      displayName: "Algorand Testnet",
+      description: "Test network for development and experimentation",
+      fees: {
+        creation: "Free (testnet)",
+        transaction: "Free (testnet)",
+        description: "Testnet provides free tokens for development and testing without real value",
+      },
+      metadataHosting: {
+        recommended: ["IPFS testnet gateways", "Development storage"],
+        description: "Use test storage solutions for development. Data may not be permanent.",
+      },
+      compliance: {
+        considerations: [
+          "Testnet only - not for production use",
+          "No real value or legal compliance required",
+          "Test your compliance workflows here first",
+        ],
+        micaRelevance: "Testnet for development only. Not subject to MICA or other regulations.",
+      },
+      bestFor: ["Testing", "Development", "Learning", "Proof of concepts"],
+    },
+    {
+      name: "Ethereum",
+      displayName: "Ethereum Mainnet",
+      description: "The world's leading smart contract platform for decentralized applications",
+      fees: {
+        creation: "~0.05-0.2 ETH (gas dependent)",
+        transaction: "~0.01-0.05 ETH (gas dependent)",
+        description: "Ethereum fees vary with network congestion. Consider gas optimization for cost efficiency",
+      },
+      metadataHosting: {
+        recommended: ["IPFS", "Arweave", "NFT.Storage", "Pinata"],
+        description: "Store metadata off-chain using decentralized storage. ERC standards reference metadata via URI.",
+      },
+      compliance: {
+        considerations: [
+          "Securities regulations for utility and governance tokens",
+          "AML/KYC for DeFi protocols",
+          "Smart contract audits recommended",
+          "Consider regulatory status in all target jurisdictions",
+        ],
+        micaRelevance: "Ethereum tokens used in EU must comply with MICA. E-money tokens require authorization.",
+      },
+      bestFor: ["DeFi protocols", "NFT marketplaces", "DAO governance", "ERC-20 tokens"],
+    },
+    {
+      name: "Arbitrum",
+      displayName: "Arbitrum One",
+      description: "Layer 2 scaling solution for Ethereum with lower fees and faster transactions",
+      fees: {
+        creation: "~0.001-0.01 ETH",
+        transaction: "~0.0001-0.001 ETH",
+        description: "Arbitrum offers significantly lower fees than Ethereum mainnet while maintaining security",
+      },
+      metadataHosting: {
+        recommended: ["IPFS", "Arweave", "NFT.Storage"],
+        description: "Use same metadata standards as Ethereum. Arbitrum is fully EVM-compatible.",
+      },
+      compliance: {
+        considerations: [
+          "Same regulatory requirements as Ethereum",
+          "Ensure cross-chain compliance if bridging assets",
+          "Smart contract audits recommended",
+          "Consider L2-specific risks in disclosures",
+        ],
+        micaRelevance: "L2 tokens subject to same MICA requirements as Ethereum when used in EU.",
+      },
+      bestFor: ["Cost-efficient DeFi", "High-frequency trading", "Gaming tokens", "NFT projects"],
+    },
+    {
+      name: "Base",
+      displayName: "Base",
+      description: "Coinbase's Ethereum L2 built on OP Stack for secure, low-cost transactions",
+      fees: {
+        creation: "~0.001-0.01 ETH",
+        transaction: "~0.0001-0.001 ETH",
+        description: "Base provides Ethereum compatibility with low fees and strong ecosystem support",
+      },
+      metadataHosting: {
+        recommended: ["IPFS", "Arweave", "NFT.Storage"],
+        description: "Use decentralized storage for metadata. Base fully supports ERC standards.",
+      },
+      compliance: {
+        considerations: [
+          "Coinbase ecosystem integration available",
+          "Same regulatory treatment as Ethereum L2s",
+          "Consider KYC/AML requirements",
+          "Smart contract security audits recommended",
+        ],
+        micaRelevance: "Base tokens marketed in EU must comply with MICA regulations.",
+      },
+      bestFor: ["Consumer applications", "Social tokens", "Creator economies", "Mobile-first dApps"],
+    },
+    {
+      name: "Sepolia",
+      displayName: "Sepolia Testnet",
+      description: "Ethereum testnet for development and testing",
+      fees: {
+        creation: "Free (testnet)",
+        transaction: "Free (testnet)",
+        description: "Testnet provides free ETH for development without real value",
+      },
+      metadataHosting: {
+        recommended: ["IPFS testnet gateways", "Development storage"],
+        description: "Use test storage for development. Data may not be permanent.",
+      },
+      compliance: {
+        considerations: [
+          "Testnet only - not for production",
+          "No real value or compliance required",
+          "Test your deployment before mainnet",
+        ],
+        micaRelevance: "Testnet for development only. Not subject to regulations.",
+      },
+      bestFor: ["Testing EVM contracts", "Development", "Integration testing", "Educational purposes"],
     },
   ];
 

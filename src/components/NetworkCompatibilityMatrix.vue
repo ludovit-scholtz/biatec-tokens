@@ -226,14 +226,14 @@ import {
   isStandardSupportedOnNetwork,
   NETWORKS,
   STANDARDS,
-  type StandardId,
-  type NetworkId,
-} from '../../config/networkCompatibility'
+  type NetworkInfo,
+  type StandardInfo,
+} from '../../types/networkCompatibility'
 
 const filterNetworkType = ref<'All' | 'AVM' | 'EVM'>('All')
 const filterTokenType = ref<'All' | 'Fungible' | 'NFT'>('All')
 
-const filteredNetworks = computed(() => {
+const filteredNetworks = computed((): NetworkInfo[] => {
   const networks = Object.values(NETWORKS)
   if (filterNetworkType.value === 'All') {
     return networks
@@ -241,7 +241,7 @@ const filteredNetworks = computed(() => {
   return networks.filter(n => n.type === filterNetworkType.value)
 })
 
-const filteredStandards = computed(() => {
+const filteredStandards = computed((): StandardInfo[] => {
   let standards = Object.values(STANDARDS)
   
   // Filter by network type

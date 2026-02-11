@@ -100,8 +100,8 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { isConfigurationCompatible, NETWORKS, STANDARDS } from '../../config/networkCompatibility'
-import type { NetworkId, StandardId, WalletType } from '../../config/networkCompatibility'
+import { isConfigurationCompatible, NETWORKS, STANDARDS } from '../../types/networkCompatibility'
+import type { NetworkId, StandardId, WalletType } from '../../types/networkCompatibility'
 
 interface Props {
   network?: string | NetworkId | null
