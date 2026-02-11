@@ -18,7 +18,8 @@
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:debug": "playwright test --debug",
-    "test:e2e:report": "playwright show-report"
+    "test:e2e:report": "playwright show-report",
+    "test:e2e:journey-video": "set VIDEO_RECORDING=true && playwright test full-e2e-journey.spec.ts --grep \"should complete full journey\" --config playwright-video.config.ts"
   },
   "dependencies": {
     "@agoralabs-sh/avm-web-provider": "^1.7.0",
@@ -33,7 +34,9 @@
     "algosdk": "^3.5.2",
     "axios": "^1.13.4",
     "buffer": "^6.0.3",
+    "ghost-cursor-playwright": "^2.1.0",
     "lute-connect": "^1.6.3",
+    "mouse-helper": "^1.0.7",
     "pinia": "^3.0.4",
     "vue": "^3.5.27",
     "vue-router": "^5.0.2",

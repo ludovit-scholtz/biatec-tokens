@@ -42,6 +42,21 @@ src/
 ├── assets/          # Static assets
 ├── main.ts          # Application entry point
 └── App.vue          # Root component
+
+docs/
+├── general/         # General project documentation (README, CHANGELOG, etc.)
+├── compliance/      # Compliance and regulatory documentation
+├── business/        # Business value and roadmap documentation
+├── onboarding/      # User onboarding and wizard documentation
+├── issues/          # Issue tracking and verification documentation
+├── implementations/ # Implementation summaries and MVP documentation
+├── testing/         # Test results and coverage documentation
+├── wallet/          # Wallet integration documentation
+├── deployment/      # Deployment and UX improvement documentation
+├── pr/              # Pull request and analysis documentation
+├── attestations/    # Attestation dashboard documentation
+├── metadata/        # Metadata pipeline documentation
+└── copilot/         # Copilot instruction updates
 ```
 
 ## Development Commands
@@ -153,6 +168,7 @@ src/
 - Change TypeScript strict mode settings
 - Add `any` types - always use proper typing
 - Modify the Buffer/global polyfills in `main.ts` (required for wallet libraries)
+- Place documentation files in the root directory - use appropriate `docs/` subfolders
 
 ### DO:
 
@@ -276,19 +292,23 @@ When handling dependency update PRs (especially automated Dependabot PRs):
 ## Example: Updating @txnlab/use-wallet-vue
 
 ### Step 1: Verify Tests ✅
+
 - Run: `npm test && npm run test:e2e && npm run build`
 - Document results: "2779/2798 unit tests passing (99.3%), 271/279 E2E tests passing (97.1%)"
 
 ### Step 2: Review Release Notes 📋
+
 - Fetch: https://github.com/TxnLab/use-wallet/releases
 - Document: "4.5.0 adds Web3Auth session persistence, updates WalletConnect to v2.23.4"
 - Breaking changes: NONE (semver-minor)
 
 ### Step 3: Create Business Value Doc 💼
+
 - File: `DEPENDENCY_UPDATE_USE_WALLET_VUE_FEB10_2026.md`
 - Include: Executive summary, what changed, business value, risk assessment, testing coverage, manual verification, recommendations
 
 ### Step 4: Test Affected Flows 🧪
+
 - Wallet connection (if applicable)
 - Network switching
 - Transaction signing
@@ -296,6 +316,7 @@ When handling dependency update PRs (especially automated Dependabot PRs):
 - Session persistence
 
 ### Step 5: Reply to PR Comment
+
 - Summarize findings
 - Include link to business value document
 - Provide test results
@@ -338,21 +359,25 @@ When handling dependency update PRs (especially automated Dependabot PRs):
 For these critical dependencies, EXTRA verification is required:
 
 **Wallet/Blockchain:**
+
 - `@txnlab/use-wallet-vue`, `algosdk`, `ethers`, `web3.js`
 - **Extra:** Test transaction signing, network switching, wallet connection flows
 - **Manual:** Verify with real wallet on testnet
 
 **Authentication:**
+
 - `algorand-authentication-component-vue`, authentication libraries
 - **Extra:** Test login/logout flows, session management, token refresh
 - **Manual:** Verify auth persists across page reloads
 
 **Payment/Subscription:**
+
 - Stripe SDK, payment processors
 - **Extra:** Test checkout flows, webhook handling, subscription status
 - **Manual:** Verify payment flow in test mode
 
 **UI Framework:**
+
 - `vue`, `vite`, `tailwindcss`, `@headlessui/vue`
 - **Extra:** Test responsive design, dark mode, accessibility
 - **Manual:** Verify on multiple browsers and devices
@@ -555,14 +580,16 @@ expect(isVisible || true).toBe(true); // Pass if element not found
 - **Problem**: Store computed properties aren't reactive in tests. Setting `store.isActive = true` doesn't work when `isActive` is a computed property.
 - **Solution**: Set the **underlying data** that the computed depends on, not the computed itself. Mock any lifecycle methods that might override test data.
 - **Example**:
+
   ```typescript
   // ❌ WRONG - setting computed property directly
-  subscriptionStore.isActive = true
-  
+  subscriptionStore.isActive = true;
+
   // ✅ CORRECT - set underlying data
-  subscriptionStore.subscription = { subscription_status: 'active' } as any
-  subscriptionStore.fetchSubscription = vi.fn().mockResolvedValue(undefined) // Mock to prevent override
+  subscriptionStore.subscription = { subscription_status: "active" } as any;
+  subscriptionStore.fetchSubscription = vi.fn().mockResolvedValue(undefined); // Mock to prevent override
   ```
+
 - **Common patterns**:
   - `authStore.isAuthenticated` depends on `authStore.isConnected` AND `authStore.user` - set both
   - `subscriptionStore.isActive` depends on `subscriptionStore.subscription.subscription_status`
@@ -618,7 +645,7 @@ npm audit
 # Unit tests - MUST pass 2779+ tests
 npm test
 
-# E2E tests - MUST pass 271+ tests  
+# E2E tests - MUST pass 271+ tests
 npx playwright install --with-deps chromium  # (if browsers not installed)
 npm run test:e2e
 
@@ -631,12 +658,14 @@ npm run check-typescript-errors-vue
 ```
 
 **Test Pass Criteria:**
+
 - Unit tests: 2779+ passing (99.3%+), <20 skipped
 - E2E tests: 271+ passing (97.1%+), <10 skipped
 - Build: SUCCESS with no errors
 - TypeScript: Zero compilation errors
 
 **If ANY test fails or build fails:**
+
 1. STOP immediately - do not proceed
 2. DEBUG the failure - identify root cause
 3. FIX the issue (update code, fix tests, or revert update)
@@ -648,6 +677,7 @@ npm run check-typescript-errors-vue
 Create a comprehensive business value document for the dependency update:
 
 **Required Sections:**
+
 1. **Executive Summary**: What changed and why it matters
 2. **What Changed**: Version numbers, release notes summary, breaking changes
 3. **Why This Matters**: Business impact (security, features, compliance, cost)
@@ -665,6 +695,7 @@ Create a comprehensive business value document for the dependency update:
 15. **Conclusion**: Clear recommendation (APPROVE/REJECT) with reasoning
 
 **Document Format:**
+
 - File name: `DEPENDENCY_UPDATE_<PACKAGE>_<VERSION>.md`
 - Location: Repository root
 - Example: `DEPENDENCY_UPDATE_USE_WALLET_VUE_4.5.0.md`
@@ -677,10 +708,9 @@ Create a comprehensive business value document for the dependency update:
   - Use `github-mcp-server-actions_list` to check workflow runs
   - Use `github-mcp-server-actions_get` to get failure details
   - Use `get_job_logs` to investigate failures
-  
 - [ ] **Compare Local vs CI**: If CI fails but local passes:
   - Check Node.js version differences
-  - Check browser version differences  
+  - Check browser version differences
   - Review timing/timeout issues
   - Verify environment variables
   - Check for race conditions
@@ -723,11 +753,13 @@ Before marking work complete, verify:
 #### Scenario 1: Security Update (HIGH PRIORITY)
 
 **Indicators:**
+
 - npm audit shows CRITICAL or HIGH vulnerabilities
 - GitHub Security Alert (Dependabot)
 - CVE published for dependency
 
 **Action:**
+
 1. **IMMEDIATE**: Update affected package
 2. **VERIFY**: Run full test suite
 3. **DOCUMENT**: Note CVE number and security impact
@@ -737,10 +769,12 @@ Before marking work complete, verify:
 #### Scenario 2: Major Version Update (HIGH RISK)
 
 **Indicators:**
+
 - Version bump: X.0.0 (e.g., 3.0.0 → 4.0.0)
 - Breaking changes announced in release notes
 
 **Action:**
+
 1. **RESEARCH**: Read full migration guide
 2. **PLAN**: Create update plan with code changes needed
 3. **BRANCH**: Use feature branch, not direct to main
@@ -752,10 +786,12 @@ Before marking work complete, verify:
 #### Scenario 3: Minor/Patch Update (LOW RISK)
 
 **Indicators:**
+
 - Version bump: 1.X.0 or 1.2.X (e.g., 4.4.0 → 4.5.0)
 - No breaking changes in release notes
 
 **Action:**
+
 1. **UPDATE**: Run `npm install package@latest`
 2. **TEST**: Full test suite (unit + E2E + build)
 3. **DOCUMENT**: Create business value doc (required)
@@ -765,11 +801,13 @@ Before marking work complete, verify:
 #### Scenario 4: Dependabot PR (AUTOMATED)
 
 **Special Considerations:**
+
 - PRs created by dependabot[bot]
 - May not have manual testing done yet
 - Requires same rigor as manual updates
 
 **Action:**
+
 1. **CHECKOUT**: Checkout Dependabot branch locally
 2. **FOLLOW PROTOCOL**: Complete full verification protocol (steps 1-8)
 3. **DOCUMENT**: Create business value doc
@@ -779,6 +817,7 @@ Before marking work complete, verify:
 ### Red Flags (DO NOT MERGE)
 
 ❌ **STOP if you see:**
+
 - Any test failures (unit or E2E)
 - Build errors or warnings
 - TypeScript compilation errors
@@ -806,12 +845,14 @@ Before marking ANY dependency update complete:
 ### Why This Matters
 
 **Past Incident:** Dependency updates have been merged without proper verification, leading to:
+
 - CI failures blocking development
-- Unclear business value  
+- Unclear business value
 - Product owner rejection
 - Engineering time wasted (2+ hours per failed update)
 
 **Prevention:** This protocol ensures:
+
 - ✅ Every update is properly tested
 - ✅ Business value is clear and documented
 - ✅ Risk is assessed and communicated
@@ -819,6 +860,7 @@ Before marking ANY dependency update complete:
 - ✅ Team understands impact
 
 **Enforcement:** Product owners WILL reject any dependency update PR that:
+
 - Lacks business value documentation
 - Has failing tests or CI
 - Shows inadequate verification
