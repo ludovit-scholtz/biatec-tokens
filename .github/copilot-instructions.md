@@ -11,6 +11,88 @@
 
 **PAST VIOLATIONS:** Copilot has previously finished work with failing tests and reduced coverage, violating these instructions. This has introduced bugs and reduced quality. This MUST NOT happen again.
 
+### Test Quality Requirements
+
+**ALL tests must pass before marking work complete.** When writing tests:
+
+1. **Async Testing**: Components with async data loading need proper async test patterns
+   - ❌ BAD: Checking loading state immediately after mount (mock data loads too fast)
+   - ✅ GOOD: Either test functional behavior after data loads, OR mock delays properly
+   
+2. **Loading State Tests**: If testing loading states:
+   - Use `vi.useFakeTimers()` to control timing
+   - Mock async functions to control when they resolve
+   - OR skip loading state tests if not critical (focus on functional tests)
+
+3. **Error State Tests**: Test error states by:
+   - Mocking functions to throw errors
+   - Not just checking if error template exists in HTML
+
+4. **Example Pattern**:
+```typescript
+// Good: Test functional behavior after load
+it('should display data after loading', async () => {
+  const wrapper = mount(Component);
+  await wrapper.vm.$nextTick();
+  await new Promise(resolve => setTimeout(resolve, 1000)); // Wait for mock data
+  expect(wrapper.text()).toContain('Expected Data');
+});
+
+// Good: Test with controlled timing
+it('should show loading state', async () => {
+  vi.useFakeTimers();
+  const wrapper = mount(Component);
+  expect(wrapper.find('.loading').exists()).toBe(true);
+  await vi.advanceTimersByTimeAsync(1000);
+  expect(wrapper.find('.loading').exists()).toBe(false);
+  vi.useRealTimers();
+});
+```
+
+**Product Owner Requirement**: Zero failing tests allowed. If tests are flaky or timing-dependent, fix them or remove them. Never commit code with known test failures.
+
+### E2E Test Quality Requirements (Playwright)
+
+**ALL E2E tests must be robust and pass consistently in CI.** When writing E2E tests:
+
+1. **Async Data Loading**: Components with async mock data need proper wait patterns
+   - ❌ BAD: Checking elements immediately after page load (mock data hasn't loaded)
+   - ✅ GOOD: Wait for networkidle + explicit timeout + long visibility checks
+   
+2. **E2E Test Pattern**:
+```typescript
+// Good: Wait for async data properly
+test('should display element', async ({ page }) => {
+  await page.goto('/route');
+  await page.waitForLoadState('networkidle');
+  await page.waitForTimeout(1500); // Let mock data load (500-800ms typical)
+  
+  const element = page.getByRole('button', { name: /Action/i });
+  await expect(element).toBeVisible({ timeout: 15000 }); // Long timeout for CI
+});
+
+// Bad: Check immediately (flaky in CI)
+test('should display element', async ({ page }) => {
+  await page.goto('/route');
+  await page.waitForLoadState('networkidle');
+  const element = page.getByRole('button', { name: /Action/i });
+  await expect(element).toBeVisible(); // May fail if data still loading!
+});
+```
+
+3. **Click Actions**: Add small waits after animations
+```typescript
+await button.click();
+await page.waitForTimeout(300); // Wait for animation/transition
+await expect(element).toHaveAttribute('aria-expanded', 'true');
+```
+
+4. **Visibility Timeouts**: Use generous timeouts for CI environments
+   - Local: 5000-10000ms may work
+   - CI: 15000ms recommended (slower environments)
+
+**Product Owner Requirement**: E2E tests must pass in CI. If tests are flaky due to timing, fix the waits - never skip or disable tests.
+
 ## Project Overview
 
 This is a Vue 3 + TypeScript frontend application for managing and deploying tokens on multiple blockchain networks. The application provides a user interface for creating, managing, and deploying various token standards across both EVM chains (Ethereum, Arbitrum, Base) and AVM chains (Algorand mainnet, Algorand testnet, VOI, Aramid).
