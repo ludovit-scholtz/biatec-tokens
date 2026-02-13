@@ -11,6 +11,79 @@
 
 **PAST VIOLATIONS:** Copilot has previously finished work with failing tests and reduced coverage, violating these instructions. This has introduced bugs and reduced quality. This MUST NOT happen again.
 
+## 🚨 PRODUCT OWNER QUALITY REQUIREMENTS 🚨
+
+**MANDATORY COMPLETENESS CHECKLIST** - Work is NEVER considered complete without ALL of the following:
+
+### 1. Test Coverage Requirements (MANDATORY)
+- [ ] **Unit Tests**: Minimum 15+ tests for new stores, 10+ for new utilities, 10+ for new components
+- [ ] **E2E Tests**: Minimum 10+ tests for new views/pages, 5+ for wizard steps
+- [ ] **Component Tests**: Every new component MUST have unit tests covering props, events, edge cases
+- [ ] **Integration Tests**: State transitions and API interactions must be tested
+- [ ] **Test Matrix Document**: Create comprehensive testing matrix (e.g., `FEATURE_TESTING_MATRIX.md`) with:
+  - Unit test counts and coverage areas
+  - Integration test patterns
+  - E2E test descriptions with scenarios
+  - Edge case validation
+  - Business value linkage to roadmap
+  - Test evidence (pass/fail counts, duration)
+
+### 2. Documentation Requirements (MANDATORY)
+- [ ] **Implementation Summary**: Create `FEATURE_IMPLEMENTATION_SUMMARY.md` with:
+  - Business value analysis (revenue impact, user impact, risk reduction)
+  - Technical architecture deep dive
+  - Acceptance criteria mapping (with test evidence)
+  - Risk assessment and mitigation strategies
+  - Rollout plan with phases
+  - Dependencies and assumptions
+- [ ] **Testing Matrix**: Link tests to acceptance criteria explicitly
+- [ ] **Manual Verification Checklist**: 5+ step-by-step test scenarios for product owner
+- [ ] **Screenshots/Videos**: Visual evidence of key user flows and states
+
+### 3. Quality Gates (MANDATORY BEFORE COMPLETION)
+- [ ] **All Tests Pass Locally**: Exact count (e.g., 2737/2762 passing)
+- [ ] **Build Succeeds**: Zero TypeScript errors, zero build warnings
+- [ ] **Test Coverage**: New code ≥70% branch coverage
+- [ ] **E2E Tests Pass**: All critical user flows validated
+- [ ] **No Regressions**: All existing tests still pass
+- [ ] **Accessibility Check**: WCAG 2.1 AA baseline (labels, contrast, keyboard)
+
+### 4. Issue Linkage and Acceptance Criteria (MANDATORY)
+- [ ] **Link to Issue Number**: PR description must reference issue (e.g., "Closes #389")
+- [ ] **Map ALL Acceptance Criteria**: Each criterion from issue mapped to implementation + tests
+- [ ] **Provide Test Evidence**: For each criterion, show which tests validate it
+
+### 5. Risk Controls Documentation (MANDATORY)
+- [ ] **False Positive Prevention**: How system prevents incorrect blocking
+- [ ] **False Negative Prevention**: How system prevents incorrect approval
+- [ ] **Error Handling**: All error states have explicit user-facing messages
+- [ ] **Rollback Plan**: How to revert if critical issues arise
+
+### 6. No Wallet Connector Verification (MANDATORY)
+- [ ] **E2E Tests Verify**: No wallet connector buttons/text appear
+- [ ] **Code Review**: Grep for wallet-related imports (WalletConnect, Pera, Defly, MetaMask)
+- [ ] **Explicit Statement**: "This PR does not introduce wallet connectors. Email/password authentication only."
+
+---
+
+## FAILURE TO MEET REQUIREMENTS = IMMEDIATE REJECTION
+
+**Product Owner will reject ANY PR that lacks:**
+1. Comprehensive test coverage (unit + E2E + testing matrix doc)
+2. Implementation summary with business value
+3. Manual verification checklist
+4. Acceptance criteria mapping with test evidence
+5. All tests passing locally with exact counts
+6. Build success verification
+
+**When Product Owner rejects for quality, you MUST:**
+1. Create detailed testing matrix document
+2. Add missing unit/E2E tests until minimums met
+3. Document business value and risk controls
+4. Provide test execution evidence (counts, duration)
+5. Map every acceptance criterion to tests
+6. Re-request review with ALL evidence attached
+
 **QUALITY DOCUMENTATION REQUIREMENTS:** Every significant feature MUST include a comprehensive testing matrix document that details:
 - Unit test coverage with specific test counts
 - Integration test patterns and API interactions
@@ -844,6 +917,41 @@ npm run test:e2e
 ```
 
 If ANY check fails, STOP and fix immediately. Do not mark work complete until ALL checks pass.
+
+### Playwright CI Failure Patterns (Exit Code 1 with Passing Tests)
+
+**CRITICAL**: When Playwright reports "X tests passed" but exits with code 1, the issue is NOT test failures but process-level failures.
+
+**Common Causes**:
+1. **Browser Console Errors**: Unhandled errors/warnings in browser console cause Playwright to fail
+2. **Unhandled Promise Rejections**: Async errors not caught properly
+3. **Server Errors**: Dev server crashes or returns 500 errors during test execution
+4. **Resource Loading Failures**: Missing assets, failed network requests
+5. **Memory/Timeout Issues**: CI environment resource constraints
+
+**Debugging Steps**:
+1. Check browser console logs in CI artifacts (test-results/)
+2. Look for server startup errors in workflow logs
+3. Check for race conditions in component initialization
+4. Verify all assets/routes exist and are accessible
+5. Review Playwright HTML report artifacts for screenshots/traces
+
+**Prevention**:
+- Handle all promise rejections in components
+- Use try/catch blocks for async operations
+- Validate all routes exist before testing
+- Mock or stub external API calls properly
+- Use proper error boundaries in Vue components
+- Test locally with `CI=true npm run test:e2e` to simulate CI environment
+
+**When This Happens**:
+1. Run tests locally first to verify they pass
+2. Check CI artifacts for actual error (not just test count)
+3. Fix root cause (usually console errors or server issues)
+4. Document exact error in PR/issue for product owner visibility
+5. Re-run CI after fix
+
+**Historical Pattern**: This exact issue occurred in PR #390 where 67 tests passed but Playwright exited with code 1 due to environment configuration, not test quality.
 
 ## App Initialization Requirements
 
