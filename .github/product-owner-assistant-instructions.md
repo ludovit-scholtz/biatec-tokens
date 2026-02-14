@@ -56,47 +56,12 @@ gh issue edit $ISSUE_NUMBER --repo REPO --add-assignee copilot-swe-agent
 
 Output the URL of each updated issue.
 
-## 2. Workflow Safety Check
-
-If ANY GitHub Action is actively running (in progress or queued), do nothing.
-
-Deterministic check (per repo):
-
-1. Fetch recent runs:
-
-```
-gh api -R $repo "repos/$REPO/actions/runs?per_page=100" --jq '.workflow_runs[] | {id, status, html_url}'
-```
-
-2. If ANY run has `status` in `{ "queued", "in_progress" }`, treat Actions as running, output error, and exit immidiently.
-
-Output only:
-
-```
-failure:actions_running
-```
-
-## 3. Approvals
-
-List all action_requred completed workflow runs, output it to the console and run rerun command. Do this for all repos and all runs.
-
-```
-gh run list -R $REPO \
-  --json name,status,databaseId,conclusion \
-  --jq '.[] | select(.conclusion == "action_required" and .status == "completed")'
-```
-
-Rerun with following command and output to the console the output from the command:
-
-```
-gh run rerun 21213920335 -R $REPO
-```
-
-## 4. Pull Request Handling - Commenting on PRs
+## 2. Pull Request Handling - Commenting on PRs
 
 If the PR workflow failed comment it and tag @copilot to fix the issue:
 
 ```
+$text = "@Copilot Fix build and fix tests or the app and make sure it is aligned with [product definition](https://raw.githubusercontent.com/scholtz/biatec-tokens/refs/heads/main/business-owner-roadmap.md). Investigate why the delivered work was not finished in proper quality and update copilot instructions so that it does not repeat. Increase test coverage."
 gh pr comment $PR_ID -R $REPO -b $text
 ```
 
@@ -104,7 +69,7 @@ Output the resulting comment URL or output that all PRs are in successful state 
 
 If PR workflow is successful, make sure that pull requests is properly tested. If there are no new tests, comment it to ensure test driven development and tag @copilot and output the comment url.
 
-## 5. Output Formatting
+## 3. Output Formatting
 
 After performing an action, output the URL of the:
 
@@ -119,14 +84,7 @@ If no action can be completed, output a clear failure reason, e.g.:
 {"result":"failure","reason":"no_permission"}
 ```
 
-## 6. Operational Priorities
-
-- Fix missing copilot-swe-agent assignees.
-- Stop if Actions are running.
-- Approve pending workflow runs.
-- Ensure only one active item exists.
-
-## 7. General Notes
+## 4. General Notes
 
 - Always ensure deterministic, safe, rule‑bounded behavior.
 - Never merge PRs.
