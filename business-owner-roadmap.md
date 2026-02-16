@@ -148,5 +148,34 @@
 
 ---
 
-**Last Updated:** February 12, 2026
-**Next Review:** February 19, 2026</content>
+## MVP Blockers Reality Check (February 16, 2026)
+
+### Evidence Reviewed
+
+- Closed issues and merged PRs from February 11-16 show substantial delivery velocity on compliance dashboards, guided launch, ARC76 backend deployment, and token workflows.
+- Playwright workflow run history shows instability: latest runs include repeated failures (`run 936-942`) with only intermittent successes.
+
+### Blocker Validation Status
+
+- ✅ **Wallet localStorage blocker appears resolved in tests:** no matches for `wallet_connected` or `active_wallet_id` under `e2e/`.
+- ❌ **Wizard removal blocker not met in tests:** multiple suites still navigate to `/create/wizard` and assert wizard UI (`token-wizard-whitelist`, `token-utility-recommendations`, `compliance-orchestration`).
+- ❌ **ARC76 auth derivation test coverage missing:** no Playwright assertions found for email/password to ARC76 account derivation.
+- ❌ **Top-menu network visibility blocker not validated:** no Playwright coverage found for hiding `"Not connected"` or removing network selector in auth-first flows.
+- ⚠️ **CI trust gap in E2E:** 23 Playwright tests are currently skipped, including wallet-removal and multi-step compliance scenarios.
+
+### Required Playwright Improvements Before MVP Sign-off
+
+1. Replace wizard-centric tests with direct auth-first routing tests from `"Create Token"` to login and then token creation.
+2. Add deterministic ARC76 verification tests (assert derived account id/address and backend auth/session response).
+3. Add explicit assertions that no `"Not connected"` status or wallet/network selector appears in top navigation for unauthenticated users.
+4. Convert currently skipped compliance/auth flows into stable CI-compatible tests by removing long timing dependencies and brittle `networkidle` waits.
+5. Update `e2e/README.md` to remove wallet-connection references and align documentation with email/password-only MVP behavior.
+
+### Roadmap Adjustment
+
+- **MVP Foundation confidence adjusted to 52% (from 55%)** due to unresolved blocker verification and CI test non-compliance despite high implementation throughput.
+
+---
+
+**Last Updated:** February 16, 2026
+**Next Review:** February 23, 2026
