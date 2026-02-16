@@ -153,7 +153,8 @@
 ### Evidence Reviewed
 
 - Closed issues and merged PRs from February 11-16 show substantial delivery velocity on compliance dashboards, guided launch, ARC76 backend deployment, and token workflows.
-- Playwright workflow run history shows instability: latest runs include repeated failures (`run 936-942`) with only intermittent successes.
+- Playwright workflow run history remains unstable: `run 936-942` failed, while only `943` and `944` recovered to success.
+- Current `e2e/` suite contains **23 skipped tests** and **290 `waitForTimeout()` calls**, indicating high CI brittleness and low confidence in blocker verification.
 
 ### Blocker Validation Status
 
@@ -162,6 +163,7 @@
 - ❌ **ARC76 auth derivation test coverage missing:** no Playwright assertions found for email/password to ARC76 account derivation.
 - ❌ **Top-menu network visibility blocker not validated:** no Playwright coverage found for hiding `"Not connected"` or removing network selector in auth-first flows.
 - ⚠️ **CI trust gap in E2E:** 23 Playwright tests are currently skipped, including wallet-removal and multi-step compliance scenarios.
+- ⚠️ **Prior MVP verification docs are stale:** `docs/issues/ISSUE_DUPLICATE_MVP_BLOCKER_SUMMARY.md` claims 30/30 MVP E2E passing, but current repository tests still include wizard-path and skipped coverage gaps.
 
 ### Required Playwright Improvements Before MVP Sign-off
 
