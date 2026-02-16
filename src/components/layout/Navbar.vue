@@ -113,7 +113,7 @@
     </div>
 
     <!-- Authentication Modal (Email/Password only) -->
-    <WalletConnectModal :is-open="showWalletModal" @close="showWalletModal = false" @connected="handleWalletConnected" />
+    <EmailAuthModal :is-open="showWalletModal" @close="showWalletModal = false" @connected="handleWalletConnected" />
 
     <!-- Mobile Menu -->
     <Transition
@@ -166,8 +166,9 @@ import {
   ArrowRightOnRectangleIcon,
   CurrencyDollarIcon,
   ChartPieIcon,
+  RocketLaunchIcon,
 } from "@heroicons/vue/24/outline";
-import WalletConnectModal from "../WalletConnectModal.vue";
+import EmailAuthModal from "../EmailAuthModal.vue";
 import { useAuthStore } from "../../stores/auth";
 
 const route = useRoute();
@@ -182,6 +183,7 @@ const showWalletModal = ref(false);
 
 const navigationItems = [
   { name: "Home", path: "/", icon: HomeIcon },
+  { name: "Guided Launch", path: "/launch/guided", icon: RocketLaunchIcon },
   { name: "Create", path: "/create", icon: PlusCircleIcon },
   { name: "Dashboard", path: "/dashboard", icon: ChartBarIcon },
   { name: "Insights", path: "/insights", icon: ChartPieIcon },
