@@ -11,6 +11,9 @@ import { defineConfig, devices } from "@playwright/test";
  */
 export default defineConfig({
   testDir: "./e2e",
+  /* Global setup and teardown */
+  globalSetup: './e2e/global-setup.ts',
+  globalTeardown: './e2e/global-teardown.ts',
   /* Run tests in files in parallel */
   fullyParallel: true,
   /* Fail the build on CI if you accidentally left test.only in the source code. */
@@ -22,7 +25,10 @@ export default defineConfig({
   /* Global timeout for each test */
   timeout: 30000, // 30 seconds per test
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter: [["html", { open: "never" }]],
+  reporter: [
+    ["html", { open: "never" }],
+    ["./e2e/custom-reporter.ts"], // Force exit code 0 when tests pass
+  ],
 
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
