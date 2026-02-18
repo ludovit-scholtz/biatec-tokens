@@ -148,34 +148,35 @@
 
 ---
 
-## MVP Blockers Reality Check (February 16, 2026)
+## MVP Blockers Reality Check (February 18, 2026)
 
 ### Evidence Reviewed
 
-- Closed issues and merged PRs from February 11-16 show substantial delivery velocity on compliance dashboards, guided launch, ARC76 backend deployment, and token workflows.
-- Playwright workflow run history remains unstable: `run 936-942` failed, while only `943` and `944` recovered to success.
-- Current `e2e/` suite contains **23 skipped tests** and **290 `waitForTimeout()` calls**, indicating high CI brittleness and low confidence in blocker verification.
+- Closed issues and merged PRs on February 18 show continued delivery velocity on auth-first flow hardening, ARC76 determinism, and compliance workflow stabilization.
+- Playwright workflow runs improved materially (`run 1023-1033` mostly successful), but one recent run (`1029`) still ended `action_required`, so reliability is improved but not yet fully trusted.
+- Current `e2e/` suite still contains **26 skipped tests** and **306 `waitForTimeout()` calls**, indicating persistent CI brittleness and low confidence in blocker verification.
 
 ### Blocker Validation Status
 
 - ✅ **Wallet localStorage blocker appears resolved in tests:** no matches for `wallet_connected` or `active_wallet_id` under `e2e/`.
 - ❌ **Wizard removal blocker not met in tests:** multiple suites still navigate to `/create/wizard` and assert wizard UI (`token-wizard-whitelist`, `token-utility-recommendations`, `compliance-orchestration`).
-- ❌ **ARC76 auth derivation test coverage missing:** no Playwright assertions found for email/password to ARC76 account derivation.
-- ❌ **Top-menu network visibility blocker not validated:** no Playwright coverage found for hiding `"Not connected"` or removing network selector in auth-first flows.
-- ⚠️ **CI trust gap in E2E:** 23 Playwright tests are currently skipped, including wallet-removal and multi-step compliance scenarios.
-- ⚠️ **Prior MVP verification docs are stale:** `docs/issues/ISSUE_DUPLICATE_MVP_BLOCKER_SUMMARY.md` claims 30/30 MVP E2E passing, but current repository tests still include wizard-path and skipped coverage gaps.
+- ❌ **ARC76 auth derivation blocker only partially met:** `arc76-validation.spec.ts` validates localStorage persistence with mocked `algorand_user`, but does not verify backend email/password-to-ARC76 derivation contract.
+- 🟡 **Top-menu network visibility blocker partially covered:** there are negative `"Not connected"` assertions, but coverage is narrow and mostly HTML-content based instead of deterministic nav-component assertions across protected and unauthenticated states.
+- ⚠️ **CI trust gap in E2E remains high:** 26 Playwright tests are currently skipped, including wallet-removal and multi-step compliance scenarios.
+- ⚠️ **Auth realism gap remains:** `algorand_user` localStorage is still mocked in ~30 tests, limiting confidence in real auth-first backend behavior.
 
 ### Required Playwright Improvements Before MVP Sign-off
 
 1. Replace wizard-centric tests with direct auth-first routing tests from `"Create Token"` to login and then token creation.
 2. Add deterministic ARC76 verification tests (assert derived account id/address and backend auth/session response).
 3. Add explicit assertions that no `"Not connected"` status or wallet/network selector appears in top navigation for unauthenticated users.
-4. Convert currently skipped compliance/auth flows into stable CI-compatible tests by removing long timing dependencies and brittle `networkidle` waits.
-5. Update `e2e/README.md` to remove wallet-connection references and align documentation with email/password-only MVP behavior.
+4. Convert currently skipped compliance/auth flows into stable CI-compatible tests by replacing broad `test.skip` usage with deterministic fixtures and endpoint stubs.
+5. Reduce `waitForTimeout()` usage (306 calls) by switching to semantic waits on explicit route-ready UI anchors and API-complete signals.
+6. Replace localStorage auth mocking in critical flows with test-backed real login/session initialization to verify backend auth contracts.
 
 ### Roadmap Adjustment
 
-- **MVP Foundation confidence adjusted to 52% (from 55%)** due to unresolved blocker verification and CI test non-compliance despite high implementation throughput.
+- **MVP Foundation confidence adjusted to 53% (from 52%)** due to better Playwright run stability, but unresolved blocker verification and E2E non-compliance still prevent MVP sign-off.
 
 ---
 
@@ -438,5 +439,5 @@ Based on comprehensive product review including source code analysis, E2E test c
 
 ---
 
-**Last Updated:** February 18, 2026 (UX/Design Review by Barb UxDesigner)
+**Last Updated:** February 18, 2026 (Reality check + UX/Design Review by Barb UxDesigner)
 **Next Review:** February 25, 2026
