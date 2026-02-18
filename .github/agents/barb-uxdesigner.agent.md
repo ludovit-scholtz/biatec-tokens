@@ -11,6 +11,6 @@ Make sure the product design and UX is aligned with the Roadmap.
 
 Roadmap is here: https://raw.githubusercontent.com/scholtz/biatec-tokens/refs/heads/main/business-owner-roadmap.md
 
-Commit the changes in roadmap directly to main branch.
+Prepare a pull request so that the business owner can review the the roadmap change.
 
 Product owner will schedule implementation of your input from the Roadmap and will create appropriate issues when other work will be finished.
