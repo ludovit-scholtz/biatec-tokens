@@ -12,11 +12,11 @@
 
 **Market Opportunity:** $50B+ RWA tokenization market by 2025, with MICA regulation creating demand for compliant platforms. Current competitors lack comprehensive compliance tooling.
 
-**Current Status:** MVP development significantly delayed due to critical integration issues, authentication problems, and UI/UX blockers. Subscription system partially implemented but not operational. No paying customers acquired. Platform requires substantial fixes before beta launch possible.
+**Current Status:** Core auth-first UX hardening shipped across both frontend and backend repositories on 2026-02-19 (multiple merged PRs). MVP is no longer blocked by basic routing/navigation regressions, but beta launch remains blocked by missing end-to-end proof of real ARC76 authentication + backend deployment confirmation in Playwright and by residual mock-driven test patterns.
 
 ---
 
-## Phase 1: MVP Foundation (Q1 2025) - 45% Complete 🔴
+## Phase 1: MVP Foundation (Q1 2025) - 58% Complete 🟡
 
 ### Core Token Creation & Deployment - 50% Complete 🟡
 
@@ -155,85 +155,59 @@
 
 ## MVP Blockers
 
-### Critical Issues Preventing Launch
+### Reality Check (2026-02-19)
 
-**Authentication System Failures:** Email/password authentication not working properly, ARC76 account derivation incomplete, preventing user access to the platform.
+**What is now materially improved (evidence: merged PRs #447, #449, #451, #453 in `scholtz/biatec-tokens`; #372, #374, #376, #378 in `scholtz/BiatecTokensApi`):**
 
-**Backend Token Creation Issues:** Backend service for token deployment not fully operational, blocking the core token creation workflow.
+- Auth-first navigation/routing hardening has been actively delivered this week.
+- Wallet-UI removal direction is reinforced in current E2E suites and navigation tests.
+- Backend ARC76 orchestration hardening work is progressing with same-day merged backend PRs.
 
-**UI/UX Navigation Issues:** Users cannot properly navigate through authentication screens and token creation flows, leading to incomplete user journeys.
+**What still blocks business-owner MVP sign-off:**
 
-**Sign-in Network Selection Issue:** When clicking sign-in, network selection still appears inappropriately.
+1. **ARC76 proof gap in E2E:** Current Playwright coverage relies heavily on `localStorage.setItem("algorand_user", ...)` session seeding instead of proving real email/password login -> ARC76 derivation -> authenticated backend session.
+2. **Backend deployment verification gap:** Tests do not yet deterministically assert real backend deployment lifecycle responses for token creation (request accepted, status transition, final confirmation).
+3. **Residual wizard-era testing:** `guided-token-launch.spec.ts` and README still center wizard-like guided flow and local draft injection (`biatec_guided_launch_draft`), which conflicts with strict blocker requirement to de-risk wizard-era assumptions for MVP sign-off.
+4. **Mock-environment dependency in tests:** Several suites explicitly suppress console/page errors as expected in "mock environment," reducing confidence that production-critical regressions are caught.
+5. **Assertion quality debt:** Some tests (e.g., `token-standards-view.spec.ts`) contain permissive patterns like `expect(isVisible || true).toBe(true)`, which can mask real failures.
 
-**Top Menu Network Display:** Network selection in top menu shows "Not connected" - remove this display as frontend should work without wallet connection requirement.
+### Playwright Compliance vs MVP Blockers
 
-**Create Token Wizard Issue:** Clicking "Create Token" in menu triggers wizard popup - remove wizard and show login page instead. Remove routing by showOnboarding parameter and implement proper page routes.
+**Status:** 🟡 **Partially compliant**
 
-**Mock Data Usage:** Application displays mock data (e.g., hardcoded recent activity) - remove all mock data for final MVP readiness.
+Current suites confirm broad walletless UX intent and auth-first redirects, but they do **not yet** provide business-owner-grade evidence that the true production auth/deployment path is stable.
 
-**Token Standards AVM Issue:** When selecting AVM chains in token standards, all standards disappear.
+### Required Playwright E2E Improvements (Blocking)
 
-**Email/Password Authentication Failure:** Sign-in using email and password does not work. Implement ARC76 to show account as the only authentication method.
+1. **Replace auth seeding with real login path in critical smoke suite**
+   - Execute real Sign In with email/password UI submission
+   - Assert backend auth response and derived ARC76 account identity
+   - Keep localStorage seeding only for non-critical secondary flows
 
-**E2E Test Suite Non-Compliance:** Playwright tests fail to comply with MVP blockers:
-- Tests still use wallet-related localStorage keys (`wallet_connected`, `active_wallet_id`) contradicting no-wallet requirement
-- Onboarding checklist interferes with user interactions, indicating wallet-related onboarding steps still present
-- Token creation wizard tests exist but MVP requires removing wizard and showing login page
-- No proper ARC76 authentication testing - tests mock but don't validate actual email/password to ARC76 account derivation
-- Network selectors still visible in tests, contradicting "Not connected" removal requirement
-- Test failures due to UI blocking suggest incomplete removal of wallet-related components
+2. **Add deterministic backend token deployment contract assertions**
+   - Validate API request payload and response contract for token creation
+   - Assert status progression to terminal success/failure state
+   - Capture and assert correlation/transaction IDs in UI
 
-### Required Playwright E2E Test Coverage
+3. **Retire wizard-era critical-path dependency**
+   - Move MVP gating suite to login-first -> /create path
+   - Keep guided flow only as non-blocking/secondary coverage until proven production-stable
 
-To validate fixes and ensure MVP stability, implement comprehensive end-to-end tests for the following critical user scenarios:
+4. **Remove permissive assertions and silent error suppression from blocker suites**
+   - Replace always-true assertions with strict expectations
+   - Fail tests on unhandled page errors in critical-path specs
 
-1. **Network Persistence on Website Load**
-   - User visits the website
-   - Verify network selector shows last used network or defaults to Algorand
-   - Confirm localStorage maintains network preference across sessions
-
-2. **Email/Password Authentication Without Wallets**
-   - User clicks "Sign In" button
-   - Verify no wallet connection options are displayed anywhere
-   - Verify email and password input fields appear
-   - User enters valid credentials and submits
-   - Verify ARC76 account is calculated automatically
-   - Verify user is marked as authenticated
-   - Verify successful backend connection and API response validation
-
-3. **Token Creation Flow with Backend Processing**
-   - Start new browser session
-   - User clicks "Create Token" from top navigation menu
-   - Verify redirect to authentication screen
-   - User fills in email and password fields
-   - Verify successful authentication and redirect to token creation page
-   - User fills token creation form
-   - Verify form submission triggers backend token creation
-   - Verify successful token deployment confirmation from backend service
-
-4. **No Wallet Connectors Test**
-   - User navigates through entire application
-   - Verify no wallet connection buttons, dialogs, or options appear anywhere
-   - Verify all interactions use email/password authentication only
-
-**CRITICAL TEST IMPROVEMENTS REQUIRED:**
-
-- **Remove Wallet-Related Test Code:** Eliminate all `wallet_connected`, `active_wallet_id`, and wallet-related localStorage mocking from tests
-- **Fix Onboarding Checklist Blocking:** Remove or fix onboarding checklist that interferes with user interactions
-- **Remove Token Creation Wizard Tests:** Replace wizard tests with direct login page navigation tests
-- **Implement ARC76 Authentication Testing:** Add tests that validate actual email/password to ARC76 account derivation
-- **Network Selector Visibility Tests:** Add tests ensuring "Not connected" and network selectors are properly hidden
-- **Mock Data Removal Validation:** Add tests confirming no hardcoded mock data appears in UI
+5. **Add explicit “no wallet regressions” + “no mock data” guard tests**
+   - Assert absence of wallet selectors/buttons/text across authenticated and unauthenticated entry points
+   - Assert dashboard/activity/token lists are either backend-driven or explicit empty states (no hardcoded placeholders)
 
 ### Priority Action Items
 
-- **URGENT:** Implement working email/password authentication with ARC76 account derivation
-- **HIGH:** Complete backend token creation service and deployment workflow
-- **HIGH:** Remove all wallet connectors and wallet-related UI elements from the application
-- **HIGH:** Fix E2E test suite to comply with MVP blockers - remove wallet-related code and fix onboarding interference
-- **MEDIUM:** Implement proper page routing without showOnboarding parameters
-- **MEDIUM:** Remove all mock data and ensure real backend integration
-- **MEDIUM:** Fix token standards display for AVM chains
+- **URGENT:** Convert one critical Playwright smoke path to real email/password -> ARC76 -> backend session validation.
+- **HIGH:** Add backend token deployment lifecycle assertions to Playwright for MVP token creation flow.
+- **HIGH:** Remove permissive always-pass assertions from critical specs.
+- **HIGH:** De-scope wizard-dependent checks from MVP blocker gate until production path is proven.
+- **MEDIUM:** Keep guided launch tests as secondary UX coverage, not MVP launch gate.
 
 ---
 
@@ -256,7 +230,7 @@ To validate fixes and ensure MVP stability, implement comprehensive end-to-end t
 ### Testing & Quality - 75% Complete 🟡
 
 - **Unit Test Coverage** (80%): 1200+ tests passing - 1452 tests passing, good coverage
-- **Integration Tests** (60%): 350+ E2E tests passing, some failures - 2 E2E test failures, many skipped
+- **Integration Tests** (65%): Broad E2E surface exists, but MVP-critical assertions still need hardening for real auth/deployment proof
 - **Performance Testing** (30%): Load and stress testing, incomplete - Not adequately tested
 - **Security Testing** (50%): Automated security scans, partial - Basic security testing
 
@@ -350,5 +324,5 @@ To validate fixes and ensure MVP stability, implement comprehensive end-to-end t
 
 ---
 
-**Last Updated:** February 9, 2026
-**Next Review:** February 16, 2026</content>
+**Last Updated:** February 19, 2026
+**Next Review:** February 26, 2026</content>
