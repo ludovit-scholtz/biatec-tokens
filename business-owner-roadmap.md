@@ -148,35 +148,35 @@
 
 ---
 
-## MVP Blockers Reality Check (February 20, 2026)
+## MVP Blockers Reality Check (February 25, 2026)
 
 ### Evidence Reviewed
 
-- Frontend and backend repositories both show fresh delivery (20 closed issues and 20 merged PRs reviewed per repo), including Auth-First Guided Launch v2 and Backend Auth-to-Deployment Reliability Contract v1 merged on February 20.
-- `e2e/` static test audit still shows high instability signals: **102 skipped tests** and **236 `waitForTimeout()` calls**.
-- Auth simulation remains heavily mocked in Playwright with **236 localStorage references** and **19 `showAuth=true` redirect checks**, reducing confidence in backend contract coverage.
+- Frontend and backend repositories show continued delivery velocity with fresh merges on February 25 (frontend PR #478 and backend PR #400), and both repos updated at ~08:46 UTC.
+- Current `e2e/` static audit (spec files only) shows **19 executable `test.skip()` calls** and **281 `waitForTimeout()` calls**.
+- Auth simulation in Playwright remains heavily mocked, with **140 `localStorage` references** and **46 `showAuth=true` redirect checks**, limiting backend contract confidence.
 
 ### Blocker Validation Status
 
-- ✅ **Wallet localStorage blocker appears resolved in tests:** no matches for `wallet_connected` or `active_wallet_id` under `e2e/`.
-- ❌ **Wizard removal blocker not met in tests:** `e2e/guided-token-launch.spec.ts` still contains 5 `/create/wizard` references (redirect behavior is tested, but legacy route remains part of canonical test flow).
-- ❌ **ARC76 auth derivation blocker only partially met:** `arc76-validation.spec.ts` validates localStorage persistence with mocked `algorand_user`, but does not assert backend email/password-to-ARC76 derivation API responses.
-- 🟡 **Top-menu network visibility blocker partially covered:** only 5 `"Not connected"` negative assertions exist, mostly string-content checks rather than deterministic nav component assertions across guest/authenticated states.
-- ⚠️ **CI trust gap in E2E remains high:** 102 tests are skipped, especially in compliance workspace and auth edge scenarios.
-- ⚠️ **Auth realism gap remains:** critical auth flows still rely on localStorage seeding rather than real login/session bootstrap against backend contracts.
+- ✅ **Wallet localStorage blocker remains resolved in tests:** no matches for `wallet_connected` or `active_wallet_id` under `e2e/`.
+- ❌ **Wizard removal blocker not met:** **40 `/create/wizard` references** remain across spec files (`accessibility-auth-launch`, `auth-first-confidence-hardening`, `auth-first-onboarding-closure`, `guided-token-launch`, `route-determinism-ci-stable`).
+- ❌ **ARC76 auth derivation blocker not met:** `arc76-validation.spec.ts` validates localStorage persistence only and does not assert backend email/password-to-ARC76 derivation or session API responses.
+- 🟡 **Top-menu network visibility blocker partially covered:** **12 `Not connected` assertions** exist, but most are broad page-content checks rather than deterministic navigation-component assertions across guest and authenticated states.
+- ⚠️ **CI trust gap persists:** `test.skip()` remains concentrated in complex compliance/auth suites (`compliance-setup-workspace`, `guided-portfolio-onboarding`, `portfolio-intelligence`).
+- ⚠️ **Auth realism gap persists:** critical auth flows still seed `algorand_user` in localStorage instead of performing real login/session bootstrap against backend contracts.
 
 ### Required Playwright Improvements Before MVP Sign-off
 
-1. Replace wizard-centric tests with direct auth-first routing tests from `"Create Token"` to login and then token creation.
-2. Add deterministic ARC76 verification tests (assert derived account id/address and backend auth/session response).
-3. Add explicit assertions that no `"Not connected"` status or wallet/network selector appears in top navigation for unauthenticated users.
-4. Convert skipped compliance/auth flows into stable CI-compatible tests by replacing broad `test.skip` usage with deterministic fixtures and endpoint stubs.
-5. Reduce `waitForTimeout()` usage (236 calls) by switching to semantic waits on explicit route-ready UI anchors and API-complete signals.
-6. Replace localStorage auth mocking in critical flows with test-backed real login/session initialization to verify backend auth contracts.
+1. Remove legacy `/create/wizard` references from canonical flows and keep only redirect-compatibility coverage.
+2. Add backend-verified ARC76 tests that assert deterministic derived account IDs/addresses from email/password via API contracts.
+3. Replace page-wide string checks with deterministic top-navigation assertions proving no wallet/network state UI for guests and authenticated users.
+4. Eliminate CI-only skips in compliance/auth suites by using deterministic fixtures, isolated route setup, and API-level stubs.
+5. Reduce `waitForTimeout()` usage (281 calls) by replacing with semantic waits tied to explicit route-ready UI anchors and request completion states.
+6. Replace localStorage auth seeding in critical journeys with real login/session bootstrap helpers that validate backend auth contracts.
 
 ### Roadmap Adjustment
 
-- **MVP Foundation confidence adjusted to 51% (from 53%)**: delivery velocity is high, but blocker verification still fails due heavy test skipping, legacy wizard references, and missing backend-auth contract assertions.
+- **MVP Foundation confidence adjusted to 50% (from 51%)**: delivery velocity is strong, but MVP blockers remain unresolved in test realism and CI trust due heavy timeout dependency, remaining skips, and missing backend ARC76 assertions.
 
 ---
 
@@ -439,5 +439,5 @@ Based on comprehensive product review including source code analysis, E2E test c
 
 ---
 
-**Last Updated:** February 20, 2026 (Reality check + UX/Design Review by Barb UxDesigner)
-**Next Review:** February 27, 2026
+**Last Updated:** February 25, 2026 (Reality check refresh + Playwright MVP blocker audit)
+**Next Review:** March 4, 2026
