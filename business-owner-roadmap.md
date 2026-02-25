@@ -152,17 +152,17 @@
 
 ### Evidence Reviewed
 
-- Frontend and backend repositories show continued delivery velocity with fresh merges on February 25 (frontend PR #478 and backend PR #400), and both repos updated at ~08:46 UTC.
-- Current `e2e/` static audit (spec files only) shows **19 executable `test.skip()` calls** and **281 `waitForTimeout()` calls**.
-- Auth simulation in Playwright remains heavily mocked, with **140 `localStorage` references** and **46 `showAuth=true` redirect checks**, limiting backend contract confidence.
+- Frontend and backend repositories show continued delivery velocity with fresh merges on February 25 (frontend PR #482 and backend PR #404), while both repos now carry one active issue and one active draft PR each for the next MVP slice.
+- Current `e2e/` static audit (28 spec files) shows **22 executable `test.skip()` calls** and **283 `waitForTimeout()` calls**.
+- Auth simulation in Playwright remains heavily mocked, with **152 `localStorage` references** and **54 `showAuth=true` redirect checks**, limiting backend contract confidence.
 
 ### Blocker Validation Status
 
 - ✅ **Wallet localStorage blocker remains resolved in tests:** no matches for `wallet_connected` or `active_wallet_id` under `e2e/`.
-- ❌ **Wizard removal blocker not met:** **40 `/create/wizard` references** remain across spec files (`accessibility-auth-launch`, `auth-first-confidence-hardening`, `auth-first-onboarding-closure`, `guided-token-launch`, `route-determinism-ci-stable`).
+- ❌ **Wizard removal blocker not met:** **63 `/create/wizard` references** remain across 15 spec files, including `arc76-validation`, `auth-first-token-creation`, `compliance-auth-first`, `compliance-setup-workspace`, `guided-token-launch`, and `portfolio-intelligence`.
 - ❌ **ARC76 auth derivation blocker not met:** `arc76-validation.spec.ts` validates localStorage persistence only and does not assert backend email/password-to-ARC76 derivation or session API responses.
 - 🟡 **Top-menu network visibility blocker partially covered:** **12 `Not connected` assertions** exist, but most are broad page-content checks rather than deterministic navigation-component assertions across guest and authenticated states.
-- ⚠️ **CI trust gap persists:** `test.skip()` remains concentrated in complex compliance/auth suites (`compliance-setup-workspace`, `guided-portfolio-onboarding`, `portfolio-intelligence`).
+- ⚠️ **CI trust gap persists:** `test.skip()` remains concentrated in complex suites (`compliance-setup-workspace` alone contributes 14 skips, with additional skips in `guided-portfolio-onboarding`, `full-e2e-journey`, and `mvp-confidence-hardening`).
 - ⚠️ **Auth realism gap persists:** critical auth flows still seed `algorand_user` in localStorage instead of performing real login/session bootstrap against backend contracts.
 
 ### Required Playwright Improvements Before MVP Sign-off
@@ -171,12 +171,12 @@
 2. Add backend-verified ARC76 tests that assert deterministic derived account IDs/addresses from email/password via API contracts.
 3. Replace page-wide string checks with deterministic top-navigation assertions proving no wallet/network state UI for guests and authenticated users.
 4. Eliminate CI-only skips in compliance/auth suites by using deterministic fixtures, isolated route setup, and API-level stubs.
-5. Reduce `waitForTimeout()` usage (281 calls) by replacing with semantic waits tied to explicit route-ready UI anchors and request completion states.
+5. Reduce `waitForTimeout()` usage (283 calls) by replacing with semantic waits tied to explicit route-ready UI anchors and request completion states.
 6. Replace localStorage auth seeding in critical journeys with real login/session bootstrap helpers that validate backend auth contracts.
 
 ### Roadmap Adjustment
 
-- **MVP Foundation confidence adjusted to 50% (from 51%)**: delivery velocity is strong, but MVP blockers remain unresolved in test realism and CI trust due heavy timeout dependency, remaining skips, and missing backend ARC76 assertions.
+- **MVP Foundation confidence adjusted to 49% (from 50%)**: delivery velocity is strong, but MVP blockers remain unresolved in test realism and CI trust due heavier timeout/skip footprint and missing backend ARC76 assertions.
 
 ---
 
@@ -439,5 +439,5 @@ Based on comprehensive product review including source code analysis, E2E test c
 
 ---
 
-**Last Updated:** February 25, 2026 (Reality check refresh + Playwright MVP blocker audit)
+**Last Updated:** February 25, 2026 (Reality check refresh + Playwright MVP blocker compliance recalibration)
 **Next Review:** March 4, 2026
