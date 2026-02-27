@@ -521,6 +521,91 @@ draft.selectedNetwork // Correct property name
 
 **Never Assume Store Structure** - Always verify by reading the actual store implementation!
 
+### 7b. Utility Integration Verification (MANDATORY FOR NEW UTILITIES) 🆕
+
+**🚨 CRITICAL PAST VIOLATION - February 26, 2026 (Issue #488) 🚨**
+
+**Violation**: Copilot delivered `authFirstIssuanceWorkspace.ts` utility with 178 tests but did NOT integrate it into the actual `GuidedTokenLaunch.vue` view. The utility defined `ISSUANCE_TEST_IDS` constants for `data-testid` anchors but none were added to the view template. Utility functions (`isIssuanceSessionValid`, `storeIssuanceReturnPath`, `consumeIssuanceReturnPath`, `buildStepEnteredEvent`) were never imported or called from the router or view — despite 3 repeated product owner rejection cycles.
+
+**What Went Wrong**:
+- Utility was created with comprehensive test coverage (136 unit + 42 integration + 20 E2E tests)
+- BUT the Vue component that uses the issuance flow had zero `data-testid` attributes matching the utility's constants
+- Product owner feedback: "delivered work was not finished in proper quality" (repeated 3+ times)
+- The utility's `isIssuanceSessionValid`, `storeIssuanceReturnPath`, `consumeIssuanceReturnPath`, `ISSUANCE_TEST_IDS` were never imported in the router or view
+- Added `data-testid` anchors to view template but still used **hardcoded strings** instead of importing `ISSUANCE_TEST_IDS` constants — this still does not constitute "integration"
+
+**Root Cause**:
+- **Utility-without-integration pattern**: Creating helpers without wiring them into the consuming views
+- **No integration verification step**: Did not check that data-testid constants defined in the utility are PRESENT in the template via import, not hardcoded
+- **Missing completeness check**: Did not verify the utility is `import`ed anywhere besides tests
+- **Repeated oversight**: Even after adding data-testid attributes, the constants were hardcoded strings — not imported from the utility
+
+**Correct Approach for New Utility/Helper Files**:
+1. **CHECK WHO CONSUMES IT**: After writing the utility, ask "Which Vue component or store uses this?"
+2. **IMPORT AND USE CONSTANTS**: If utility defines `ISSUANCE_TEST_IDS`, IMPORT them and use `:data-testid="ISSUANCE_TEST_IDS.WORKSPACE_SHELL"` — NOT hardcoded strings
+3. **WIRE FUNCTIONS**: Route guard utilities must be called from `src/router/index.ts`. Session/lifecycle utilities must be called from `onMounted`. Telemetry builders must be called in event handlers.
+4. **GREP TO VERIFY**: Run `grep -r 'authFirstIssuanceWorkspace' src/ --include='*.vue' --include='*.ts' | grep -v test` to confirm non-test usage
+5. **100% BRANCH COVERAGE**: New utilities must achieve ≥98% branch coverage, not just line coverage
+
+**Verification Checklist for New Utilities**:
+```bash
+# 1. Check the utility is imported somewhere non-test
+grep -r 'yourUtility' src/ --include='*.vue' --include='*.ts' | grep -v test | grep -v __tests__
+
+# 2. Check constants are IMPORTED and USED (not just hardcoded strings with matching values)
+grep -r 'ISSUANCE_TEST_IDS' src/views/ --include='*.vue'
+# Must show: :data-testid="ISSUANCE_TEST_IDS.WORKSPACE_SHELL" — NOT data-testid="issuance-workspace-shell"
+
+# 3. Check route guard functions are actually called in router
+grep -r 'isIssuanceSessionValid\|storeIssuanceReturnPath' src/router/
+
+# 4. Verify coverage is truly comprehensive
+npx vitest run --coverage src/utils/__tests__/yourUtility.test.ts
+# Target: 100% branches, 100% functions, 100% lines
+```
+
+**Pattern Example (Correct)**:
+```typescript
+// ✅ Router uses utility function for structural session validation
+import { isIssuanceSessionValid, storeIssuanceReturnPath } from '../utils/authFirstIssuanceWorkspace'
+const isAuthenticated = to.name === 'GuidedTokenLaunch'
+  ? isIssuanceSessionValid(algorandUser)  // more stringent check
+  : !!algorandUser
+
+// ✅ View imports and uses constants (NOT hardcoded strings)
+import { ISSUANCE_TEST_IDS, consumeIssuanceReturnPath } from '../utils/authFirstIssuanceWorkspace'
+// In template:
+<div :data-testid="ISSUANCE_TEST_IDS.WORKSPACE_SHELL">  // ← imported constant, not "issuance-workspace-shell"
+
+// ✅ View uses lifecycle function in onMounted
+const savedPath = consumeIssuanceReturnPath()
+if (savedPath) router.replace(savedPath)
+```
+
+**Pattern Example (Wrong — still fails even with data-testids present)**:
+```typescript
+// ❌ WRONG: utility imported in tests only, NOT in router or view
+// router/index.ts — no import of authFirstIssuanceWorkspace
+// views/GuidedTokenLaunch.vue — no import of authFirstIssuanceWorkspace
+
+// ❌ WRONG: hardcoded strings that happen to match utility constants
+<div data-testid="issuance-workspace-shell">  // ← NOT using ISSUANCE_TEST_IDS
+```
+
+**Red Flags This Pattern Is Repeating**:
+- ✅ Utility file created but not imported in any .vue file
+- ✅ Constants like `SOME_TEST_IDS` defined but `data-testid` attributes are hardcoded strings, not imported constants
+- ✅ PR only adds test files + utility file, no Vue component changes
+- ✅ E2E test uses `page.content()` string checks instead of `[data-testid]` locators
+- ✅ Route guard utility functions not present in `src/router/index.ts`
+- ✅ Lifecycle utilities (`consumeIssuanceReturnPath`) not called in `onMounted`
+
+**Never Again**:
+- ❌ Create a utility with `data-testid` constants without importing and using those constants in the template
+- ❌ Submit PR with utility + tests only — at least one non-test consumer required
+- ❌ Accept "utility coverage is high" as complete — must verify VIEW and ROUTER integration
+- ❌ Treat hardcoded strings as "integration" — import the constants and use them
+
 ### 8. Feature Accessibility (MANDATORY FOR NEW ROUTES)
 - [ ] **Navigation Link Required**: If implementing new route, MUST add navigation link
   - ❌ **Past Violation**: Guided launch implemented but not accessible from navbar

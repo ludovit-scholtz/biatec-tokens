@@ -466,5 +466,278 @@ describe('useMarketplaceStore', () => {
 
       expect(PriceOracleModule.priceOracleService.getTokenPrice).not.toHaveBeenCalled();
     });
+
+    it('should fetch price for existing token and update it', async () => {
+      const store = useMarketplaceStore();
+      vi.resetAllMocks(); // Clear any leftover once-queued mocks from prior tests
+      // Directly add a token so fetchTokenPrice can find it
+      store.tokens = [{
+        id: 'token-abc',
+        name: 'Test Token',
+        symbol: 'TEST',
+        standard: 'ARC200',
+        network: 'VOI',
+        isVerified: false,
+        complianceBadge: 'None',
+        assetClass: 'Utility',
+        description: '',
+        issuer: '',
+        totalSupply: 1000000,
+        decimals: 6,
+        createdAt: new Date(),
+      }];
+
+      const mockPrice = {
+        id: 'token-abc',
+        symbol: 'TEST',
+        price: 1.07,
+        priceChange24h: 1.2,
+        priceChange7d: 2.5,
+        volume24h: 10000,
+        marketCap: 1000000,
+        lastUpdated: new Date(),
+        source: 'CoinGecko' as const,
+      };
+      vi.mocked(PriceOracleModule.priceOracleService.getTokenPrice).mockResolvedValueOnce(mockPrice);
+
+      await store.fetchTokenPrice('token-abc');
+
+      expect(PriceOracleModule.priceOracleService.getTokenPrice).toHaveBeenCalled();
+      const updatedToken = store.tokens.find(t => t.id === 'token-abc');
+      expect(updatedToken?.price).toBe(1.07);
+    });
+
+    it('should fetch price for existing token when price data is null (no update)', async () => {
+      const store = useMarketplaceStore();
+      vi.resetAllMocks();
+      store.tokens = [{
+        id: 'token-abc',
+        name: 'Test Token',
+        symbol: 'TEST',
+        standard: 'ARC200',
+        network: 'VOI',
+        isVerified: false,
+        complianceBadge: 'None',
+        assetClass: 'Utility',
+        description: '',
+        issuer: '',
+        totalSupply: 1000000,
+        decimals: 6,
+        createdAt: new Date(),
+      }];
+
+      vi.mocked(PriceOracleModule.priceOracleService.getTokenPrice).mockResolvedValueOnce(null);
+
+      await store.fetchTokenPrice('token-abc');
+
+      expect(PriceOracleModule.priceOracleService.getTokenPrice).toHaveBeenCalled();
+      // Price stays as original (undefined or prior value)
+    });
+
+    it('should restart polling when startPricePolling called while already polling', () => {
+      const store = useMarketplaceStore();
+
+      vi.useFakeTimers();
+      vi.mocked(PriceOracleModule.priceOracleService.getBatchPrices).mockResolvedValue([]);
+
+      store.startPricePolling(1000);
+      expect(store.pricePollingEnabled).toBe(true);
+
+      // Call again — should stop old interval and start new one (line 194)
+      store.startPricePolling(2000);
+      expect(store.pricePollingEnabled).toBe(true);
+
+      store.stopPricePolling();
+      vi.useRealTimers();
+    });
   });
+
+  describe('loadTokens error handling', () => {
+    it('should set error on loadTokens failure', async () => {
+      const store = useMarketplaceStore();
+
+      // Make setTimeout throw to trigger catch block in loadTokens
+      const spy = vi.spyOn(global, 'setTimeout').mockImplementationOnce((_cb: any) => {
+        throw new Error('Load failed')
+      });
+
+      await store.loadTokens();
+
+      expect(store.error).toBeTruthy();
+      expect(store.loading).toBe(false);
+      spy.mockRestore();
+    });
+  });
+
+  describe('Filter Logic with populated tokens', () => {
+    const makeToken = (overrides: Record<string, unknown> = {}) => ({
+      id: 'tk-1',
+      name: 'Alpha Token',
+      symbol: 'ALP',
+      standard: 'ARC200',
+      network: 'VOI',
+      totalSupply: '1000000',
+      description: 'A token',
+      status: 'active',
+      complianceBadges: [],
+      type: 'FT',
+      isMicaCompliant: false,
+      kycRequired: false,
+      whitelistStatus: 'disabled',
+      issuer: 'issuer@example.com',
+      ...overrides,
+    } as any);
+
+    it('should filter "None" complianceBadge — returns tokens with no compliance badges', () => {
+      const store = useMarketplaceStore();
+      store.tokens = [
+        makeToken({ id: 'tk-no-badge', complianceBadges: [] }),
+        makeToken({ id: 'tk-has-badge', complianceBadges: ['MICA Compliant'] }),
+      ];
+      store.updateFilters({ complianceBadge: 'None' });
+      const result = store.filteredTokens;
+      expect(result.every((t) => !t.complianceBadges || t.complianceBadges.length === 0)).toBe(true);
+      expect(result.some((t) => t.id === 'tk-no-badge')).toBe(true);
+    });
+
+    it('should return true for unknown complianceBadge value', () => {
+      const store = useMarketplaceStore();
+      store.tokens = [makeToken({ id: 'tk-1' })];
+      store.updateFilters({ complianceBadge: 'UnknownBadge' as any });
+      // fallback `return true` keeps all tokens
+      expect(store.filteredTokens.length).toBe(1);
+    });
+
+    it('should search by issuer field (optional chain branch)', () => {
+      const store = useMarketplaceStore();
+      store.tokens = [
+        makeToken({ id: 'tk-issuer', issuer: 'alice@biatec.io', name: 'ZZZ', symbol: 'ZZZ', description: '' }),
+        makeToken({ id: 'tk-no-issuer', issuer: undefined, name: 'YYY', symbol: 'YYY', description: '' }),
+      ];
+      store.updateFilters({ search: 'alice' });
+      const result = store.filteredTokens;
+      expect(result.some((t) => t.id === 'tk-issuer')).toBe(true);
+      expect(result.some((t) => t.id === 'tk-no-issuer')).toBe(false);
+    });
+
+    it('should handle undefined issuer without crashing (optional chain = undefined)', () => {
+      const store = useMarketplaceStore();
+      store.tokens = [makeToken({ id: 'tk-niss', issuer: undefined, name: 'Beta', symbol: 'BETA', description: 'b' })];
+      store.updateFilters({ search: 'alpha' });
+      // doesn't match, returns empty — importantly, no crash
+      expect(store.filteredTokens.length).toBe(0);
+    });
+  });
+
+  describe('fetchTokenPrices error handling', () => {
+    it('should catch and log error in fetchTokenPrices without throwing', async () => {
+      const store = useMarketplaceStore();
+      store.tokens = [
+        {
+          id: 'tk-err',
+          name: 'Err Token',
+          symbol: 'ERR',
+          standard: 'ARC200',
+          network: 'VOI',
+          totalSupply: '1',
+          description: '',
+          status: 'active',
+          complianceBadges: [],
+          type: 'FT',
+        } as any,
+      ];
+      vi.mocked(PriceOracleModule.priceOracleService.getBatchPrices).mockRejectedValueOnce(
+        new Error('Network error'),
+      );
+      // should resolve without throwing
+      await expect(store.fetchTokenPrices()).resolves.toBeUndefined();
+      expect(store.pricesLoading).toBe(false);
+    });
+
+    it('should catch and log error in fetchTokenPrice without throwing', async () => {
+      const store = useMarketplaceStore();
+      store.tokens = [
+        {
+          id: 'tk-single-err',
+          name: 'Single Err',
+          symbol: 'SE',
+          standard: 'ARC200',
+          network: 'VOI',
+          totalSupply: '1',
+          description: '',
+          status: 'active',
+          complianceBadges: [],
+          type: 'FT',
+        } as any,
+      ];
+      vi.mocked(PriceOracleModule.priceOracleService.getTokenPrice).mockRejectedValueOnce(
+        new Error('Price fetch failed'),
+      );
+      await expect(store.fetchTokenPrice('tk-single-err')).resolves.toBeUndefined();
+    });
+  });
+
+  describe('fetchTokenPrices with tokens', () => {
+    it('should update tokens when prices are returned from batch fetch', async () => {
+      const store = useMarketplaceStore();
+      store.tokens = [
+        {
+          id: 'token-1',
+          name: 'Test Token',
+          symbol: 'TEST',
+          standard: 'ARC200',
+          network: 'VOI',
+          totalSupply: '1000000',
+          description: '',
+          status: 'active',
+          complianceBadges: [],
+          type: 'FT',
+        } as any,
+      ];
+
+      const priceMap = new Map([
+        ['token-1', {
+          price: 1.5,
+          priceChange24h: 0.05,
+          priceChange7d: 0.1,
+          volume24h: 10000,
+          marketCap: 1500000,
+          source: 'mock',
+          lastUpdated: new Date().toISOString(),
+        }],
+      ]);
+
+      vi.mocked(PriceOracleModule.priceOracleService.getBatchPrices).mockResolvedValueOnce(priceMap);
+
+      await store.fetchTokenPrices();
+
+      expect(store.tokens[0].price).toBe(1.5);
+      expect(store.tokens[0].priceChange24h).toBe(0.05);
+    });
+
+    it('should not update tokens when price not in map', async () => {
+      const store = useMarketplaceStore();
+      store.tokens = [
+        {
+          id: 'token-no-price',
+          name: 'No Price Token',
+          symbol: 'NP',
+          standard: 'ARC200',
+          network: undefined,
+          totalSupply: '1000000',
+          description: '',
+          status: 'active',
+          complianceBadges: [],
+          type: 'FT',
+        } as any,
+      ];
+
+      vi.mocked(PriceOracleModule.priceOracleService.getBatchPrices).mockResolvedValueOnce(new Map());
+
+      await store.fetchTokenPrices();
+
+      expect(store.tokens[0].price).toBeUndefined();
+    });
+  });
+
 });

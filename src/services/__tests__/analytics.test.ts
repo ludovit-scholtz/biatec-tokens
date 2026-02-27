@@ -395,4 +395,230 @@ describe('AnalyticsService', () => {
       expect(service1.getSessionId()).not.toBe(service2.getSessionId())
     })
   })
+
+  describe('Wizard Step Completed', () => {
+    it('should track wizard step completed', () => {
+      analyticsService.trackWizardStepCompleted({
+        stepIndex: 1,
+        stepId: 'token-details',
+        stepTitle: 'Token Details',
+      })
+
+      expect(consoleLogSpy).toHaveBeenCalledWith(
+        '[Analytics Event]',
+        expect.objectContaining({
+          event: 'wizard_step_completed',
+          category: 'Wizard',
+          action: 'Step Completed',
+          label: 'Token Details',
+          stepIndex: 1,
+          stepId: 'token-details',
+        }),
+      )
+    })
+  })
+
+  describe('Token Creation Attempt', () => {
+    it('should track token creation attempt', () => {
+      analyticsService.trackTokenCreationAttempt({
+        tokenName: 'Draft Token',
+        standard: 'ERC20',
+        network: 'Ethereum',
+      })
+
+      expect(consoleLogSpy).toHaveBeenCalledWith(
+        '[Analytics Event]',
+        expect.objectContaining({
+          event: 'token_creation_attempt',
+          category: 'Token Creation',
+          action: 'Attempt',
+          tokenName: 'Draft Token',
+        }),
+      )
+    })
+  })
+
+  describe('Insights Events', () => {
+    it('should track insights workspace viewed', () => {
+      analyticsService.trackInsightsWorkspaceViewed()
+
+      expect(consoleLogSpy).toHaveBeenCalledWith(
+        '[Analytics Event]',
+        expect.objectContaining({
+          event: 'insights_workspace_viewed',
+          category: 'Insights',
+          action: 'Page Viewed',
+        }),
+      )
+    })
+
+    it('should track insights filter changed', () => {
+      analyticsService.trackInsightsFilterChanged('timeframe', '30d')
+
+      expect(consoleLogSpy).toHaveBeenCalledWith(
+        '[Analytics Event]',
+        expect.objectContaining({
+          event: 'insights_filter_changed',
+          category: 'Insights',
+          action: 'Filter Changed',
+          label: 'timeframe',
+          filterType: 'timeframe',
+          filterValue: '30d',
+        }),
+      )
+    })
+
+    it('should track insights exported as csv', () => {
+      analyticsService.trackInsightsExported('csv')
+
+      expect(consoleLogSpy).toHaveBeenCalledWith(
+        '[Analytics Event]',
+        expect.objectContaining({
+          event: 'insights_exported',
+          category: 'Insights',
+          action: 'Data Exported',
+          label: 'csv',
+          format: 'csv',
+        }),
+      )
+    })
+
+    it('should track insights exported as json', () => {
+      analyticsService.trackInsightsExported('json')
+
+      expect(consoleLogSpy).toHaveBeenCalledWith(
+        '[Analytics Event]',
+        expect.objectContaining({
+          event: 'insights_exported',
+          format: 'json',
+        }),
+      )
+    })
+
+    it('should track scenario run', () => {
+      analyticsService.trackScenarioRun({ supplyGrowth: 10, priceTarget: 1.5 })
+
+      expect(consoleLogSpy).toHaveBeenCalledWith(
+        '[Analytics Event]',
+        expect.objectContaining({
+          event: 'insights_scenario_run',
+          category: 'Insights',
+          action: 'Scenario Run',
+          supplyGrowth: 10,
+        }),
+      )
+    })
+
+    it('should track metric clicked', () => {
+      analyticsService.trackMetricClicked('total-supply', 'Total Supply')
+
+      expect(consoleLogSpy).toHaveBeenCalledWith(
+        '[Analytics Event]',
+        expect.objectContaining({
+          event: 'insights_metric_clicked',
+          category: 'Insights',
+          action: 'Metric Clicked',
+          label: 'Total Supply',
+          metricId: 'total-supply',
+        }),
+      )
+    })
+  })
+
+  describe('Compliance Checklist unchecked branch', () => {
+    it('should track compliance item unchecked', () => {
+      analyticsService.trackComplianceChecklistUpdate('kyc-policy', false, 50)
+
+      expect(consoleLogSpy).toHaveBeenCalledWith(
+        '[Analytics Event]',
+        expect.objectContaining({
+          event: 'compliance_checklist_update',
+          action: 'Item Unchecked',
+          label: 'kyc-policy',
+          completionPercentage: 50,
+        }),
+      )
+    })
+  })
+
+  describe('Analytics consent and disabled tracking', () => {
+    it('should respect consent=false and disable tracking', () => {
+      localStorage.setItem('analytics_consent', 'false')
+      const service = new AnalyticsService()
+      expect(service.isTrackingEnabled()).toBe(false)
+    })
+
+    it('should not fire console Analytics Event log when tracking is disabled', () => {
+      localStorage.setItem('analytics_consent', 'false')
+      const service = new AnalyticsService()
+      consoleLogSpy.mockClear()
+      service.trackEvent({ event: 'test_disabled' })
+      expect(consoleLogSpy).toHaveBeenCalledWith(
+        '[Analytics] Tracking disabled, event not sent:',
+        expect.objectContaining({ event: 'test_disabled' }),
+      )
+      // The [Analytics Event] log must NOT have been called
+      const analyticsEventCalls = consoleLogSpy.mock.calls.filter(
+        (c: any[]) => c[0] === '[Analytics Event]',
+      )
+      expect(analyticsEventCalls).toHaveLength(0)
+    })
+
+    it('should call setTrackingEnabled and persist to localStorage', () => {
+      analyticsService.setTrackingEnabled(false)
+      expect(localStorage.getItem('analytics_consent')).toBe('false')
+      expect(analyticsService.isTrackingEnabled()).toBe(false)
+      analyticsService.setTrackingEnabled(true)
+      expect(localStorage.getItem('analytics_consent')).toBe('true')
+      expect(analyticsService.isTrackingEnabled()).toBe(true)
+    })
+  })
+
+  describe('initializeGoogleAnalytics path coverage', () => {
+    it('should log "already initialized" when window.gtag exists before init call', () => {
+      ;(window as any).gtag = vi.fn()
+      class TestableAnalyticsService extends AnalyticsService {
+        callInit(id: string) {
+          ;(this as any).trackingId = id
+          ;(this as any).initializeGoogleAnalytics()
+        }
+      }
+      const service = new TestableAnalyticsService()
+      service.callInit('UA-TEST-2')
+      expect(consoleLogSpy).toHaveBeenCalledWith(
+        '[Analytics] Google Analytics already initialized',
+      )
+    })
+
+    it('should set up dataLayer and gtag function when window has no gtag', () => {
+      delete (window as any).gtag
+      ;(window as any).dataLayer = undefined
+      class TestableAnalyticsService extends AnalyticsService {
+        callInit(id: string) {
+          ;(this as any).trackingId = id
+          ;(this as any).initializeGoogleAnalytics()
+        }
+      }
+      const service = new TestableAnalyticsService()
+      service.callInit('UA-TEST-3')
+      expect(typeof (window as any).gtag).toBe('function')
+      expect(consoleLogSpy).toHaveBeenCalledWith(
+        '[Analytics] Google Analytics initialized:',
+        'UA-TEST-3',
+      )
+    })
+  })
+
+  describe('trackEvent fires gtag when available', () => {
+    it('should invoke window.gtag with event data', () => {
+      const gtagFn = vi.fn()
+      ;(window as any).gtag = gtagFn
+      analyticsService.trackEvent({ event: 'gtag_test', category: 'Cat', action: 'Act' })
+      expect(gtagFn).toHaveBeenCalledWith(
+        'event',
+        'gtag_test',
+        expect.objectContaining({ event_category: 'Cat', event_action: 'Act' }),
+      )
+    })
+  })
 })

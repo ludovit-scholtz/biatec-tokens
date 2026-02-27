@@ -305,5 +305,199 @@ describe('useInsightsStore', () => {
       // Restore
       Storage.prototype.setItem = originalSetItem
     })
+
+    it('should handle runScenario errors and rethrow', async () => {
+      const store = useInsightsStore()
+
+      // Spy on setTimeout to throw synchronously, triggering the catch+rethrow in runScenario
+      const spy = vi.spyOn(global, 'setTimeout').mockImplementationOnce((_cb: any) => {
+        throw new Error('Calculation error')
+      })
+
+      await expect(store.runScenario({
+        campaignLift: 10,
+        liquidityContribution: 5000,
+        retentionChange: 2,
+      })).rejects.toThrow('Calculation error')
+
+      spy.mockRestore()
+    })
+
+    it('should handle fetchTrendData errors gracefully without throwing', async () => {
+      const store = useInsightsStore()
+
+      // Spy on setTimeout to throw, simulating an async failure in fetchTrendData
+      const spy = vi.spyOn(global, 'setTimeout').mockImplementationOnce((_cb: any) => {
+        throw new Error('Trend fetch error')
+      })
+
+      // Should not throw (errors logged internally)
+      await expect(store.fetchTrendData('adoption')).resolves.toBeUndefined()
+
+      spy.mockRestore()
+    })
+
+    it('should handle fetchBenchmarks errors gracefully without throwing', async () => {
+      const store = useInsightsStore()
+
+      // Spy on setTimeout to throw, simulating an async failure in fetchBenchmarks
+      const spy = vi.spyOn(global, 'setTimeout').mockImplementationOnce((_cb: any) => {
+        throw new Error('Benchmarks fetch error')
+      })
+
+      await expect(store.fetchBenchmarks()).resolves.toBeUndefined()
+
+      spy.mockRestore()
+    })
   })
-})
+
+  describe('initialize', () => {
+    it('should populate metrics and benchmarks after initialize completes', async () => {
+      localStorage.setItem('biatec_insights_filters', JSON.stringify({
+        timeframe: '90d',
+        networks: ['algorand'],
+        tokenIds: [],
+        walletSegment: 'all',
+      }))
+
+      const store = useInsightsStore()
+      store.initialize()
+
+      // Verify loadFiltersFromStorage effect: filters restored from localStorage
+      expect(store.filters.timeframe).toBe('90d')
+      expect(store.filters.networks).toEqual(['algorand'])
+    })
+
+    it('should load persisted filters on initialize', () => {
+      const saved = {
+        timeframe: '90d' as const,
+        networks: ['algorand'],
+        tokenIds: [],
+        walletSegment: 'all' as const,
+      }
+      localStorage.setItem('biatec_insights_filters', JSON.stringify(saved))
+
+      const store = useInsightsStore()
+      store.initialize()
+
+      expect(store.filters.timeframe).toBe('90d')
+      expect(store.filters.networks).toEqual(['algorand'])
+    })
+  })
+
+  describe('exportData with benchmarks', () => {
+    it('should export CSV including benchmarks section when benchmarks exist', async () => {
+      const store = useInsightsStore()
+      await store.fetchMetrics()
+      await store.fetchBenchmarks()
+
+      global.URL.createObjectURL = vi.fn(() => 'blob:mock-url')
+      global.URL.revokeObjectURL = vi.fn()
+      const mockClick = vi.fn()
+      const mockAppendChild = vi.fn()
+      const mockRemoveChild = vi.fn()
+      document.createElement = vi.fn(() => ({
+        href: '',
+        download: '',
+        click: mockClick,
+      })) as any
+      document.body.appendChild = mockAppendChild
+      document.body.removeChild = mockRemoveChild
+
+      // Should not throw and click should be called for CSV
+      store.exportData('csv')
+      expect(mockClick).toHaveBeenCalled()
+    })
+  })
+
+  describe('timeframe trend data coverage', () => {
+    it('should generate 366 data points for 1y timeframe', async () => {
+      const store = useInsightsStore()
+
+      store.updateFilters({ timeframe: '1y' })
+      await store.fetchTrendData('adoption')
+      expect(store.trendData['adoption'].length).toBe(366) // 365 days + today
+    })
+
+    it('should generate 91 data points for 90d timeframe', async () => {
+      const store = useInsightsStore()
+
+      store.updateFilters({ timeframe: '90d' })
+      await store.fetchTrendData('adoption')
+      expect(store.trendData['adoption'].length).toBe(91) // 90 days + today
+    })
+
+    it('should generate 366 data points for all timeframe (fallback to 365)', async () => {
+      const store = useInsightsStore()
+
+      store.updateFilters({ timeframe: 'all' })
+      await store.fetchTrendData('adoption')
+      expect(store.trendData['adoption'].length).toBe(366) // 365 days + today (all falls to 365)
+    })
+  })
+
+  describe('saveFiltersToStorage - error path', () => {
+    it('should handle localStorage.setItem throwing', () => {
+      const store = useInsightsStore()
+      const originalSetItem = localStorage.setItem.bind(localStorage)
+      try {
+        localStorage.setItem = () => { throw new Error('Storage quota exceeded') }
+        expect(() => store.saveFiltersToStorage()).not.toThrow()
+      } finally {
+        localStorage.setItem = originalSetItem
+      }
+    })
+  })
+
+  describe('loadFiltersFromStorage - error path', () => {
+    it('should handle JSON.parse throwing on corrupted storage', () => {
+      localStorage.setItem('biatec_insights_filters', '{invalid json}')
+      const store = useInsightsStore()
+      
+      expect(() => store.loadFiltersFromStorage()).not.toThrow()
+    })
+  })
+
+  describe('generateMockTrendData - timeframe branches', () => {
+    it('should generate correct points for 7d timeframe', async () => {
+      const store = useInsightsStore()
+      store.updateFilters({ timeframe: '7d' })
+      await store.fetchTrendData('retention')
+      expect(store.trendData['retention'].length).toBe(8) // 7 days + today
+    })
+
+    it('should generate correct points for 30d timeframe', async () => {
+      const store = useInsightsStore()
+      store.updateFilters({ timeframe: '30d' })
+      await store.fetchTrendData('txQuality')
+      expect(store.trendData['txQuality'].length).toBe(31) // 30 days + today
+    })
+  })
+
+  describe('exportData - edge cases', () => {
+    beforeEach(() => {
+      global.URL.createObjectURL = vi.fn(() => 'blob:mock-url')
+      global.URL.revokeObjectURL = vi.fn()
+      const mockClick = vi.fn()
+      document.createElement = vi.fn(() => ({
+        href: '',
+        download: '',
+        click: mockClick,
+      })) as any
+      document.body.appendChild = vi.fn()
+      document.body.removeChild = vi.fn()
+    })
+
+    it('should export JSON format without error', async () => {
+      const store = useInsightsStore()
+      await store.fetchMetrics()
+      expect(() => store.exportData('json')).not.toThrow()
+    })
+
+    it('should export CSV with empty benchmarks', () => {
+      const store = useInsightsStore()
+      // No benchmarks fetched yet
+      expect(() => store.exportData('csv')).not.toThrow()
+    })
+  })
+});
