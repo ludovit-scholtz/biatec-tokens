@@ -148,22 +148,22 @@
 
 ---
 
-## MVP Blockers Reality Check (February 28, 2026)
+## MVP Blockers Reality Check (February 28, 2026 - Late Update)
 
 ### Evidence Reviewed
 
-- Frontend and backend repositories show continued delivery velocity with fresh merges on February 28 (frontend PR #490 and backend PR #412), while both repos still carry one active issue and one active draft PR for the next MVP slice (`#491/#492` frontend, `#413/#414` backend).
-- Current `e2e/` static audit (32 spec files) shows **27 executable `test.skip()` calls**, **289 `waitForTimeout()` calls**, and **17 executable `page.goto('/create/wizard')` references**.
-- Auth simulation in Playwright remains heavily mocked, with **168 `localStorage` references**, **69 `algorand_user` seeds**, and **61 `showAuth=true` redirect checks**, limiting backend contract confidence.
+- Frontend and backend repositories show continued delivery velocity with fresh merges on February 28 (frontend PR #498 and backend PR #420), while both repos still carry one active issue and one active draft PR for the next MVP slice (`#499/#500` frontend, `#421/#422` backend).
+- Current `e2e/` static audit (34 spec files) shows **62 executable `test.skip()` calls**, **80 `test.describe.skip()` blocks**, **179 `waitForTimeout()` calls**, **91 `/create/wizard` references**, and **17 executable `page.goto('/create/wizard')` visits**.
+- Auth simulation in Playwright remains localStorage-seeded via shared helpers, with **34 `localStorage` references**, **0 direct `algorand_user` writes in specs** (migrated into helper), and **22 `showAuth=true` redirect checks**, limiting backend contract confidence.
 
 ### Blocker Validation Status
 
 - ✅ **Wallet localStorage blocker remains resolved in tests:** no matches for `wallet_connected` or `active_wallet_id` under `e2e/`.
-- ❌ **Wizard removal blocker not met:** deprecated `/create/wizard` remains heavily exercised (**91 references across 10 spec files; 17 executable route visits**), so canonical-flow coverage is still mixed with legacy-route assertions.
-- ❌ **ARC76 auth derivation blocker not met:** `arc76-validation.spec.ts` validates localStorage persistence only and does not assert backend email/password-to-ARC76 derivation or session API responses.
+- ❌ **Wizard removal blocker not met:** deprecated `/create/wizard` remains heavily exercised (**91 references across 9 spec files; 17 executable route visits**), so canonical-flow coverage is still mixed with legacy-route assertions.
+- ❌ **ARC76 auth derivation blocker not met:** `arc76-validation.spec.ts` still validates localStorage/session persistence and UI state, but does not assert backend email/password-to-ARC76 derivation or session API responses.
 - 🟡 **Top-menu network visibility blocker partially covered:** **15 `Not connected` assertions** exist, but major suites still rely on broad `page.content()` checks instead of deterministic nav-component assertions across guest and authenticated states.
-- ⚠️ **CI trust gap persists:** `test.skip()` remains concentrated in complex suites (`arc76-validation` alone contributes 12 skips, with additional clusters in `trustworthy-operations-ux`, `compliance-auth-first`, and `auth-first-token-creation`).
-- ⚠️ **Auth realism gap persists:** critical auth flows still seed `algorand_user` in localStorage instead of performing real login/session bootstrap against backend contracts.
+- ⚠️ **CI trust gap persists:** skip usage remains concentrated in complex suites (`arc76-validation` contributes 11 `describe.skip()` blocks, with additional clusters in `trustworthy-operations-ux`, `subscription-billing`, and `compliance-auth-first`).
+- ⚠️ **Auth realism gap persists:** critical auth flows still seed localStorage through `withAuth()` helper instead of performing real login/session bootstrap against backend contracts.
 
 ### Required Playwright Improvements Before MVP Sign-off
 
@@ -171,12 +171,12 @@
 2. Add backend-verified ARC76 tests that assert deterministic derived account IDs/addresses from email/password via API contracts.
 3. Replace page-wide string checks with deterministic top-navigation assertions proving no wallet/network state UI for guests and authenticated users.
 4. Eliminate CI-only skips in compliance/auth suites by using deterministic fixtures, isolated route setup, and API-level stubs.
-5. Reduce `waitForTimeout()` usage (289 calls) by replacing with semantic waits tied to explicit route-ready UI anchors and request completion states.
-6. Replace localStorage auth seeding in critical journeys with real login/session bootstrap helpers that validate backend auth contracts.
+5. Reduce `waitForTimeout()` usage further (179 calls) by replacing with semantic waits tied to explicit route-ready UI anchors and request completion states.
+6. Replace localStorage auth seeding in critical journeys (`withAuth()` helper) with real login/session bootstrap helpers that validate backend auth contracts.
 
 ### Roadmap Adjustment
 
-- **MVP Foundation confidence adjusted to 45% (from 46%)**: delivery velocity remains strong, but blocker compliance remains below sign-off bar due to increased skip/timeout footprint and persistent localStorage-seeded auth in ARC76 coverage.
+- **MVP Foundation confidence adjusted to 47% (from 45%)**: delivery velocity and timeout footprint improved, but blocker compliance remains below sign-off bar due to heavy skip usage, legacy wizard-route coverage, and localStorage-seeded auth in ARC76 coverage.
 
 ---
 
@@ -433,11 +433,11 @@ Based on comprehensive product review including source code analysis, E2E test c
 - User satisfaction (error scenarios): Baseline → +40%
 
 **Code Quality:**
-- Skipped E2E tests: 23 → 0
+- Skipped E2E blocks (`test.skip` + `test.describe.skip`): 142 → 0
 - View count: 28 → 15-20 (consolidated)
 - Test coverage (UX flows): Unknown → 80%+
 
 ---
 
-**Last Updated:** February 28, 2026 (Reality check refresh + Playwright MVP blocker compliance recalibration)
+**Last Updated:** February 28, 2026 (Late reality-check refresh + Playwright MVP blocker compliance recalibration)
 **Next Review:** March 7, 2026
