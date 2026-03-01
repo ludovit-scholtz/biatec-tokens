@@ -26,46 +26,42 @@
  */
 
 import { test, expect } from "@playwright/test";
+import {
+  withAuth as withAuthHelper,
+  suppressBrowserErrors,
+  getNavText,
+} from "./helpers/auth";
 
 // ---------------------------------------------------------------------------
-// Auth fixture helpers (email/password only — no wallet connectors)
+// Spec-local auth fixtures — thin wrappers with semantic names
+//
+// These wrappers use fixed test credentials (CLOSURE_TEST_ADDRESS) consistent
+// across all tests in this spec, so that auth state is predictable and tests
+// do not depend on external user data.
 // ---------------------------------------------------------------------------
 
+/**
+ * Seeds a valid, connected auth session for this spec.
+ * Uses spec-local credentials to keep test isolation clean.
+ */
 function withAuth(page: import("@playwright/test").Page) {
-  return page.addInitScript(() => {
-    localStorage.setItem(
-      "algorand_user",
-      JSON.stringify({
-        address: "CLOSURE_TEST_ADDRESS",
-        email: "closure@example.com",
-        isConnected: true,
-      })
-    );
+  return withAuthHelper(page, {
+    address: "CLOSURE_TEST_ADDRESS",
+    email: "closure@example.com",
+    isConnected: true,
   });
 }
 
+/**
+ * Seeds a structurally valid but disconnected session.
+ * isConnected: false means the route guard will redirect the user —
+ * this fixture proves the guard checks the isConnected field, not just address.
+ */
 function withExpiredSession(page: import("@playwright/test").Page) {
-  return page.addInitScript(() => {
-    localStorage.setItem(
-      "algorand_user",
-      JSON.stringify({
-        address: "CLOSURE_TEST_ADDRESS",
-        email: "closure@example.com",
-        isConnected: false, // Expired session
-      })
-    );
-  });
-}
-
-// Suppress browser console errors to prevent CI failure masking
-function suppressBrowserErrors(page: import("@playwright/test").Page) {
-  page.on("console", (msg) => {
-    if (msg.type() === "error") {
-      console.log(`[closure-e2e suppressed] ${msg.text()}`);
-    }
-  });
-  page.on("pageerror", (error) => {
-    console.log(`[closure-e2e pageerror suppressed] ${error.message}`);
+  return withAuthHelper(page, {
+    address: "CLOSURE_TEST_ADDRESS",
+    email: "closure@example.com",
+    isConnected: false, // Expired/logged-out session
   });
 }
 
@@ -178,14 +174,10 @@ test.describe("AC #3: Top navigation — no wallet/network state for unauthentic
     // have wallets — directly damages first-impression conversion.
     await page.goto("/");
     await page.waitForLoadState("networkidle");
-    await page.evaluate(() => localStorage.clear());
 
-    await page.waitForFunction(() => document.readyState === "complete", {
-      timeout: 10000,
-    });
-
-    const content = await page.content();
-    expect(content).not.toMatch(/not connected/i);
+    // getNavText() waits for nav and returns nav.textContent() — avoids compiled-bundle false positives
+    const navText = await getNavText(page);
+    expect(navText).not.toMatch(/not connected/i);
   });
 
   test("guest homepage contains no wallet connector names", async ({ page }) => {
@@ -193,10 +185,10 @@ test.describe("AC #3: Top navigation — no wallet/network state for unauthentic
     // incorrect expectations that a crypto wallet is needed.
     await page.goto("/");
     await page.waitForLoadState("networkidle");
-    await page.evaluate(() => localStorage.clear());
 
-    const content = await page.content();
-    expect(content).not.toMatch(/WalletConnect|Pera Wallet|Defly|MetaMask/i);
+    // body.innerText() checks only rendered visible text — not compiled JS bundle content.
+    const bodyText = await page.locator("body").innerText().catch(() => "");
+    expect(bodyText).not.toMatch(/WalletConnect|Pera Wallet|Defly|MetaMask/i);
   });
 
   test("guest nav shows Sign In button — auth-first primary CTA", async ({ page }) => {
@@ -216,12 +208,9 @@ test.describe("AC #3: Top navigation — no wallet/network state for unauthentic
     await page.goto("/");
     await page.waitForLoadState("networkidle");
 
-    await page.waitForFunction(() => document.readyState === "complete", {
-      timeout: 10000,
-    });
-
-    const content = await page.content();
-    expect(content).not.toMatch(/not connected/i);
+    // getNavText() waits for nav and returns textContent — avoids compiled-bundle false positives
+    const navText = await getNavText(page);
+    expect(navText).not.toMatch(/not connected/i);
   });
 });
 
@@ -462,12 +451,9 @@ test.describe("AC #8: No regression — authenticated user flows", () => {
     await page.goto("/");
     await page.waitForLoadState("networkidle");
 
-    await page.waitForFunction(() => document.readyState === "complete", {
-      timeout: 10000,
-    });
-
-    const content = await page.content();
-    expect(content).not.toMatch(/not connected/i);
+    // getNavText() waits for nav and returns textContent — avoids compiled-bundle false positives
+    const navText = await getNavText(page);
+    expect(navText).not.toMatch(/not connected/i);
   });
 
   test("Sign In button is not visible for authenticated users (correct nav state)", async ({
