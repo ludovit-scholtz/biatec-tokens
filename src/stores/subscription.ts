@@ -13,6 +13,7 @@ interface SubscriptionData {
   cancel_at_period_end: boolean
   payment_method_brand: string | null
   payment_method_last4: string | null
+  trial_end: number | null
 }
 
 export interface ConversionMetrics {
@@ -25,10 +26,21 @@ export interface ConversionMetrics {
   lastActivity: Date | null
 }
 
+export interface CouponResult {
+  valid: boolean
+  discountPercent?: number
+  discountAmount?: number
+  code?: string
+  message?: string
+}
+
+const TIER_ORDER: Record<string, number> = { basic: 1, professional: 2, enterprise: 3 }
+
 export const useSubscriptionStore = defineStore('subscription', () => {
   const subscription = ref<SubscriptionData | null>(null)
   const loading = ref(false)
   const error = ref<string | null>(null)
+  const appliedCoupon = ref<CouponResult | null>(null)
   const conversionMetrics = ref<ConversionMetrics>({
     tokenCreationAttempts: 0,
     successfulCreations: 0,
@@ -43,6 +55,27 @@ export const useSubscriptionStore = defineStore('subscription', () => {
     return subscription.value?.subscription_status === 'active'
   })
 
+  const isInTrial = computed(() => {
+    const status = subscription.value?.subscription_status
+    if (status !== 'trialing') return false
+    const trialEnd = subscription.value?.trial_end
+    if (!trialEnd) return false
+    return new Date(trialEnd * 1000) > new Date()
+  })
+
+  const trialDaysRemaining = computed(() => {
+    if (!isInTrial.value || !subscription.value?.trial_end) return 0
+    const trialEndDate = new Date(subscription.value.trial_end * 1000)
+    const now = new Date()
+    const diff = trialEndDate.getTime() - now.getTime()
+    return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)))
+  })
+
+  const trialEndDate = computed(() => {
+    if (!subscription.value?.trial_end) return null
+    return new Date(subscription.value.trial_end * 1000)
+  })
+
   const currentProduct = computed((): StripeProduct | null => {
     if (!subscription.value?.price_id) return null
     return getProductByPriceId(subscription.value.price_id) || null
@@ -52,6 +85,16 @@ export const useSubscriptionStore = defineStore('subscription', () => {
     if (!subscription.value?.current_period_end) return null
     return new Date(subscription.value.current_period_end * 1000)
   })
+
+  const currentTier = computed((): 'basic' | 'professional' | 'enterprise' | null => {
+    return currentProduct.value?.tier ?? null
+  })
+
+  const hasFeatureAccess = (requiredTier: 'basic' | 'professional' | 'enterprise'): boolean => {
+    const userTierLevel = TIER_ORDER[currentTier.value ?? ''] ?? 0
+    const requiredLevel = TIER_ORDER[requiredTier] ?? 1
+    return (isActive.value || isInTrial.value) && userTierLevel >= requiredLevel
+  }
 
   const fetchSubscription = async () => {
     // Don't refetch if already loaded and active
@@ -78,7 +121,8 @@ export const useSubscriptionStore = defineStore('subscription', () => {
             current_period_end: cachedData.current_period_end || null,
             cancel_at_period_end: cachedData.cancel_at_period_end || false,
             payment_method_brand: cachedData.payment_method_brand || null,
-            payment_method_last4: cachedData.payment_method_last4 || null
+            payment_method_last4: cachedData.payment_method_last4 || null,
+            trial_end: cachedData.trial_end ?? null
           }
           console.log('[Subscription Store] Loaded from cache:', subscription.value)
           loading.value = false
@@ -99,7 +143,8 @@ export const useSubscriptionStore = defineStore('subscription', () => {
         current_period_end: null,
         cancel_at_period_end: false,
         payment_method_brand: null,
-        payment_method_last4: null
+        payment_method_last4: null,
+        trial_end: null
       }
 
       subscription.value = mockSubscription
@@ -148,14 +193,14 @@ export const useSubscriptionStore = defineStore('subscription', () => {
     }
   }
 
-  const createCheckoutSession = async (priceId: string, mode: 'payment' | 'subscription' = 'subscription') => {
+  const createCheckoutSession = async (priceId: string, mode: 'payment' | 'subscription' = 'subscription', couponCode?: string) => {
     loading.value = true
     error.value = null
 
     try {
       // Mock checkout session creation
       // In a real app, this would call your backend to create a Stripe checkout session
-      console.log('Creating checkout session for:', { priceId, mode })
+      console.log('Creating checkout session for:', { priceId, mode, couponCode })
       
       // Simulate API call delay
       await new Promise(resolve => setTimeout(resolve, 1000))
@@ -169,6 +214,27 @@ export const useSubscriptionStore = defineStore('subscription', () => {
     } finally {
       loading.value = false
     }
+  }
+
+  const validateCoupon = async (code: string): Promise<CouponResult> => {
+    // TODO: Replace with real API call to /api/subscriptions/coupons/:code
+    await new Promise(resolve => setTimeout(resolve, 500))
+    
+    // Mock coupon validation
+    const upperCode = code.toUpperCase().trim()
+    const mockCoupons: Record<string, CouponResult> = {
+      'LAUNCH20': { valid: true, discountPercent: 20, code: 'LAUNCH20', message: '20% off your first 3 months' },
+      'WELCOME10': { valid: true, discountPercent: 10, code: 'WELCOME10', message: '10% off first month' },
+      'BIATEC50': { valid: true, discountPercent: 50, code: 'BIATEC50', message: '50% off for 6 months' },
+    }
+    
+    const result = mockCoupons[upperCode] ?? { valid: false, message: 'Invalid or expired coupon code' }
+    appliedCoupon.value = result.valid ? result : null
+    return result
+  }
+
+  const clearCoupon = () => {
+    appliedCoupon.value = null
   }
 
   const trackTokenCreationAttempt = () => {
@@ -222,13 +288,21 @@ export const useSubscriptionStore = defineStore('subscription', () => {
     subscription,
     loading,
     error,
+    appliedCoupon,
     isActive,
+    isInTrial,
+    trialDaysRemaining,
+    trialEndDate,
     currentProduct,
     currentPeriodEnd,
+    currentTier,
+    hasFeatureAccess,
     fetchSubscription,
     createCheckoutSession,
     cancelSubscription,
     reactivateSubscription,
+    validateCoupon,
+    clearCoupon,
     conversionMetrics,
     trackTokenCreationAttempt,
     trackTokenCreationSuccess,
