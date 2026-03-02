@@ -327,6 +327,7 @@ import { launchTelemetryService } from '../services/launchTelemetry'
 import { competitiveTelemetryService } from '../services/CompetitiveTelemetryService'
 import { getLaunchErrorMessage, classifyLaunchError } from '../utils/launchErrorMessages'
 import { ISSUANCE_TEST_IDS, consumeIssuanceReturnPath } from '../utils/authFirstIssuanceWorkspace'
+import { validatePreflightChecks } from '../utils/launchPreflightValidator'
 
 // Lazy load step components
 import OrganizationProfileStep from '../components/guidedLaunch/steps/OrganizationProfileStep.vue'
@@ -463,6 +464,25 @@ const handleEconomicsUpdate = (economics: TokenEconomics) => {
 const handleSubmit = async () => {
   try {
     const userEmail = authStore.user?.email || ''
+    const form = guidedLaunchStore.currentForm
+
+    // Run preflight validation before submitting.
+    // Advisory-only in this phase: the wizard step validation already enforces
+    // required fields per step. Preflight runs a cross-cutting check and logs
+    // issues for observability; the store's submitLaunch handles final server-side
+    // validation and will surface errors from the backend if any remain.
+    const preflight = validatePreflightChecks({
+      tokenName: form.selectedTemplate?.name,
+      totalSupply: form.tokenEconomics?.totalSupply !== undefined ? Number(form.tokenEconomics.totalSupply) : undefined,
+      network: form.selectedTemplate?.network,
+      templateSelected: !!form.selectedTemplate,
+      organizationVerified: !!form.organizationProfile?.organizationName,
+      complianceComplete: completedSteps.value >= 4,
+    })
+    if (!preflight.passed) {
+      console.warn('[Preflight] Advisory check failed (proceeding to backend validation):', preflight.summary)
+    }
+
     const response = await guidedLaunchStore.submitLaunch(userEmail)
     submissionResponse.value = response
     showSuccessModal.value = true

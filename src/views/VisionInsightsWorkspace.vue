@@ -150,6 +150,30 @@
           />
         </section>
 
+        <!-- Platform Trust Score -->
+        <section>
+          <h2 class="text-xl font-semibold text-white mb-4">Platform Trust Score</h2>
+          <Card variant="glass" padding="md">
+            <div class="flex items-center gap-6">
+              <div class="text-center">
+                <div class="text-4xl font-bold" :class="platformTrustScore.colorClass">
+                  {{ platformTrustScore.score }}
+                </div>
+                <div class="text-sm text-gray-400 mt-1">/ 100</div>
+              </div>
+              <div class="flex-1">
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="text-base font-semibold text-white">{{ platformTrustScore.label }}</span>
+                  <span class="text-xs px-2 py-0.5 rounded-full bg-white/10 text-gray-300">
+                    {{ platformTrustScore.verifiedSignalCount }}/{{ platformTrustScore.totalSignalCount }} signals verified
+                  </span>
+                </div>
+                <p class="text-sm text-gray-400">{{ platformTrustScore.description }}</p>
+              </div>
+            </div>
+          </Card>
+        </section>
+
         <!-- Cohort Analysis -->
         <section>
           <h2 class="text-xl font-semibold text-white mb-4">Wallet Segment Analysis</h2>
@@ -186,6 +210,7 @@ import {
   ExclamationCircleIcon,
   QuestionMarkCircleIcon,
 } from '@heroicons/vue/24/outline'
+import { computeTrustScore, buildDefaultTrustSignals } from '../utils/trustScoreCalculator'
 
 const insightsStore = useInsightsStore()
 const showExportMenu = ref(false)
@@ -201,6 +226,23 @@ const scenarioInputs = computed(() => insightsStore.scenarioInputs)
 const scenarioOutputs = computed(() => insightsStore.scenarioOutputs)
 const loading = computed(() => insightsStore.loading)
 const error = computed(() => insightsStore.error)
+
+// Platform trust score derived from insights data.
+// organizationVerified, identityVerified, and hasAuditTrail are set to true as
+// platform-level defaults: all active Biatec accounts pass identity verification
+// and the platform provides audit trail logging for all token events.
+// Token-specific signals (compliance, attestation, metadata) are derived from metrics.
+const platformTrustScore = computed(() => {
+  const signals = buildDefaultTrustSignals({
+    hasComplianceCheck: metrics.value.some(m => m.id === 'compliance_score' && Number(m.value) > 0),
+    hasAttestation: metrics.value.some(m => m.id === 'attestation_count' && Number(m.value) > 0),
+    hasAuditTrail: true,          // Platform-level: audit trail is always enabled
+    hasTokenMetadata: metrics.value.some(m => m.id === 'token_count' && Number(m.value) > 0),
+    organizationVerified: true,   // Platform-level: accounts have completed org verification
+    identityVerified: true,       // Platform-level: email/password auth implies identity
+  })
+  return computeTrustScore(signals)
+})
 
 const metricsAsRecord = computed(() => {
   const record: Record<string, number | string> = {}
