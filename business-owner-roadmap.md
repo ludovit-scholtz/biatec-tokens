@@ -16,7 +16,7 @@
 
 ---
 
-## Phase 1: MVP Foundation (Q1 2025) - 55% Complete 🟡
+## Phase 1: MVP Foundation (Q1 2025) - 56% Complete 🟡
 
 ### Core Token Creation & Deployment - 60% Complete 🟡
 
@@ -148,33 +148,34 @@
 
 ---
 
-## MVP Blockers Reality Check (March 1, 2026 - Weekly Update)
+## MVP Blockers Reality Check (March 4, 2026 - Weekly Update)
 
 ### Evidence Reviewed
 
-- Frontend and backend show active MVP hardening delivery: frontend PR **#516** merged on March 1, and new hardening PRs are open (**#518** frontend, **#440** backend).
-- Active execution focus remains clear in both repos with one open MVP hardening issue each (**#517** frontend, **#439** backend).
-- Current `e2e/` static code-search snapshot shows major cleanup vs prior week: **12 `test.skip(` matches** (down from 62), **0 `test.describe.skip(` matches** (down from 80), **16 `waitForTimeout(` matches** (down from 179), **13 `/create/wizard` references** (down from 91), and **15 `withAuth(` helper references** still indicating localStorage-seeded auth in critical journeys.
+- Recent hardening delivery is merged to main: frontend PR **#558** and backend PR **#477** are closed/merged; there are currently **0 open issues** and **0 open PRs** in `scholtz/biatec-tokens`.
+- Playwright workflow health check on main shows latest run **#1366** (run ID `22664895816`, March 4, 2026) with **conclusion: failure**.
+- Current `e2e/` code snapshot (`main`) shows: **22 code-level `test.skip(` uses**, **19 CI-conditional skips**, **0 `test.describe.skip(` uses**, **34 `waitForTimeout(` uses**, **109 `withAuth(` references**, and **12 direct `goto('/create/wizard')` references across 6 files**.
+- Critical suites do show progress: `auth-first-token-creation`, `guided-token-launch`, `compliance-orchestration`, and `compliance-setup-workspace` use `loginWithCredentials()` and contain **0 `withAuth(` calls**.
 
 ### Blocker Validation Status
 
-- ✅ **CI skip hygiene materially improved:** `test.describe.skip` usage is now at **0**, and direct skip usage dropped sharply.
-- 🟡 **Wizard blocker partially resolved, not complete:** `/create/wizard` is greatly reduced but still present, so canonical-flow ownership is not yet fully clean.
-- ❌ **ARC76 backend-verification blocker not met:** frontend Playwright still relies on `withAuth()` helper patterns and does not yet prove deterministic email/password→ARC76 derivation via backend contract assertions.
-- 🟡 **Navigation/accessibility quality improving:** open frontend hardening work includes skip-to-content, nav label consistency, and accessibility checks, but this is still in-flight and not fully merged.
-- ⚠️ **Documentation/test reality mismatch still present:** `docs/testing/PLAYWRIGHT_STATUS.md` reports 80 skipped tests, while current search evidence shows significantly lower skip footprint; status docs need synchronization with actual suite state.
+- 🟡 **ARC76 critical-path blocker partially met:** the 4 critical journey suites now use `loginWithCredentials()` (good), but broader suite coverage still has heavy `withAuth()` usage and fallback-seeded flows that do not prove backend determinism end-to-end.
+- ❌ **CI reliability blocker not met:** latest Playwright run on `main` failed, so MVP sign-off cannot treat E2E as stable.
+- ❌ **Canonical route-cleanup blocker not met:** `/create/wizard` direct navigation still exists outside `wizard-redirect-compat.spec.ts`.
+- 🟡 **Skip/timeout hygiene improved but still above MVP threshold:** `test.describe.skip` is zero, but `test.skip` and `waitForTimeout` remain high for a sign-off-grade suite.
+- ⚠️ **Documentation/reality mismatch still present:** `docs/testing/PLAYWRIGHT_STATUS.md` states all tests passing, which conflicts with the latest failed workflow run on `main`.
 
 ### Required Playwright Improvements Before MVP Sign-off
 
-1. Remove remaining `/create/wizard` references from canonical journeys and keep only explicit redirect-compatibility coverage.
-2. Replace `withAuth()` seeding in critical auth/compliance suites with backend-verified login/session bootstrap helpers.
-3. Add deterministic ARC76 contract assertions in Playwright/API-integrated tests (same credentials => same derived account, invalid session => explicit contract error).
-4. Continue reducing remaining `test.skip(` and `waitForTimeout(` usage by converting to semantic waits and stable fixtures.
-5. Align `docs/testing/PLAYWRIGHT_STATUS.md` with current suite reality (skip counts, browser scope, and blocker-facing coverage).
+1. Fix the failing `Playwright Tests` workflow on `main` and keep at least 3 consecutive green runs before sign-off.
+2. Restrict `goto('/create/wizard')` to `wizard-redirect-compat.spec.ts` only; migrate remaining legacy-navigation tests to `/launch/guided`.
+3. Reduce dependency on `withAuth()` by migrating canonical/hardening suites to backend-first auth bootstrap, not localStorage-seeded shortcuts.
+4. Cut CI-only skips and `waitForTimeout` usage in blocker-facing suites via semantic waits and fixture stabilization.
+5. Align `docs/testing/PLAYWRIGHT_STATUS.md` with actual workflow outcomes and current skip/timeout counts.
 
 ### Roadmap Adjustment
 
-- **MVP Foundation confidence adjusted to 53% (from 47%)**: delivery execution is stronger and test hygiene improved substantially, but MVP sign-off blockers remain open around backend-verified ARC76 auth coverage and full canonical route cleanup.
+- **MVP Foundation confidence adjusted to 56% (from 53%)**: delivery throughput improved with merged hardening work, but MVP sign-off blockers remain open due to failing CI Playwright run, legacy route references, and residual auth/skip hygiene debt.
 
 ---
 
@@ -437,5 +438,5 @@ Based on comprehensive product review including source code analysis, E2E test c
 
 ---
 
-**Last Updated:** March 1, 2026 (Weekly reality-check refresh + Playwright MVP blocker recalibration)
-**Next Review:** March 8, 2026
+**Last Updated:** March 4, 2026 (Reality-check refresh with Actions + Playwright blocker audit)
+**Next Review:** March 11, 2026
