@@ -12,7 +12,7 @@
 
 **Market Opportunity:** $50B+ RWA tokenization market by 2025, with MICA regulation creating demand for compliant platforms. Current competitors lack comprehensive compliance tooling.
 
-**Current Status:** MVP development significantly delayed due to critical integration issues, authentication problems, and UI/UX blockers. Subscription system partially implemented but not operational. No paying customers acquired. Platform requires substantial fixes before beta launch possible.
+**Current Status:** Core MVP hardening shipped across frontend and backend on March 3-4, 2026 (multiple merged PRs), but MVP sign-off remains blocked by Playwright CI instability. Latest workflow runs for `Playwright Tests` are failing, and test-suite hygiene debt remains high (`test.skip`: 38, `waitForTimeout`: 32, `withAuth`: 118 in `e2e/`).
 
 ---
 
@@ -160,18 +160,18 @@
 ### Blocker Validation Status
 
 - 🟡 **ARC76 critical-path blocker partially met:** the 4 critical journey suites now use `loginWithCredentials()` (good), but broader suite coverage still has heavy `withAuth()` usage and fallback-seeded flows that do not prove backend determinism end-to-end.
-- ❌ **CI reliability blocker not met:** latest Playwright run on `main` failed, so MVP sign-off cannot treat E2E as stable.
-- ❌ **Canonical route-cleanup blocker not met:** `/create/wizard` direct navigation still exists outside `wizard-redirect-compat.spec.ts`.
-- 🟡 **Skip/timeout hygiene improved but still above MVP threshold:** `test.describe.skip` is zero, but `test.skip` and `waitForTimeout` remain high for a sign-off-grade suite.
-- ⚠️ **Documentation/reality mismatch still present:** `docs/testing/PLAYWRIGHT_STATUS.md` states all tests passing, which conflicts with the latest failed workflow run on `main`.
+- ❌ **CI reliability blocker not met:** latest `Playwright Tests` workflow runs are failing (including run #1378), so MVP sign-off cannot treat E2E as stable.
+- ✅ **Canonical route-cleanup blocker met:** direct `goto('/create/wizard')` calls are now limited to `wizard-redirect-compat.spec.ts` only.
+- 🟡 **Skip/timeout hygiene still above MVP threshold:** `test.describe.skip` is zero, but `test.skip` (38) and `waitForTimeout` (32) remain too high for sign-off-grade confidence.
+- ⚠️ **Documentation/reality mismatch still present:** `docs/testing/PLAYWRIGHT_STATUS.md` claims all tests passing, while current workflow outcomes are failing and counts differ.
 
 ### Required Playwright Improvements Before MVP Sign-off
 
 1. Fix the failing `Playwright Tests` workflow on `main` and keep at least 3 consecutive green runs before sign-off.
-2. Restrict `goto('/create/wizard')` to `wizard-redirect-compat.spec.ts` only; migrate remaining legacy-navigation tests to `/launch/guided`.
-3. Reduce dependency on `withAuth()` by migrating canonical/hardening suites to backend-first auth bootstrap, not localStorage-seeded shortcuts.
-4. Cut CI-only skips and `waitForTimeout` usage in blocker-facing suites via semantic waits and fixture stabilization.
-5. Align `docs/testing/PLAYWRIGHT_STATUS.md` with actual workflow outcomes and current skip/timeout counts.
+2. Keep `goto('/create/wizard')` scoped to `wizard-redirect-compat.spec.ts` only and enforce this in review checks.
+3. Reduce dependency on `withAuth()` by migrating broader suites to backend-first auth bootstrap, not localStorage-seeded shortcuts.
+4. Cut CI-only skips and `waitForTimeout` usage in blocker-facing suites via semantic waits, fixture stabilization, and deterministic app readiness.
+5. Align `docs/testing/PLAYWRIGHT_STATUS.md` with actual workflow outcomes and current skip/timeout/auth-helper counts.
 
 ### Roadmap Adjustment
 
@@ -250,36 +250,21 @@ Based on comprehensive product review including source code analysis, E2E test c
 
 ---
 
-#### 3. **Legacy Wizard Flow Cleanup** 🟡 **PRIORITY: MEDIUM**
+#### 3. **Legacy Wizard Flow Cleanup** ✅ **PRIORITY: COMPLETE**
 
-**Issue:** Multiple E2E tests still reference `/create/wizard` path (legacy, redirects to `/launch/guided`)
+**Status:** `/create/wizard` direct navigation is now isolated to `wizard-redirect-compat.spec.ts` and validated as backward-compatibility behavior.
 
 **Evidence:**
-- 6 test files contain wizard references: `token-wizard-whitelist.spec.ts`, `compliance-orchestration.spec.ts`, `token-utility-recommendations.spec.ts`, `guided-token-launch.spec.ts`, `compliance-setup-workspace.spec.ts`, `auth-first-token-creation.spec.ts`
-- Tests are skipped but still present in codebase
-- Comments indicate "legacy path" but no migration timeline
-- Creates confusion about which flow is canonical
+- Direct `goto('/create/wizard')` calls appear only in `e2e/wizard-redirect-compat.spec.ts` (3 assertions).
+- Canonical flow coverage is centered on `/launch/guided` in MVP hardening suites.
 
 **Business Impact:**
-- Development velocity reduced (unclear which flow to maintain)
-- QA confidence lowered (skipped tests don't validate functionality)
-- User confusion if old documentation references wizard path
+- Reduced route ambiguity in MVP-critical E2E journeys
+- Lower regression risk for canonical launch path messaging
 
-**Required Actions:**
-1. Migrate all wizard functionality to guided launch flow
-2. Remove or update all `/create/wizard` test references
-3. Verify `/create/wizard` → `/launch/guided` redirect works
-4. Update all documentation to reference guided launch only
-5. Remove TokenCreationWizard.vue component if no longer used
-
-**Acceptance Criteria:**
-- Zero skipped tests referencing `/create/wizard`
-- All wizard tests migrated or removed
-- Redirect tested in E2E suite
-- Documentation audit complete (no wizard references)
-- Component removed or clearly marked as deprecated
-
-**Estimated Effort:** 16-24 hours (1 week, 1 developer)
+**Remaining Action (maintenance):**
+1. Keep redirect-compat tests isolated to the single dedicated spec.
+2. Reject any new direct `/create/wizard` navigation in non-compat tests during review.
 
 ---
 
@@ -432,11 +417,11 @@ Based on comprehensive product review including source code analysis, E2E test c
 - User satisfaction (error scenarios): Baseline → +40%
 
 **Code Quality:**
-- Skipped E2E blocks (`test.skip` + `test.describe.skip`): 142 → 0
+- Skipped E2E blocks (`test.skip` + `test.describe.skip`): 38 → 0
 - View count: 28 → 15-20 (consolidated)
 - Test coverage (UX flows): Unknown → 80%+
 
 ---
 
-**Last Updated:** March 4, 2026 (Reality-check refresh with Actions + Playwright blocker audit)
+**Last Updated:** March 4, 2026 (23:03 UTC reality-check refresh with latest Actions + Playwright blocker audit)
 **Next Review:** March 11, 2026
