@@ -55,6 +55,10 @@ When creating a new issue, use the `gh issue create` command with a highly descr
 
 [Comprehensive scope including what will be implemented, what won't be, technical approach, and dependencies]
 
+## UX and Design
+
+[Comprehensive scope to improve the UX and/or design]
+
 ## Acceptance Criteria
 
 [Specific, measurable criteria for completion, including functional requirements and quality standards]
