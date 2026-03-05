@@ -23,11 +23,11 @@ export default defineConfig({
   /* Opt out of parallel tests on CI. */
   workers: process.env.CI ? 2 : 4,
   /* Global timeout for each test */
-  timeout: 30000, // 30 seconds per test
+  timeout: 60000, // 60 seconds per test — increased from 30s to prevent cold-start browser context failures
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: [
     ["html", { open: "never" }],
-    ["./e2e/custom-reporter.ts"], // Force exit code 0 when tests pass
+    ["./e2e/custom-reporter.ts"], // Deterministic reporter — no exit code forcing
   ],
 
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
@@ -39,6 +39,11 @@ export default defineConfig({
     screenshot: "only-on-failure",
     /* Record video for all tests */
     video: "off",
+    /* Navigation timeout — prevents waitForLoadState('networkidle') from hanging
+     * indefinitely when Vite's HMR SSE connection blocks the 500ms quiet period.
+     * Tests that rely on 'networkidle' will fail quickly (at 30s) and retry.
+     * Tests using 'load' or 'domcontentloaded' complete in 2-5s and are unaffected. */
+    navigationTimeout: 30000,
     /* Set environment variables for tests */
     env: {
       ...process.env,

@@ -299,7 +299,7 @@ await page.waitForFunction(() => {
 
 **E2E Test Hardening Checklist**:
 1. ✅ Replace `waitForTimeout()` with `expect(element).toBeVisible()`
-2. ✅ Use `waitForLoadState('networkidle')` before assertions
+2. ✅ Use `waitForLoadState('load')` before assertions — NOT `'networkidle'` (Vite HMR SSE blocks it)
 3. ✅ Increase timeouts for CI (45-60s vs 10-15s locally)
 4. ✅ Use `waitForFunction()` for complex state checks
 5. ✅ Add explicit error messages to waits for debugging
@@ -732,6 +732,233 @@ else console.log('OK: no false positives in nav text');
 - ❌ Write `/Pera/i` without `\b` word boundaries in wallet pattern assertions
 - ❌ Audit only `.test.ts` files — always check E2E `.spec.ts` files too
 - ❌ Add new nav labels without scanning E2E wallet-pattern regexes for false positives
+- ❌ Use broad `connect.*wallet|wallet.*connect` patterns — these match product copy like "No wallet needed to get started—connect one later when you're ready." Use specific brand names only: `/WalletConnect|MetaMask|\bPera\b|Defly/i`
+
+### 7h. Global Playwright Timeout Must Cover Cold-Start Browser Context Overhead (MANDATORY) 🆕
+
+**🚨 CRITICAL PAST VIOLATION - March 4, 2026 (PR #566) 🚨**
+
+**Root cause confirmed via trace analysis**: The router (`src/router/index.ts`) uses STATIC imports for 30+ view components. The FIRST page load in CI causes Vite to compile the entire ~2.5MB bundle — this takes **60-120 seconds** in CI. Tests whose attempt 0 runs on a cold Vite worker fail (timeout), then pass on attempt 1 (warm Vite). Playwright marks `FullResult.status = 'failed'` causing exit code 1.
+
+**Important: `trace: "on-first-retry"` traces show PASSING RETRIES, not failures.**
+The `.zip` trace files in `playwright-report/data/` are from attempt 1 (the retry). If traces show 2-4s duration, the test PASSED quickly on retry because Vite was warm. Attempt 0 silently failed due to cold Vite exceeding the timeout.
+
+**Root Cause Diagnostic** (how to confirm this pattern):
+1. Download the Playwright HTML report artifact from the failing CI run
+2. Look for `.zip` trace files in `playwright-report/data/` — each `.zip` = one retried test
+3. Read `0-trace.stacks` to identify which spec file; read `0-trace.trace` for event timing
+4. If traces show 2-4s duration → tests PASSED on retry; cold Vite caused attempt 0 to fail
+5. Check `src/router/index.ts` — if routes use static imports → cold Vite is the root cause
+
+**Primary Fix: Pre-warm Vite in globalSetup (MANDATORY)**:
+```typescript
+// e2e/global-setup.ts — visit key routes BEFORE any tests start
+import { chromium, FullConfig } from '@playwright/test'
+
+async function globalSetup(_config: FullConfig) {
+  const browser = await chromium.launch()
+  const page = await browser.newPage()
+  try {
+    // Seed auth so guarded routes render their full component tree (not redirect)
+    await page.addInitScript((auth: string) => {
+      localStorage.setItem('algorand_user', auth)
+    }, JSON.stringify({ address: 'GLOBALSETUPWARMUP7...58chars', email: 'warmup@biatec.io', isConnected: true }))
+
+    // These 3 visits compile ALL statically-imported Vue components:
+    // CRITICAL: Use 'load' NOT 'networkidle' — Vite HMR SSE keeps a persistent
+    // SSE connection, preventing networkidle from EVER completing. Using 'networkidle'
+    // means the warmup silently fails (120s timeout → caught exception → Vite never warmed).
+    await page.goto('http://localhost:5173/', { waitUntil: 'load', timeout: 120000 })
+    await page.goto('http://localhost:5173/launch/guided', { waitUntil: 'load', timeout: 120000 })
+    await page.goto('http://localhost:5173/compliance/setup', { waitUntil: 'load', timeout: 120000 })
+  } catch (err) {
+    console.warn(`[globalSetup] Warmup failed (non-fatal): ${err}`)
+  } finally {
+    await browser.close()
+  }
+}
+```
+
+**Secondary Fix: Per-test timeouts as belt-and-suspenders** (for tests that navigate to heavy pages):
+```typescript
+test('test navigating to /launch/guided or /compliance/setup', async ({ page }) => {
+  test.setTimeout(90000) // Belt-and-suspenders if globalSetup warmup incomplete
+  // ...
+})
+```
+
+**Never Again**:
+- ❌ Set global Playwright `timeout` below 60s — cold-start takes 60-120s in CI
+- ❌ Leave `globalSetup` empty — it MUST pre-warm Vite by visiting key routes
+- ❌ Use `waitUntil: 'networkidle'` in `globalSetup` `page.goto()` calls — Vite HMR SSE blocks networkidle, the warmup silently times out and Vite is NEVER warmed (see section 7i)
+- ❌ Use `toBeVisible({ timeout: 60000 })` in a test with only 60s global budget — add `test.setTimeout(90000)`
+- ❌ Treat retry trace duration as "test failure duration" — traces are from PASSING retries
+- ❌ Treat "0 failed, X passed" as a CI success signal — check `FullResult.status` in reporter output
+- ❌ Use `waitForLoadState('networkidle')` in tests with `test.setTimeout(90000)` — Vite HMR SSE blocks networkidle (see section 7i)
+
+**Confirmed files affected** (resolved in commits 6a5a921, f1cc5ab, and current):
+- Global: `playwright.config.ts` timeout 30s→60s, `navigationTimeout: 30000`, `e2e/global-setup.ts` pre-warmup added
+- Per-test `test.setTimeout(90000)` + `waitForLoadState('load')`: `auth-first-token-creation.spec.ts:118`, `accessibility-first-launch.spec.ts:280`, `accessibility-conversion-hardening.spec.ts:421`, `guided-launch-hardening.spec.ts:116`
+
+### 7i. Vite HMR SSE Blocks `waitForLoadState('networkidle')` in CI (MANDATORY) 🆕
+
+**🚨 CRITICAL PAST VIOLATION - March 4, 2026 (PR #566 continuation) 🚨**
+
+**Violation**: 4 tests with `test.setTimeout(90000)` used `waitForLoadState('networkidle')` and timed out on ALL 3 attempts (90s × 3 = 270s wasted per test). Playwright report showed `status=timedOut, unexpected: 4` causing `FullResult.status='failed'` and exit code 1.
+
+**Root Cause**: Vite's HMR (Hot Module Replacement) dev server maintains a persistent SSE (Server-Sent Events) connection with every connected browser page. This open connection prevents `waitForLoadState('networkidle')` from completing because Playwright's networkidle requires **no network connections for 500ms**. With `test.setTimeout(90000)`, the navigation timeout inherits the 90s budget, causing each test to silently wait 90s before failing.
+
+**Why some tests with networkidle pass**: Tests with the global 60s timeout have `navigationTimeout: 30000` as a cap (now configured globally), fail at 30s, and succeed on retry when HMR is quieter. Tests with `test.setTimeout(90000)` previously had 90s cap, causing all 3 attempts to fail before HMR settled.
+
+**Correct Approach**:
+```typescript
+// ❌ WRONG - hangs indefinitely when Vite HMR SSE is active
+await page.goto('/launch/guided')
+await page.waitForLoadState('networkidle') // SSE connection = network always active = waits test.setTimeout
+
+// ✅ CORRECT - use 'load' (DOM + resources ready) or 'domcontentloaded'
+await page.goto('/launch/guided')
+await page.waitForLoadState('load') // Fires when JS/CSS/images loaded, ignores SSE connection
+// Then use explicit element wait:
+await expect(page.getByRole('heading', { name: /Expected Title/i })).toBeVisible({ timeout: 60000 })
+
+// ✅ ALSO CORRECT - rely on element assertion as the semantic wait (skip waitForLoadState entirely)
+await page.goto('/launch/guided')
+const heading = page.getByRole('heading', { name: /Guided Token Launch/i, level: 1 })
+await expect(heading).toBeVisible({ timeout: 60000 }) // This IS the semantic wait
+```
+
+**Global Safety Net Added**: `playwright.config.ts` now has `navigationTimeout: 30000`. This caps ALL `waitForLoadState()` calls at 30s, preventing tests from hanging 60-90s. Any test that uses `networkidle` will fail quickly at 30s and retry.
+
+**CRITICAL DISCOVERY**: `navigationTimeout: 30000` does NOT reliably cap `waitForLoadState('networkidle')` in Playwright v1.58 when used inside `test.setTimeout(90000)`. The test-level timeout (90s) can fire BEFORE the navigation timeout, causing `status='timedOut'` instead of `status='failed'`. This has two consequences:
+1. The test times out at 90s on ALL 3 retry attempts (never passes) 
+2. The test has `status='timedOut'` (capital O) not `'failed'` — the reporter must check `'timedOut'` not `'timedout'` (lowercase)!
+
+**Affected Tests Fixed** (changed `networkidle` → `load`):
+- `e2e/auth-first-token-creation.spec.ts` lines 92, 111, 125, 177, 185, 204 (all test.setTimeout(90000) tests)
+- `e2e/accessibility-first-launch.spec.ts:280-303` (test.setTimeout(90000))
+- `e2e/accessibility-conversion-hardening.spec.ts:421` (test.setTimeout(90000))
+- `e2e/guided-launch-hardening.spec.ts:116` (test.setTimeout(90000))
+- `e2e/mvp-stabilization.spec.ts` lines 147, 159, 182, 193, 219, 260 (all test.setTimeout(90000) tests)
+- `e2e/compliance-setup-workspace.spec.ts` lines 40, 262 (all test.setTimeout(90000) tests)
+
+**Diagnostic Pattern** (how to identify this issue):
+1. CI reporter shows "0 failed" but Playwright exits code 1 → suspect `'timedOut'` case bug in reporter
+2. Total tests count doesn't add up: e.g. "806 total, 783 passed, 19 skipped = 802 ≠ 806" → 4 tests unreported
+3. Report shows `unexpected: 4, flaky: 0, ok: false` — tests fail ALL attempts (not just some)
+4. Test duration = exactly `test.setTimeout` value on every attempt
+
+**Never Again**:
+- ❌ Use `waitForLoadState('networkidle')` in tests with `test.setTimeout(90000)` — use `'load'` instead
+- ❌ Trust that `networkidle` works reliably in CI — Vite HMR SSE makes it non-deterministic
+- ❌ Use `'timedout'` (lowercase) in reporter status checks — Playwright uses `'timedOut'` (capital O)!
+- ❌ Assume `navigationTimeout: 30000` caps `waitForLoadState` inside 90s test — verify the timeout chain
+
+### 7j. Cumulative Timeout Budget Must Stay Below test.setTimeout() Value (MANDATORY) 🆕
+
+**🚨 CRITICAL PAST VIOLATION - March 5, 2026 (PR #566 continuation) 🚨**
+
+**Violation**: 3 tests in `test.setTimeout(90000)` consistently timed out at exactly 90s on all 3 retry attempts. Root cause: `textContent()`, `click()`, and `innerText()` calls WITHOUT explicit timeouts inside `test.setTimeout(90000)` tests inherit the test budget (90s) as their action timeout. When combined with other steps that each have 30s explicit timeouts, the cumulative MAXIMUM exceeded 90s.
+
+**Example pattern that caused the failure**:
+```typescript
+// ❌ WRONG — cumulative max = 5+30+30+45+90 = 200s > 90s budget
+test.setTimeout(90000)
+await loginWithCredentials(page) // 5s HTTP timeout
+await page.goto('/route', { timeout: 30000 }) // max 30s
+await page.waitForLoadState('load', { timeout: 30000 }) // max 30s
+await expect(heading).toBeVisible({ timeout: 45000 }) // max 45s
+const navText = await getNavText(page) // textContent() with NO timeout = inherits 90s!
+```
+
+**Root cause**: When `test.setTimeout(90000)` is active, ALL actions without explicit timeouts inherit 90s as their action timeout:
+- `locator.click()` — no timeout → waits 90s if element doesn't respond
+- `locator.textContent()` — no timeout → waits 90s if element not found
+- `locator.innerText()` — no timeout → waits 90s if element not found
+
+Even with `navigationTimeout: 30000` set globally, this does NOT apply to action methods.
+
+**Correct Pattern**:
+```typescript
+// ✅ CORRECT — cumulative max = 5+15+10+30+20 = 80s < 90s budget
+test.setTimeout(90000)
+await loginWithCredentials(page) // 5s HTTP timeout (fallback to localStorage)
+await page.goto('/route', { timeout: 15000 }) // Vite pre-warmed: 15s sufficient
+await page.waitForLoadState('load', { timeout: 10000 }) // Vite pre-warmed: 10s sufficient
+await expect(heading).toBeVisible({ timeout: 30000 }) // Reduced: fits budget
+const nav = page.getByRole('navigation').first()
+const navText = await nav.textContent({ timeout: 10000 }).catch(() => '') // EXPLICIT timeout!
+
+// Also applies to click():
+await button.click({ timeout: 5000 }) // If button isVisible() confirmed, 5s is enough
+```
+
+**Budget Calculation Rule** (MANDATORY before committing tests with test.setTimeout):
+```
+SUM of all max timeouts < test.setTimeout value
+= loginWithCredentials(5) + goto(15) + waitForLoadState(10) + toBeVisible(30) + textContent(10) + other_actions(5)
+= 75s < 90s ✓
+
+For tests with 2 navigation sequences:
+= loginWithCredentials(5) + goto1(10) + load1(8) + visible1(20) + goto2(10) + load2(8) + visible2(20)
+= 81s < 90s ✓
+```
+
+**Key guidelines**:
+1. Since `globalSetup` pre-warms Vite, page.goto() and waitForLoadState() complete in 2-5s, not 15-30s. Use 15s/10s timeouts (not 30s) for these operations in test.setTimeout(90000) tests.
+2. toBeVisible() timeout: use 20-30s (not 60s) since Vite is pre-warmed.
+3. ALWAYS add explicit `{ timeout: N }` to ALL `click()`, `textContent()`, `innerText()`, `innerHTML()` calls in test.setTimeout(90000) tests.
+
+**Never Again**:
+- ❌ Use `textContent()`, `click()`, or `innerText()` without explicit timeout in test.setTimeout(90000) tests
+- ❌ Use `{ timeout: 30000 }` on goto/waitForLoadState when test has multiple navigation sequences — use 10-15s
+- ❌ Use `toBeVisible({ timeout: 60000 })` in test.setTimeout(90000) tests — use 20-30s with pre-warmed Vite
+- ❌ Skip the budget calculation — always sum all max timeouts and verify < test.setTimeout
+
+### 7g. Body Text Wallet Assertions Must Use Specific Brands, Not Broad Patterns (MANDATORY) 🆕
+
+**🚨 CRITICAL PAST VIOLATION - March 4, 2026 (PR #566) 🚨**
+
+**Violation**: Copilot used `/connect.*wallet|wallet.*connect/i` in an E2E body text assertion (`page.locator('body').innerText()`). This broad pattern matched legitimate product copy: "No wallet needed to get started—connect one later when you're ready." causing 3 CI failures (1 test × 3 retries).
+
+**Root Cause**:
+- Pattern `wallet.*connect` matches "wallet" appearing anywhere before "connect" in the same string
+- Product copy often legitimately mentions wallets in informational/negative contexts ("no wallet needed")
+- The pattern was too broad — it tested for semantic proximity of two words without requiring they form a specific UI call-to-action
+
+**Correct Pattern** (MANDATORY for body text wallet assertions):
+```typescript
+// ❌ WRONG - too broad, matches informational product copy
+expect(bodyText).not.toMatch(/connect.*wallet|wallet.*connect/i)
+// Matches: "No wallet needed to get started—connect one later when you're ready."
+
+// ✅ CORRECT - specific brand names only, won't match informational copy
+expect(navText).not.toMatch(/WalletConnect|MetaMask|\bPera\b|Defly/i)
+// Does NOT match: "No wallet needed to get started—connect one later when you're ready."
+
+// ✅ ALSO CORRECT - for E2E nav assertions, always use getNavText(page)
+const navText = await getNavText(page)
+expect(navText).not.toMatch(/WalletConnect|MetaMask|\bPera\b|Defly/i)
+```
+
+**Pre-Commit Check** for body text assertions:
+```bash
+node -e "
+const bodyText = 'No wallet needed to get started—connect one later when you are ready.';
+const badPattern = /connect.*wallet|wallet.*connect/i;
+const goodPattern = /WalletConnect|MetaMask|\bPera\b|Defly/i;
+const falsePositive = badPattern.test(bodyText);
+const correctResult = goodPattern.test(bodyText);
+if (falsePositive) { console.error('BAD pattern false-positives on product copy'); process.exit(1); }
+if (correctResult) { console.error('GOOD pattern also false-positives - investigate'); process.exit(1); }
+console.log('OK: patterns are correct');
+"
+```
+
+**Never Again**:
+- ❌ Use `connect.*wallet` or `wallet.*connect` in body text assertions — matches product copy
+- ❌ Check `page.locator('body').innerText()` for wallet patterns — use `getNavText(page)` instead
+- ❌ Skip the pre-commit regex test when writing new wallet assertions
 
 ### 7f. API Client + UI Component Integration Tests Are Mandatory (MANDATORY) 🆕
 
@@ -1037,26 +1264,26 @@ it('should show loading state', async () => {
 
 1. **Async Data Loading**: Components with async mock data need proper wait patterns
    - ❌ BAD: Checking elements immediately after page load (mock data hasn't loaded)
-   - ✅ GOOD: Wait for networkidle + explicit timeout + long visibility checks
+   - ✅ GOOD: Wait for `'load'` state + explicit element visibility check
+   - ❌ NEVER: Use `waitForLoadState('networkidle')` — Vite HMR SSE blocks networkidle indefinitely (see section 7i)
    
 2. **E2E Test Pattern**:
 ```typescript
-// Good: Wait for async data properly
+// ✅ CORRECT: Use 'load' (not 'networkidle') — Vite HMR SSE prevents networkidle
 test('should display element', async ({ page }) => {
   await page.goto('/route');
-  await page.waitForLoadState('networkidle');
-  await page.waitForTimeout(1500); // Let mock data load (500-800ms typical)
+  await page.waitForLoadState('load'); // SSE-safe; fires when DOM+JS ready
   
   const element = page.getByRole('button', { name: /Action/i });
-  await expect(element).toBeVisible({ timeout: 15000 }); // Long timeout for CI
+  await expect(element).toBeVisible({ timeout: 15000 }); // Semantic wait
 });
 
-// Bad: Check immediately (flaky in CI)
+// ❌ WRONG: networkidle hangs when Vite HMR SSE is active
 test('should display element', async ({ page }) => {
   await page.goto('/route');
-  await page.waitForLoadState('networkidle');
+  await page.waitForLoadState('networkidle'); // DANGEROUS: may hang 60-90s in CI
   const element = page.getByRole('button', { name: /Action/i });
-  await expect(element).toBeVisible(); // May fail if data still loading!
+  await expect(element).toBeVisible();
 });
 ```
 
@@ -1067,13 +1294,12 @@ test('should display element', async ({ page }) => {
    - ✅ GOOD: 10s wait, 45s timeouts (passes reliably in CI and locally)
    
 ```typescript
-// Pattern for auth-dependent routes (e.g., /launch/guided, /compliance/*, /tokens/*)
+// ✅ Pattern for auth-dependent routes (e.g., /launch/guided, /compliance/*, /tokens/*)
 test('should display auth-required page', async ({ page }) => {
   await page.goto('/launch/guided');
-  await page.waitForLoadState('networkidle');
-  await page.waitForTimeout(10000); // CI needs EXTRA time for auth store init + mount + render
+  await page.waitForLoadState('load'); // Use 'load' NOT 'networkidle' — Vite HMR SSE blocks networkidle
   
-  // Wait for SPECIFIC element that proves page loaded
+  // Wait for SPECIFIC element that proves page loaded (semantic wait)
   const title = page.getByRole('heading', { name: /Guided Token Launch/i, level: 1 });
   await expect(title).toBeVisible({ timeout: 45000 }); // Extra time for CI
   
@@ -1311,12 +1537,12 @@ For ALL protected routes and auth-required features:
 test('should redirect unauthenticated user to login', async ({ page }) => {
   // Clear auth state
   await page.goto('/')
-  await page.waitForLoadState('networkidle')
+  await page.waitForLoadState('load') // 'load' NOT 'networkidle' — Vite HMR SSE blocks networkidle
   await page.evaluate(() => localStorage.clear())
   
   // Try to access protected route
   await page.goto('/protected-route')
-  await page.waitForLoadState('networkidle')
+  await page.waitForLoadState('load')
   await page.waitForTimeout(5000) // Auth guard redirect
   
   // Flexible verification (CI-safe)
@@ -1339,10 +1565,9 @@ test('should allow authenticated user to access route', async ({ page }) => {
   
   // Navigate to protected route
   await page.goto('/protected-route')
-  await page.waitForLoadState('networkidle')
-  await page.waitForTimeout(10000) // CI: auth store init + mount
+  await page.waitForLoadState('load') // 'load' NOT 'networkidle' — SSE-safe
   
-  // Verify page loaded
+  // Verify page loaded (semantic wait — no arbitrary timeout needed)
   const heading = page.getByRole('heading', { name: /Expected Title/i, level: 1 })
   await expect(heading).toBeVisible({ timeout: 45000 }) // CI-safe timeout
 })
@@ -1351,10 +1576,10 @@ test('should allow authenticated user to access route', async ({ page }) => {
 ### E2E Quality Standards
 
 **Deterministic Waits (REQUIRED):**
-- Auth-required routes: 10s wait after navigation
+- Auth-required routes: element-based semantic waits (toBeVisible with 45s+ timeout)
 - Element visibility: 45s timeout minimum
 - NO brittle `waitForTimeout()` without justification
-- Use `waitForLoadState('networkidle')` before waits
+- Use `waitForLoadState('load')` — NOT `'networkidle'` (Vite HMR SSE makes networkidle non-deterministic in CI)
 
 **Product Alignment (REQUIRED):**
 - Verify NO wallet connector UI appears
