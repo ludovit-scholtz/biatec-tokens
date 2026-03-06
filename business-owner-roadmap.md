@@ -12,7 +12,7 @@
 
 **Market Opportunity:** $50B+ RWA tokenization market by 2025, with MICA regulation creating demand for compliant platforms. Current competitors lack comprehensive compliance tooling.
 
-**Current Status:** Core MVP hardening continues, with new accessibility/navigation work in progress (issue **#567**, draft PR **#568**). MVP sign-off is still blocked because the latest `Playwright Tests` run (**#1404**, run ID `22740152615`) is still **queued/pending** (no green evidence yet), and test-suite hygiene debt remains high (`test.skip`: 38, `waitForTimeout`: 31, `withAuth`: 179 in `e2e/` on current main snapshot).
+**Current Status:** Core MVP hardening continues with active accessibility/navigation work (open issue **#567**, draft PR **#568**). Playwright now has fresh green evidence (**#1401-#1404** completed successfully, including run **#1404** / ID `22740152615`), but latest run **#1405** (ID `22740995948`) failed at workflow bootstrap due GitHub Actions service unavailability (not test assertions). MVP sign-off remains blocked by unresolved suite hygiene debt (`test.skip`: 41, `waitForTimeout`: 31, `withAuth`: 178) and one remaining non-compat legacy route navigation in blocker-facing specs.
 
 ---
 
@@ -148,26 +148,26 @@
 
 ---
 
-## MVP Blockers Reality Check (March 5, 2026 - Weekly Update)
+## MVP Blockers Reality Check (March 6, 2026 - Weekly Update)
 
 ### Evidence Reviewed
 
 - Recent hardening delivery is merged to main (notably PR **#566**), but there is active unfinished MVP blocker work: **1 open issue** (#567) and **1 open draft PR** (#568) in `scholtz/biatec-tokens`.
-- Playwright workflow health check: latest run is **#1404** (run ID `22740152615`, linked to PR #568) and remains **queued/pending** with **0 jobs started**, so there is still no fresh passing CI evidence for sign-off.
-- Current `e2e/` code snapshot (`main`) shows: **38 `test.skip(` uses**, **0 `test.describe.skip(` uses**, **31 `waitForTimeout(` uses**, **179 `withAuth(` references**, and **4 direct `goto('/create/wizard')` references across 2 files** (`mvp-deterministic-journey.spec.ts`, `wizard-redirect-compat.spec.ts`).
+- Playwright workflow health check: runs **#1401-#1404** are green (including #1404), while latest run **#1405** failed before test execution because GitHub Actions could not resolve action downloads (`Service Unavailable`).
+- Current `e2e/` code snapshot (`main`) shows: **41 `test.skip(` uses**, **0 `test.describe.skip(` uses**, **31 `waitForTimeout(` uses**, **178 `withAuth(` references**, and **4 direct `goto('/create/wizard')` references across 2 files** (`mvp-deterministic-journey.spec.ts`, `wizard-redirect-compat.spec.ts`).
 - Coverage signal is improving for blocker criteria: dedicated suites exist for keyboard/focus/navigation/error UX (`accessibility-auth-launch.spec.ts`, `navigation-parity-wcag.spec.ts`, `accessibility-conversion-hardening.spec.ts`, `auth-first-confidence-hardening.spec.ts`, `mvp-signoff-readiness.spec.ts`), but sign-off criteria also require CI stability and hygiene thresholds.
 
 ### Blocker Validation Status
 
-- 🟡 **ARC76 critical-path blocker partially met:** critical journey specs moved toward backend-first auth bootstrap, but broader suite coverage still has heavy `withAuth()` usage (179 references) that weakens deterministic end-to-end confidence.
-- ❌ **CI reliability blocker not met:** latest Playwright run (#1404) is still queued/pending, and there is no sequence of recent green runs proving sign-off stability.
+- 🟡 **ARC76 critical-path blocker partially met:** critical journey specs moved toward backend-first auth bootstrap, but broader suite coverage still has heavy `withAuth()` usage (178 references) that weakens deterministic end-to-end confidence.
+- 🟡 **CI reliability blocker partially met:** there is fresh green evidence (#1401-#1404), but sign-off-grade stability is still not proven on `main` because the latest run (#1405) failed during workflow bootstrap and blocker policy still requires consecutive healthy runs on main.
 - 🟡 **Canonical route-cleanup blocker partially met:** `goto('/create/wizard')` usage is reduced but not fully isolated to compatibility-only coverage (still present in `mvp-deterministic-journey.spec.ts`).
-- 🟡 **Skip/timeout hygiene still above MVP threshold:** `test.describe.skip` is zero (good), but `test.skip` (38) and `waitForTimeout` (31) remain too high for sign-off-grade confidence.
+- 🟡 **Skip/timeout hygiene still above MVP threshold:** `test.describe.skip` is zero (good), but `test.skip` (41) and `waitForTimeout` (31) remain too high for sign-off-grade confidence.
 - ⚠️ **Documentation/reality mismatch still present:** `docs/testing/PLAYWRIGHT_STATUS.md` still reports stale low counts (e.g., `waitForTimeout` = 1, `test.skip` = 22) that do not match current main branch reality.
 
 ### Required Playwright Improvements Before MVP Sign-off
 
-1. Get `Playwright Tests` green on the current blocker PR, then establish at least **3 consecutive green runs on main** before MVP sign-off.
+1. Re-run `Playwright Tests` after the #1405 infrastructure failure and establish at least **3 consecutive green runs on main** before MVP sign-off.
 2. Remove remaining non-compat direct `goto('/create/wizard')` usage from blocker-facing suites; reserve it only for redirect-compat tests.
 3. Reduce dependency on `withAuth()` by migrating broader suites to backend-first auth bootstrap (`loginWithCredentials`) and deterministic session setup.
 4. Cut `test.skip` and `waitForTimeout` usage in blocker-facing suites using semantic waits, stable fixtures, and explicit readiness contracts.
@@ -424,5 +424,5 @@ Based on comprehensive product review including source code analysis, E2E test c
 
 ---
 
-**Last Updated:** March 5, 2026 (23:04 UTC reality-check refresh with latest Actions + Playwright blocker audit)
-**Next Review:** March 12, 2026
+**Last Updated:** March 6, 2026 (11:03 UTC reality-check refresh with latest Actions + Playwright blocker audit)
+**Next Review:** March 13, 2026
