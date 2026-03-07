@@ -12,7 +12,7 @@
 
 **Market Opportunity:** $50B+ RWA tokenization market by 2025, with MICA regulation creating demand for compliant platforms. Current competitors lack comprehensive compliance tooling.
 
-**Current Status:** MVP hardening is still active with one open roadmap issue (**#575**) and one open draft PR (**#576**) focused on compliance launch UX. Playwright reliability on `main` has recovered with **5 consecutive green push runs** (#1406, #1407, #1414, #1419, #1420), but MVP sign-off remains blocked by suite hygiene debt in `e2e` (`test.skip`: 38, `waitForTimeout`: 33, `withAuth`: 144 in `*.spec.ts`) and one remaining non-compat legacy route navigation.
+**Current Status:** Core MVP hardening is still advancing (merged frontend PRs **#568**, **#570**, **#572**, **#574**; backend PRs **#485**, **#487**, **#491**), while one strategic frontend item remains open (**issue #575**, draft **PR #576**). Playwright CI on `main` now shows consecutive green recovery after the earlier infrastructure outage (**#1406**, **#1407**, **#1414**, **#1419**, **#1420** all `success`), but MVP sign-off is still blocked by test-suite quality debt and auth realism gaps in `e2e/*.spec.ts` (`test.skip`: 38, `waitForTimeout`: 33, `withAuth`: 144, `localStorage.setItem('algorand_user')`: 28, and 36 permissive `|| true` assertions).
 
 ---
 
@@ -152,9 +152,9 @@
 
 ### Evidence Reviewed
 
-- Recent hardening delivery is merged to `main`, but active unfinished MVP blocker work remains: **1 open issue** (#575) and **1 open draft PR** (#576) in `scholtz/biatec-tokens`.
-- Playwright workflow health check on `main` now shows **5 consecutive successful push runs** (#1406, #1407, #1414, #1419, #1420) after historical infra failure #1405.
-- Current `e2e/` code snapshot (`main`, `*.spec.ts`) shows: **38 `test.skip(` uses**, **0 `test.describe.skip(` uses**, **33 `waitForTimeout(` uses**, **144 `withAuth(` references**, and **4 direct `goto('/create/wizard')` references across 2 files** (`mvp-deterministic-journey.spec.ts`, `wizard-redirect-compat.spec.ts`).
+- Recent hardening delivery is merged to main (notably PRs **#568**, **#570**, **#572**, **#574** in `scholtz/biatec-tokens`; **#485**, **#487**, **#491** in `scholtz/BiatecTokensApi`), with active unfinished productization work in **issue #575** and draft **PR #576**.
+- Playwright workflow health check on `main`: there are now **5 consecutive successful runs** (**#1406**, **#1407**, **#1414**, **#1419**, **#1420**) after historical infra failure **#1405**.
+- Current `e2e/` code snapshot (`main`, `*.spec.ts`) shows: **38 `test.skip(` uses**, **0 `test.describe.skip(` uses**, **33 `waitForTimeout(` uses**, **144 `withAuth(` references**, **28 direct `localStorage.setItem('algorand_user'...)` usages**, **4 direct `goto('/create/wizard')` references across 2 files** (`mvp-deterministic-journey.spec.ts`, `wizard-redirect-compat.spec.ts`), and **36 permissive `expect(... || true).toBe(true)` assertions**.
 - Coverage signal is improving for blocker criteria: dedicated suites exist for keyboard/focus/navigation/error UX (`accessibility-auth-launch.spec.ts`, `navigation-parity-wcag.spec.ts`, `accessibility-conversion-hardening.spec.ts`, `auth-first-confidence-hardening.spec.ts`, `mvp-signoff-readiness.spec.ts`), but sign-off criteria also require CI stability and hygiene thresholds.
 
 ### Blocker Validation Status
@@ -169,14 +169,16 @@
 
 1. Keep Playwright push runs green on `main` (do not regress below the currently achieved consecutive-green stability gate).
 2. Remove remaining non-compat direct `goto('/create/wizard')` usage from blocker-facing suites; reserve it only for redirect-compat tests.
-3. Reduce dependency on `withAuth()` by migrating broader suites to backend-first auth bootstrap (`loginWithCredentials`) and deterministic session setup.
-4. Cut `test.skip` and `waitForTimeout` usage in blocker-facing suites using semantic waits, stable fixtures, and explicit readiness contracts.
-5. Add/keep explicit Playwright checks for MVP blocker outcomes in real user journeys (keyboard-only sign-in → guided launch, desktop/mobile nav parity, focus-visible states, user-friendly error guidance).
-6. Align `docs/testing/PLAYWRIGHT_STATUS.md` with actual workflow outcomes and current skip/timeout/auth-helper/legacy-route counts.
+- 🔴 **Assertion-quality blocker not met:** permissive always-pass patterns (`expect(... || true).toBe(true)`) still exist in blocker-facing and adjacent suites (36 references), masking real regressions.
+3. Reduce dependency on `withAuth()` and raw session seeding by migrating broader suites to backend-first auth bootstrap (`loginWithCredentials`) and deterministic session setup.
+4. Eliminate permissive always-pass assertions (`expect(... || true).toBe(true)`) in blocker-facing and user-critical suites.
+5. Cut `test.skip` and `waitForTimeout` usage in blocker-facing suites using semantic waits, stable fixtures, and explicit readiness contracts.
+6. Add/keep explicit Playwright checks for MVP blocker outcomes in real user journeys (keyboard-only sign-in → guided launch, desktop/mobile nav parity, focus-visible states, user-friendly error guidance).
+7. Align `docs/testing/PLAYWRIGHT_STATUS.md` with actual workflow outcomes and current skip/timeout/auth-helper/assertion-quality/legacy-route counts.
 
 ### Roadmap Adjustment
 
-- **MVP Foundation confidence remains 56%**: CI reliability gate is now met, but MVP sign-off blockers remain open due to residual auth/skip/timeout debt, documentation drift, and remaining legacy route references.
+- **MVP Foundation confidence adjusted to 60%**: CI reliability proof improved materially (5 consecutive green runs), but MVP sign-off blockers remain open due to residual auth realism debt, skip/timeout volume, permissive assertion debt, documentation drift, and remaining non-compat legacy route usage.
 
 ---
 
@@ -425,5 +427,5 @@ Based on comprehensive product review including source code analysis, E2E test c
 
 ---
 
-**Last Updated:** March 7, 2026 (23:03 UTC reality-check refresh with latest Actions + Playwright blocker audit)
+**Last Updated:** March 7, 2026 (23:04 UTC reality-check refresh with latest Actions + Playwright blocker audit)
 **Next Review:** March 14, 2026
