@@ -153,12 +153,12 @@
 ### Evidence Reviewed
 
 - Recent hardening/productization work is merged to `main` (notably frontend PRs **#558**, **#560**, **#562**, **#564**, **#566**, **#568**, **#570**, **#572**, **#574**, **#576** and backend PRs **#471**, **#473**, **#477**, **#479**, **#481**, **#483**, **#485**, **#487**, **#491**).
-- Latest `Run Tests` workflow on `main` is green (**run #1692**, commit `f6bec98bd6ee529eed50b67e8968a05ebc88a3ee`, `success`), so CI health is improved versus the February blocker period and the current roadmap commit is sitting on a passing main-branch workflow.
+- Latest `Run Tests` workflow on `main` is green (**run #1693**, commit `14da73d361eca0e0d7f5fbfd63e05487067ca9e5`, `success`), so CI health is improved versus the February blocker period and the current roadmap commit is sitting on a passing main-branch workflow.
 - Current blocker-facing Playwright evidence now includes dedicated suites for sign-off and hardening: `e2e/mvp-signoff-readiness.spec.ts`, `e2e/mvp-sign-off-hardening.spec.ts`, `e2e/mvp-deterministic-journey.spec.ts`, `e2e/arc76-determinism.spec.ts`, and `e2e/backend-deployment-contract.spec.ts`.
 - `e2e/helpers/auth.ts` shows the suite is **not yet fully real-backend**: `loginWithCredentials()` attempts backend auth but explicitly falls back to `withAuth()` localStorage seeding when `API_BASE_URL` or the backend is unavailable.
 - `e2e/backend-deployment-contract.spec.ts` improves deployment-state coverage, but it still asserts lifecycle UI by injecting DOM panels with `document.body.appendChild(panel)` instead of driving a live create-token -> backend acceptance -> status transition -> terminal confirmation flow.
 - Fresh local baseline validation in a clean clone completed successfully for `npm run build` and `npm test`, which lowers general frontend regression risk but does **not** close the business-owner blocker because the remaining gap is E2E fidelity, not build/unit stability.
-- Weak Playwright patterns remain broader than a single file: `suppressBrowserErrors()` is still referenced across **34 E2E files**, while permissive/trivial assertions also remain in `e2e/token-discovery-dashboard.spec.ts`, `e2e/vision-insights-workspace.spec.ts`, `e2e/token-detail-view.spec.ts`, `e2e/team-management.spec.ts`, `e2e/whitelist-jurisdiction.spec.ts`, and related adjacent suites.
+- Weak Playwright patterns remain broader than a single file: the current `e2e/` corpus contains **56 spec files**, `suppressBrowserErrors()` is still referenced across **32 E2E files**, and permissive/trivial assertions still remain in `e2e/token-discovery-dashboard.spec.ts`, `e2e/vision-insights-workspace.spec.ts`, `e2e/token-detail-view.spec.ts`, `e2e/team-management.spec.ts`, `e2e/whitelist-jurisdiction.spec.ts`, and related adjacent suites.
 
 ### Blocker Validation Status
 
@@ -444,5 +444,5 @@ Based on comprehensive product review including source code analysis, E2E test c
 
 ---
 
-**Last Updated:** March 9, 2026 (23:12 UTC reality-check refresh: merged PRs, latest green Actions run, local build/unit baseline, and Playwright MVP blocker evidence reviewed)
+**Last Updated:** March 9, 2026 (23:17 UTC reality-check refresh: merged PRs, latest green Actions run, local build/unit baseline, and Playwright MVP blocker evidence reviewed)
 **Next Review:** March 16, 2026
