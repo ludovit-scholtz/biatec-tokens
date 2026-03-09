@@ -12,40 +12,35 @@
 
 **Market Opportunity:** $50B+ RWA tokenization market by 2025, with MICA regulation creating demand for compliant platforms. Current competitors lack comprehensive compliance tooling.
 
-**Current Status:** Core auth-first UX hardening shipped across both frontend and backend repositories on 2026-02-19 (multiple merged PRs). MVP is no longer blocked by basic routing/navigation regressions, but beta launch remains blocked by missing end-to-end proof of real ARC76 authentication + backend deployment confirmation in Playwright and by residual mock-driven test patterns.
+**Current Status:** Frontend and backend hardening kept moving through March 2026 (recent merged frontend PRs **#558**, **#560**, **#562**, **#564**, **#566**, **#568**, **#570**, **#572**, **#574**, **#576**; backend PRs **#471**, **#473**, **#477**, **#479**, **#481**, **#483**, **#485**, **#487**, **#491**). Playwright CI on `main` is currently green and coverage is materially better across auth-first UX, accessibility, and canonical-route checks, but business-owner MVP sign-off is still blocked because the highest-risk evidence path is not yet fully real-backend: `loginWithCredentials()` still falls back to seeded localStorage when no backend is available, `backend-deployment-contract.spec.ts` validates injected UI states rather than a real token deployment lifecycle, and permissive or suppressed-error patterns still mask regressions in adjacent suites.
 
 ---
 
-## Phase 1: MVP Foundation (Q1 2025) - 58% Complete 🟡
+## Phase 1: MVP Foundation (Q1 2025) - 56% Complete 🟡
 
-### Core Token Creation & Deployment - 50% Complete 🟡
+### Core Token Creation & Deployment - 60% Complete 🟡
 
-- **Multi-Token Standard Support** (80%): ASA, ARC3, ARC200, ERC20, ERC721 - Basic support exists but integration issues
-- **Backend Token Creation Service** (30%): All token creation and deployment handled by backend - API structure exists, deployment logic incomplete
-- **Multi-Network Deployment** (30%): Algorand Mainnet, Ethereum mainnet (Ethereum, Base, Arbitrum), VOI Testnet, Aramid Testnet - Main chains partially supported, test failures indicate issues
-- **Smart Contract Templates** (70%): 15+ pre-built templates with validation - Templates exist but UX issues prevent proper use
-- **Real-time Deployment Status** (40%): Basic transaction monitoring, incomplete - Backend integration problems
-- **Batch Deployment** (20%): Multiple tokens in single transaction, not fully tested - Not implemented
+- **Multi-Token Standard Support** (85%): ASA, ARC3, ARC200, ERC20, ERC721 - Support implemented but integration issues persist
+- **Backend Token Creation Service** (50%): All token creation and deployment handled by backend - API structure exists, deployment logic partially implemented
+- **Multi-Network Deployment** (45%): Algorand Mainnet, Ethereum mainnet (Ethereum, Base, Arbitrum), VOI Testnet, Aramid Testnet - Main chains supported, test networks functional
+- **Smart Contract Templates** (75%): 15+ pre-built templates with validation - Templates exist and functional
+- **Real-time Deployment Status** (55%): Basic transaction monitoring, backend integration partially working
+- **Batch Deployment** (30%): Multiple tokens in single transaction, basic implementation exists
 
-### Backend Token Creation & Authentication - 40% Complete 🔴
+### Backend Token Creation & Authentication - 50% Complete 🟡
 
-- **Email/Password Authentication** (60%): Secure user authentication without wallet requirements - Basic implementation exists but ARC76 integration incomplete
-- **Backend Token Deployment** (30%): All token creation handled server-side - Basic API structure exists, deployment logic incomplete
-- **ARC76 Account Management** (20%): Automatic account derivation from user credentials - Framework exists but not fully implemented
-- **Transaction Processing** (40%): Backend handles all blockchain interactions - Partial implementation with integration issues
-- **Security & Compliance** (50%): Enterprise-grade security for token operations - Basic security measures in place
+- **Email/Password Authentication** (70%): Secure user authentication without wallet requirements - Implementation exists but ARC76 integration needs completion
+- **Backend Token Deployment** (45%): All token creation handled server-side - API structure complete, deployment logic needs testing
+- **ARC76 Account Management** (35%): Automatic account derivation from user credentials - Framework implemented, needs full integration
+- **Transaction Processing** (50%): Backend handles all blockchain interactions - Implementation exists with some integration issues
+- **Security & Compliance** (60%): Enterprise-grade security for token operations - Security measures implemented
 
-### Basic Compliance Features - 60% Complete 🟡
+### Basic Compliance Features - 65% Complete 🟡
 
-- **MICA Readiness Check** (70%): Article 17-35 compliance validation - Basic validation exists
-- **Basic Attestation System** (50%): Digital signatures for compliance, incomplete - Partial implementation
-- **Compliance Badges** (80%): Visual compliance indicators - UI components exist
-- **Audit Trail Logging** (60%): Basic transaction logging - Partial logging implemented
-
-- **MICA Readiness Check** (85%): Article 17-35 compliance validation
-- **Basic Attestation System** (70%): Digital signatures for compliance, incomplete
-- **Compliance Badges** (90%): Visual compliance indicators
-- **Audit Trail Logging** (75%): Basic transaction logging
+- **MICA Readiness Check** (85%): Article 17-35 compliance validation - Validation implemented and functional
+- **Basic Attestation System** (65%): Digital signatures for compliance - Partial implementation, needs completion
+- **Compliance Badges** (90%): Visual compliance indicators - UI components exist and working
+- **Audit Trail Logging** (75%): Basic transaction logging - Logging implemented and functional
 
 ---
 
@@ -153,176 +148,300 @@
 
 ---
 
-## MVP Blockers
+## MVP Blockers Reality Check (March 9, 2026 - Weekly Update)
 
-### Reality Check (2026-02-19)
+### Evidence Reviewed
 
-**What is now materially improved (evidence: merged PRs #447, #449, #451, #453 in `scholtz/biatec-tokens`; #372, #374, #376, #378 in `scholtz/BiatecTokensApi`):**
+- Recent hardening/productization work is merged to `main` (notably frontend PRs **#558**, **#560**, **#562**, **#564**, **#566**, **#568**, **#570**, **#572**, **#574**, **#576** and backend PRs **#471**, **#473**, **#477**, **#479**, **#481**, **#483**, **#485**, **#487**, **#491**).
+- Latest `Run Tests` workflow on `main` is green (**run #1691**, commit `28bf609d44c43aaaa1d012dc7c81b66d03c707a6`, `success`), so CI health is improved versus the February blocker period.
+- Current blocker-facing Playwright evidence now includes dedicated suites for sign-off and hardening: `e2e/mvp-signoff-readiness.spec.ts`, `e2e/mvp-sign-off-hardening.spec.ts`, `e2e/mvp-deterministic-journey.spec.ts`, `e2e/arc76-determinism.spec.ts`, and `e2e/backend-deployment-contract.spec.ts`.
+- `e2e/helpers/auth.ts` shows the suite is **not yet fully real-backend**: `loginWithCredentials()` attempts backend auth but explicitly falls back to `withAuth()` localStorage seeding when `API_BASE_URL` or the backend is unavailable.
+- `e2e/backend-deployment-contract.spec.ts` improves deployment-state coverage, but it still asserts lifecycle UI by injecting DOM panels with `document.body.appendChild(panel)` instead of driving a live create-token -> backend acceptance -> status transition -> terminal confirmation flow.
+- `e2e/token-standards-view.spec.ts` still contains permissive patterns such as `expect(isVisible || true).toBe(true)`, `expect(true).toBe(true)`, and `expect(focusedElement).toBeGreaterThanOrEqual(0)`, while `suppressBrowserErrors()` remains widely used across blocker and adjacent suites.
 
-- Auth-first navigation/routing hardening has been actively delivered this week.
-- Wallet-UI removal direction is reinforced in current E2E suites and navigation tests.
-- Backend ARC76 orchestration hardening work is progressing with same-day merged backend PRs.
+### Blocker Validation Status
 
-**What still blocks business-owner MVP sign-off:**
-
-1. **ARC76 proof gap in E2E:** Current Playwright coverage relies heavily on `localStorage.setItem("algorand_user", ...)` session seeding instead of proving real email/password login -> ARC76 derivation -> authenticated backend session.
-2. **Backend deployment verification gap:** Tests do not yet deterministically assert real backend deployment lifecycle responses for token creation (request accepted, status transition, final confirmation).
-3. **Residual wizard-era testing:** `guided-token-launch.spec.ts` and README still center wizard-like guided flow and local draft injection (`biatec_guided_launch_draft`), which conflicts with strict blocker requirement to de-risk wizard-era assumptions for MVP sign-off.
-4. **Mock-environment dependency in tests:** Several suites explicitly suppress console/page errors as expected in "mock environment," reducing confidence that production-critical regressions are caught.
-5. **Assertion quality debt:** Some tests (e.g., `token-standards-view.spec.ts`) contain permissive patterns like `expect(isVisible || true).toBe(true)`, which can mask real failures.
+- 🟡 **ARC76 critical-path blocker improved but not closed:** critical journeys increasingly use `loginWithCredentials()`, but `mvp-signoff-readiness.spec.ts` and `mvp-deterministic-journey.spec.ts` still rely heavily on `withAuth()`, and even `loginWithCredentials()` can pass through seeded localStorage fallback instead of proving real email/password -> ARC76 -> authenticated backend session. `e2e/arc76-determinism.spec.ts` still carries a TODO for full backend-backed address isolation proof.
+- 🟡 **Backend deployment verification blocker improved but not closed:** `e2e/backend-deployment-contract.spec.ts` adds useful lifecycle-state UI coverage, but it does not yet prove the real token deployment contract end to end. The critical business-owner requirement remains open until Playwright asserts live request acceptance, intermediate status progression, surfaced IDs, and final completion/failure using backend responses.
+- ✅ **Legacy `/create/wizard` blocker is mostly contained:** legacy route usage is now largely redirect-compatibility coverage, but one direct non-compat navigation still remains in `e2e/mvp-deterministic-journey.spec.ts`, so the policy is not absolute yet.
+- 🟡 **Mock-environment dependency blocker remains open:** helper-level and spec-level `suppressBrowserErrors()` usage still keeps blocker suites tolerant of console/page failures, which is useful for CI stability but not strong enough for business-owner sign-off.
+- 🔴 **Assertion-quality blocker remains open:** permissive or trivial assertions still exist in adjacent suites (`e2e/token-standards-view.spec.ts` is the clearest example, and `e2e/guided-token-launch.spec.ts` still contains a permissive `expect(isVisible || true).toBe(true)` pattern).
+- 🟡 **Documentation currently overstates closure:** `docs/testing/PLAYWRIGHT_STATUS.md` and `docs/implementations/MVP_SIGNOFF_READINESS_BLOCKER_MAPPING.md` document real progress, but they read closer to closure reports than to a strict business-owner reality check because they do not emphasize the remaining fallback/mock/injected-evidence gaps strongly enough.
 
 ### Playwright Compliance vs MVP Blockers
 
-**Status:** 🟡 **Partially compliant**
+**Status:** 🟡 **Partially compliant — materially improved, but not yet business-owner sign-off ready**
 
-Current suites confirm broad walletless UX intent and auth-first redirects, but they do **not yet** provide business-owner-grade evidence that the true production auth/deployment path is stable.
+Current Playwright coverage proves canonical auth-first UX intent, wallet-free navigation direction, accessibility baselines, and better CI stability. It still does **not** provide business-owner-grade proof that the highest-risk production path is stable end to end, because the most important auth and deployment assertions can still pass in fallback/mock modes instead of a real backend-backed flow.
 
-### Required Playwright E2E Improvements (Blocking)
+### Required Playwright Improvements Before MVP Sign-off
 
-1. **Replace auth seeding with real login path in critical smoke suite**
-   - Execute real Sign In with email/password UI submission
-   - Assert backend auth response and derived ARC76 account identity
-   - Keep localStorage seeding only for non-critical secondary flows
-
-2. **Add deterministic backend token deployment contract assertions**
-   - Validate API request payload and response contract for token creation
-   - Assert status progression to terminal success/failure state
-   - Capture and assert correlation/transaction IDs in UI
-
-3. **Retire wizard-era critical-path dependency**
-   - Move MVP gating suite to login-first -> /create path
-   - Keep guided flow only as non-blocking/secondary coverage until proven production-stable
-
-4. **Remove permissive assertions and silent error suppression from blocker suites**
-   - Replace always-true assertions with strict expectations
-   - Fail tests on unhandled page errors in critical-path specs
-
-5. **Add explicit “no wallet regressions” + “no mock data” guard tests**
-   - Assert absence of wallet selectors/buttons/text across authenticated and unauthenticated entry points
-   - Assert dashboard/activity/token lists are either backend-driven or explicit empty states (no hardcoded placeholders)
+1. Add at least one blocker suite that must use a live backend auth response in CI/staging and **fail if `loginWithCredentials()` falls back** to seeded localStorage.
+2. Replace the injected-panel approach in `e2e/backend-deployment-contract.spec.ts` with real token creation/deployment lifecycle assertions: request accepted, status progression, surfaced IDs, and terminal success/failure.
+3. Remove the remaining non-compat `goto('/create/wizard')` usage from blocker-facing suites so legacy route coverage lives only in `wizard-redirect-compat.spec.ts`.
+4. Stop suppressing console/page errors in blocker suites except for a narrowly documented allowlist of known benign noise; sign-off suites should fail loudly on unhandled regressions.
+5. Eliminate permissive always-pass and trivial assertions from `e2e/token-standards-view.spec.ts` and any other blocker-adjacent suites.
+6. Keep reducing raw localStorage auth manipulation and `withAuth()` dependency in secondary suites so the suite converges on one backend-validated auth path.
+7. Keep documentation honest: green CI is necessary, but it is still insufficient until live-backend auth proof and live deployment proof exist.
 
 ### Priority Action Items
 
-- **URGENT:** Convert one critical Playwright smoke path to real email/password -> ARC76 -> backend session validation.
-- **HIGH:** Add backend token deployment lifecycle assertions to Playwright for MVP token creation flow.
-- **HIGH:** Remove permissive always-pass assertions from critical specs.
-- **HIGH:** De-scope wizard-dependent checks from MVP blocker gate until production path is proven.
-- **MEDIUM:** Keep guided launch tests as secondary UX coverage, not MVP launch gate.
+- **URGENT:** Provide a live backend/auth endpoint to Playwright in CI or a protected staging lane, then make at least one blocker suite fail hard on fallback auth.
+- **URGENT:** Turn backend deployment verification into a real end-to-end test rather than DOM injection.
+- **HIGH:** Remove permissive assertions and broad error suppression from blocker and adjacent suites (`e2e/token-standards-view.spec.ts` first).
+- **HIGH:** Finish isolating `/create/wizard` to redirect compatibility only.
+- **MEDIUM:** Continue reducing raw seeded session usage and CI skips in secondary flows.
+
+### Roadmap Adjustment
+
+- **MVP Foundation confidence remains capped at 60%**: recent PRs and green workflows prove strong forward motion, but MVP sign-off blockers are still open because the most important Playwright evidence remains partially fallback/mock/injected rather than fully real-backend.
 
 ---
 
-## Technical Debt & Infrastructure (Ongoing) - 60% Complete 🟡
+## UX/Design Improvement Roadmap (Added February 18, 2026)
 
-### Performance Optimization - 65% Complete 🟡
+### Critical UX/Design Issues Identified 🔴
 
-- **Frontend Optimization** (70%): Bundle size reduction, lazy loading - Build successful but performance issues in E2E tests
-- **API Performance** (60%): Caching, database optimization - Backend integration issues
-- **Network Efficiency** (50%): Reduced transaction costs - Basic optimization
-- **Mobile Optimization** (75%): Responsive design improvements - Basic responsive design
+Based on comprehensive product review including source code analysis, E2E test coverage review, and component structure assessment, the following design and UX issues require immediate attention:
 
-### Security Hardening - 70% Complete 🟡
+#### 1. **CRITICAL: WCAG Accessibility Compliance** 🔴 **PRIORITY: HIGH**
 
-- **Penetration Testing** (60%): Third-party security audits - Basic testing done
-- **Code Security** (80%): Automated vulnerability scanning - Good coverage
-- **Infrastructure Security** (65%): Cloud security best practices - Basic security
-- **Compliance Security** (75%): Regulatory security standards - Basic compliance
+**Issue:** Color contrast violations likely failing WCAG 2.1 AA standards (4.5:1 ratio requirement)
 
-### Testing & Quality - 75% Complete 🟡
+**Evidence:**
+- `text-gray-300`, `text-gray-400`, `text-gray-500` used extensively on dark backgrounds
+- `text-red-300` error messages on light backgrounds
+- Focus indicators present but not consistently visible across interactive elements
 
-- **Unit Test Coverage** (80%): 1200+ tests passing - 1452 tests passing, good coverage
-- **Integration Tests** (65%): Broad E2E surface exists, but MVP-critical assertions still need hardening for real auth/deployment proof
-- **Performance Testing** (30%): Load and stress testing, incomplete - Not adequately tested
-- **Security Testing** (50%): Automated security scans, partial - Basic security testing
+**Business Impact:** 
+- Legal compliance risk (EU Web Accessibility Directive, ADA)
+- Excludes users with visual impairments (15%+ of potential market)
+- Regulatory review blocker for MICA compliance (accessibility is part of consumer protection)
 
----
+**Required Actions:**
+1. Audit all color combinations using automated tools (axe DevTools, WAVE)
+2. Replace low-contrast grays with WCAG AA compliant alternatives
+3. Redesign error state colors to meet 4.5:1 minimum contrast
+4. Implement visible focus indicators on all interactive elements
+5. Test with real screen readers (NVDA, JAWS, VoiceOver)
+6. Document keyboard navigation patterns for all workflows
 
-## Revenue Projections & KPIs
+**Acceptance Criteria:**
+- 100% WCAG 2.1 AA compliance verified with automated tools
+- All error messages pass 4.5:1 contrast ratio
+- Focus indicators visible at 1.5rem distance
+- Screen reader testing on 5 critical user flows
+- Keyboard-only navigation documentation complete
 
-### Year 1 Targets (2025) - 5% Complete 🔴
-
-- **Revenue Goal:** $2.5M ARR (0% achieved - subscription system not operational)
-- **Customer Acquisition:** 1,200 paying users (0 achieved - no functional product)
-- **Average Revenue Per User:** $2,083/year (N/A - no customers)
-- **Churn Rate:** <5% (N/A - no customers)
-- **Customer Acquisition Cost:** <$450 (N/A - no customers)
-
-### Key Metrics (2026)
-
-- **Monthly Active Users:** Target 8,000 by EOY 2026 (Current: 0 - platform not production-ready)
-- **Token Deployment Success Rate:** >96% (Current: Unknown - backend integration issues)
-- **Compliance Violation Rate:** <0.05% (Current: N/A - not deployed)
-- **Platform Uptime:** >99.5% (Current: Unknown - not deployed)
-- **Customer Satisfaction:** >4.6/5 (Current: N/A - no customers)
-
-### Revenue Streams
-
-1. **Subscription Fees** (50%): Tiered pricing model - Partially implemented but not operational
-2. **Enterprise Licensing** (30%): Custom deployments - Basic framework exists
-3. **API Usage Fees** (10%): Transaction-based pricing - Basic API exists
-4. **Consulting Services** (10%): Implementation support - Not started
+**Estimated Effort:** 40-60 hours (2-3 weeks, 1 developer)
 
 ---
 
-## Risk Assessment & Mitigation
+#### 2. **Navigation Complexity & Mobile Inconsistency** 🟡 **PRIORITY: MEDIUM**
 
-### High-Risk Items
+**Issue:** Desktop shows 9 navigation items, mobile menu shows only 7 items (missing 2 links)
 
-1. **Regulatory Changes** (HIGH): MICA regulation evolution
-   - **Mitigation:** Legal counsel retainer, regulatory monitoring
-2. **Market Competition** (MEDIUM): New entrants in RWA space
-   - **Mitigation:** First-mover advantage, continuous innovation
-3. **Technology Changes** (MEDIUM): Algorand network upgrades
-   - **Mitigation:** Active participation in ecosystem, flexible architecture
+**Evidence:**
+- Desktop navigation: Home, Cockpit, Guided Launch, Compliance, Create, Dashboard, Insights, Pricing, Settings (9 items)
+- Mobile navigation: Incomplete subset of desktop items
+- Cognitive load at upper limit for non-technical users (target audience per roadmap)
 
-### Technical Risks
+**Business Impact:**
+- Confuses non-crypto native users (target audience)
+- Mobile users cannot access all features (40%+ of traffic)
+- Reduces feature discovery and conversion rates
 
-1. **Smart Contract Vulnerabilities** (HIGH)
-   - **Mitigation:** Formal verification, bug bounties, audits
-2. **Scalability Limitations** (MEDIUM)
-   - **Mitigation:** Performance monitoring, optimization planning
-3. **Integration Complexity** (LOW)
-   - **Mitigation:** Modular architecture, comprehensive testing
+**Required Actions:**
+1. Consolidate navigation to 5-7 core items maximum
+2. Group related items under dropdowns (e.g., "Compliance" → Setup, Dashboard, Whitelists)
+3. Ensure 100% parity between desktop and mobile navigation
+4. Add visual hierarchy (primary vs secondary actions)
+5. A/B test reduced navigation for conversion impact
 
----
+**Acceptance Criteria:**
+- Maximum 7 top-level navigation items
+- 100% mobile/desktop parity
+- Sub-navigation for grouped features
+- User testing shows improved task completion time
+- Analytics show improved feature discovery
 
-## Success Metrics & Milestones
-
-### Q1 2025 Milestones - 30% Complete 🔴
-
-- [ ] MVP launch with core features (Delayed - critical integration and UX issues)
-- [ ] 100 beta users acquired (0 achieved - platform not ready)
-- [ ] $50K revenue achieved (0 achieved - no subscription system)
-- [x] 95%+ test coverage maintained (Achieved - 79.62% coverage)
-
-### Q2 2025 Milestones - 0% Complete 🔴
-
-- [ ] Enterprise compliance features complete (Major delays due to MVP issues)
-- [ ] 500 paying customers (0 achieved - no functional product)
-- [ ] $500K quarterly revenue (0 achieved - no customers)
-- [ ] First enterprise client signed (0 achieved - not ready for enterprise)
-
-### Q3 2025 Milestones - 0% Complete 🔴
-
-- [ ] Advanced DeFi features launched (Dependent on MVP success)
-- [ ] 1,000 paying customers (0 achieved - significant delays)
-- [ ] $1M quarterly revenue (0 achieved - no customers)
-- [ ] International expansion begun (Cannot start without working product)
-
-### 2025 Year-End Goals - 0% Complete 🔴
-
-- [ ] 2,500 paying customers (0 achieved - unrealistic given current state)
-- [ ] $2.5M ARR achieved (0 achieved - no customers, delayed launch)
-- [ ] Market leadership in RWA tokenization (Not possible without working product)
-- [ ] Regulatory approval in 3+ jurisdictions (Cannot pursue without MVP)
-
-### Q1 2026 Milestones - 0% Complete 🔴
-
-- [ ] Scale infrastructure deployed (Dependent on MVP success)
-- [ ] 3,500 paying customers (0 achieved - major delays expected)
-- [ ] $3.5M ARR achieved (0 achieved - no current customers)
-- [ ] Enterprise marketplace launched (Cannot launch without working platform)
+**Estimated Effort:** 24-32 hours (1-2 weeks, 1 developer)
 
 ---
 
-**Last Updated:** February 19, 2026
-**Next Review:** February 26, 2026</content>
+#### 3. **Legacy Wizard Flow Cleanup** 🟡 **PRIORITY: MEDIUM**
+
+**Status:** `/create/wizard` direct navigation is reduced but **not yet fully isolated** to `wizard-redirect-compat.spec.ts`.
+
+**Evidence:**
+- Direct `goto('/create/wizard')` calls appear in both `e2e/wizard-redirect-compat.spec.ts` (3 assertions) and `e2e/mvp-deterministic-journey.spec.ts` (1 assertion).
+- Canonical flow coverage is centered on `/launch/guided` in MVP hardening suites.
+
+**Business Impact:**
+- Reduced route ambiguity in MVP-critical E2E journeys
+- Lower regression risk for canonical launch path messaging
+
+**Remaining Action:**
+1. Remove the remaining non-compat `goto('/create/wizard')` call from `mvp-deterministic-journey.spec.ts`.
+2. Keep redirect-compat tests isolated to the dedicated compatibility spec.
+3. Reject any new direct `/create/wizard` navigation in non-compat tests during review.
+
+---
+
+#### 4. **Error Message User Experience** 🟡 **PRIORITY: MEDIUM**
+
+**Issue:** Error messages sometimes expose technical details instead of user-friendly guidance
+
+**Evidence:**
+- Components use `err.message` patterns which may show stack traces or error codes
+- Good patterns exist (`StateMessage` component with `userGuidance` and `nextAction` fields) but not used consistently
+- Some errors show "Temporary Issue" vs "Error" semantic differentiation (good) but inconsistent
+
+**Business Impact:**
+- Non-technical users confused by error messages (target audience per roadmap)
+- Increased support ticket volume
+- Reduced user trust and confidence
+- Longer time to resolution for user errors
+
+**Required Actions:**
+1. Audit all error handling code for user-facing error messages
+2. Implement consistent error message translation layer
+3. Ensure all errors include:
+   - What happened (user-friendly language)
+   - Why it matters (business impact)
+   - How to fix it (actionable next steps)
+   - Support contact (for unresolvable errors)
+4. Add error message testing to QA checklist
+5. Document error message patterns in style guide
+
+**Acceptance Criteria:**
+- 100% of user-facing errors use translation layer
+- All errors include 3-part structure (what/why/how)
+- No technical error codes or stack traces shown to users
+- Error messages tested with non-technical users
+- Style guide documented with 10+ examples
+
+**Estimated Effort:** 32-48 hours (2 weeks, 1 developer)
+
+---
+
+#### 5. **View/Component Consolidation** 🟡 **PRIORITY: LOW**
+
+**Issue:** 28 views detected, potential duplication (GuidedTokenLaunch + TokenCreationWizard both create tokens)
+
+**Evidence:**
+- `src/views/` contains 28 view files
+- Multiple similar flows: GuidedTokenLaunch.vue, TokenCreationWizard.vue, TokenCreator.vue
+- Unclear which flow is recommended for different user types
+- Increases maintenance burden and testing surface
+
+**Business Impact:**
+- Confuses users about which flow to use
+- Increased development and QA costs
+- Risk of feature drift between duplicate flows
+- Harder to measure conversion metrics (split across flows)
+
+**Required Actions:**
+1. Map all 28 views to user journeys
+2. Identify duplicate/overlapping functionality
+3. Consolidate to single recommended flow per use case
+4. Archive or remove deprecated views
+5. Update navigation to reflect consolidated structure
+6. Add flow selection guidance for edge cases
+
+**Acceptance Criteria:**
+- Single recommended token creation flow documented
+- Deprecated views removed from codebase
+- Navigation updated to reflect consolidated structure
+- User journey map shows clear paths (no overlap)
+- Analytics tracking on single consolidated flow
+
+**Estimated Effort:** 40-60 hours (2-3 weeks, 1 developer)
+
+---
+
+### Low Priority UX Improvements 🟢
+
+#### 6. **Loading State Consistency** 🟢 **PRIORITY: LOW**
+
+**Issue:** Loading states exist (Button component has loading spinner) but consistency across views not verified
+
+**Required Actions:**
+1. Audit all async operations for loading state indicators
+2. Standardize loading state patterns (skeleton loaders, spinners, progress bars)
+3. Ensure loading states accessible (aria-busy, aria-live announcements)
+4. Document loading state guidelines
+
+**Estimated Effort:** 16-24 hours
+
+---
+
+#### 7. **Form Validation UX** 🟢 **PRIORITY: LOW**
+
+**Issue:** Form validation present (Input/Select components have error states) but validation timing not documented
+
+**Required Actions:**
+1. Audit validation timing (on blur vs on submit vs on change)
+2. Standardize validation feedback patterns
+3. Add inline validation hints before errors occur
+4. Test validation UX with real users
+
+**Estimated Effort:** 16-24 hours
+
+---
+
+#### 8. **Progressive Disclosure** 🟢 **PRIORITY: LOW**
+
+**Issue:** Some components use `<details>` for technical information (good pattern) but not consistent across complex flows
+
+**Required Actions:**
+1. Identify complex workflows with 5+ steps
+2. Implement progressive disclosure (show essential, hide advanced)
+3. Add "Show advanced options" toggles
+4. Test with beginner vs expert users
+
+**Estimated Effort:** 24-32 hours
+
+---
+
+### Recommended Implementation Priority
+
+**Phase 1 (MVP Blockers - Next 2 Weeks):**
+1. ✅ **WCAG Accessibility Compliance** - Legal/regulatory requirement
+2. ✅ **Navigation Mobile Parity** - Blocks 40%+ of users from features
+
+**Phase 2 (Post-MVP UX Hardening - Weeks 3-6):**
+3. ✅ **Error Message UX** - Reduces support costs
+4. ✅ **Legacy Wizard Cleanup** - Improves development velocity
+
+**Phase 3 (Continuous Improvement - Q2 2026):**
+5. ✅ **View/Component Consolidation** - Long-term maintainability
+6. ✅ **Loading State Consistency** - Polish
+7. ✅ **Form Validation UX** - Conversion optimization
+8. ✅ **Progressive Disclosure** - Advanced user experience
+
+---
+
+### Success Metrics
+
+**Accessibility:**
+- WCAG 2.1 AA compliance: 0% → 100%
+- Screen reader compatibility: Unknown → 5 flows tested
+
+**Navigation:**
+- Mobile feature access: ~70% → 100%
+- Task completion time: Baseline → -20%
+
+**Error UX:**
+- Support tickets (error-related): Baseline → -30%
+- User satisfaction (error scenarios): Baseline → +40%
+
+**Code Quality:**
+- Skipped E2E blocks (`test.skip` + `test.describe.skip`): 38 → 0
+- View count: 28 → 15-20 (consolidated)
+- Test coverage (UX flows): Unknown → 80%+
+
+---
+
+**Last Updated:** March 9, 2026 (11:03 UTC reality-check refresh: merged PRs, latest green Actions run, and Playwright MVP blocker evidence reviewed)
+**Next Review:** March 16, 2026
