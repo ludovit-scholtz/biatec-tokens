@@ -12,7 +12,7 @@
 
 **Market Opportunity:** $50B+ RWA tokenization market by 2025, with MICA regulation creating demand for compliant platforms. Current competitors lack comprehensive compliance tooling.
 
-**Current Status:** Frontend and backend hardening kept moving through March 2026 (recent merged frontend PRs **#558**, **#560**, **#562**, **#564**, **#566**, **#568**, **#570**, **#572**, **#574**, **#576**; backend PRs **#471**, **#473**, **#477**, **#479**, **#481**, **#483**, **#485**, **#487**, **#491**). The latest `Run Tests` workflow on `main` is green (updated **2026-03-09 23:22 UTC** on commit `3f3c5b6d673eb22df06d3559d382eb180cd38ac0`), and fresh local validation passed (`npm run build`, `npm test`: **308** files, **9691** tests passing, **25** skipped). However, business-owner MVP sign-off is still blocked because the highest-risk Playwright evidence is not yet fully real-backend: `loginWithCredentials()` still falls back to seeded localStorage when no backend is available, `backend-deployment-contract.spec.ts` validates injected UI states rather than a real token deployment lifecycle, and the suite still carries broad error suppression plus low-signal assertions.
+**Current Status:** Frontend and backend hardening kept moving through March 2026 (recent merged frontend PRs **#558**, **#560**, **#562**, **#564**, **#566**, **#568**, **#570**, **#572**, **#574**, **#576**; backend PRs **#471**, **#473**, **#477**, **#479**, **#481**, **#483**, **#485**, **#487**, **#491**). Since the March 10 refresh, `main` only picked up dependency-maintenance PRs **#577**-**#582**, so no new MVP blocker-closing product work has landed. The latest `Playwright Tests` workflow on `main` is green (updated **2026-03-11 22:29 UTC** on commit `efa78dcb8c7f2215198397b16e3f582dc94edbe9`), and fresh local validation still passed (`npm run build`, `npm test`: **308** files, **9691** tests passing, **25** skipped). However, business-owner MVP sign-off is still blocked because the highest-risk Playwright evidence is not yet fully real-backend: `loginWithCredentials()` still falls back to seeded localStorage when no backend is available, `backend-deployment-contract.spec.ts` validates injected UI states rather than a real token deployment lifecycle, and the suite still carries broad error suppression plus low-signal assertions.
 
 ---
 
@@ -148,17 +148,17 @@
 
 ---
 
-## MVP Blockers Reality Check (March 10, 2026 - Weekly Update)
+## MVP Blockers Reality Check (March 11, 2026 - Weekly Update)
 
 ### Evidence Reviewed
 
-- Recent hardening/productization work is merged to `main` (notably frontend PRs **#558**, **#560**, **#562**, **#564**, **#566**, **#568**, **#570**, **#572**, **#574**, **#576** and backend PRs **#471**, **#473**, **#477**, **#479**, **#481**, **#483**, **#485**, **#487**, **#491**).
-- Latest `Run Tests` workflow on `main` remains green (updated **2026-03-09 23:22 UTC**, commit `3f3c5b6d673eb22df06d3559d382eb180cd38ac0`, `success`), so CI health is improved versus the February blocker period and the current roadmap commit is still sitting on a passing main-branch workflow.
+- Recent hardening/productization work remains merged to `main` (notably frontend PRs **#558**, **#560**, **#562**, **#564**, **#566**, **#568**, **#570**, **#572**, **#574**, **#576** and backend PRs **#471**, **#473**, **#477**, **#479**, **#481**, **#483**, **#485**, **#487**, **#491**). Since the prior roadmap refresh, the only additional main-branch activity is dependency maintenance (**#577**, **#578**, **#579**, **#580**, **#581**, **#582**), so blocker status should be judged on test fidelity rather than commit volume.
+- Latest `Playwright Tests` workflow on `main` is green (updated **2026-03-11 22:29 UTC**, commit `efa78dcb8c7f2215198397b16e3f582dc94edbe9`, `success`), which proves CI stability on current `main` but does **not** by itself prove live-backend blocker closure.
 - Current blocker-facing Playwright evidence now includes dedicated suites for sign-off and hardening: `e2e/mvp-signoff-readiness.spec.ts`, `e2e/mvp-sign-off-hardening.spec.ts`, `e2e/mvp-deterministic-journey.spec.ts`, `e2e/arc76-determinism.spec.ts`, and `e2e/backend-deployment-contract.spec.ts`.
 - `e2e/helpers/auth.ts` shows the suite is **not yet fully real-backend**: `loginWithCredentials()` attempts backend auth but explicitly falls back to `withAuth()` localStorage seeding when `API_BASE_URL` or the backend is unavailable.
 - `e2e/backend-deployment-contract.spec.ts` improves deployment-state coverage, but it still asserts lifecycle UI by injecting DOM panels with `document.body.appendChild(panel)` instead of driving a live create-token -> backend acceptance -> status transition -> terminal confirmation flow.
-- Fresh local baseline validation in a clean clone completed successfully for `npm run build` and `npm test` (**308** test files, **9691** tests passing, **25** skipped), which lowers general frontend regression risk but does **not** close the business-owner blocker because the remaining gap is E2E fidelity, not build/unit stability.
-- Weak Playwright patterns remain broader than a single file: the current `e2e/` corpus contains **56 spec files**, `suppressBrowserErrors()` is still referenced across **34** TypeScript files under `e2e/`, `withAuth()` still appears in **28** files while `loginWithCredentials()` appears in only **12**, and there are still **69** permissive/trivial assertions (`expect(true).toBe(true)`, `expect(isVisible || true).toBe(true)`, `toBeGreaterThanOrEqual(0)`, etc.) across adjacent suites.
+- Fresh local baseline validation was re-run in a clean clone and again completed successfully for `npm run build` and `npm test` (**308** test files, **9691** tests passing, **25** skipped), which lowers general frontend regression risk but does **not** close the business-owner blocker because the remaining gap is E2E fidelity, not build/unit stability.
+- Weak Playwright patterns remain broader than a single file: the current `e2e/` corpus contains **56 spec files**, `suppressBrowserErrors()` is still referenced across **34** TypeScript files under `e2e/`, `withAuth()` still appears in **28** files while `loginWithCredentials()` appears in only **12**, and there are still **68** permissive/trivial assertions (`expect(true).toBe(true)`, `expect(isVisible || true).toBe(true)`, `toBeGreaterThanOrEqual(0)`, etc.) across adjacent suites.
 
 ### Blocker Validation Status
 
@@ -166,8 +166,8 @@
 - 🟡 **Backend deployment verification blocker improved but not closed:** `e2e/backend-deployment-contract.spec.ts` adds useful lifecycle-state UI coverage, but it does not yet prove the real token deployment contract end to end. The critical business-owner requirement remains open until Playwright asserts live request acceptance, intermediate status progression, surfaced IDs, and final completion/failure using backend responses.
 - ✅ **Legacy `/create/wizard` blocker is mostly contained:** legacy route usage is now largely redirect-compatibility coverage, but one direct non-compat navigation still remains in `e2e/mvp-deterministic-journey.spec.ts`, so the policy is not absolute yet.
 - 🟡 **Mock-environment dependency blocker remains open:** helper-level and spec-level `suppressBrowserErrors()` usage still keeps blocker suites tolerant of console/page failures, and the helper is still referenced across **34** TypeScript files under `e2e/`. That may be useful for CI stability, but it is not strong enough for business-owner sign-off.
-- 🔴 **Assertion-quality blocker remains open:** there are still **69** permissive or trivial assertions in the current `e2e/` corpus. `e2e/token-standards-view.spec.ts` remains the clearest example, but similar patterns also remain in `e2e/guided-token-launch.spec.ts`, `e2e/token-discovery-dashboard.spec.ts`, `e2e/token-detail-view.spec.ts`, `e2e/team-management.spec.ts`, and `e2e/whitelist-jurisdiction.spec.ts`.
-- 🟡 **Documentation currently overstates closure:** `docs/testing/PLAYWRIGHT_STATUS.md` and `docs/implementations/MVP_SIGNOFF_READINESS_BLOCKER_MAPPING.md` document real progress, but they still read closer to closure reports than to a strict business-owner reality check. `PLAYWRIGHT_STATUS.md` says all four critical suites use `loginWithCredentials()` and that all remaining `goto('/create/wizard')` navigations live only in `wizard-redirect-compat.spec.ts`; the current spec corpus contradicts both claims.
+- 🔴 **Assertion-quality blocker remains open:** there are still **68** permissive or trivial assertions in the current `e2e/` corpus. `e2e/token-standards-view.spec.ts` remains the clearest example, but similar patterns also remain in `e2e/guided-token-launch.spec.ts`, `e2e/token-discovery-dashboard.spec.ts`, `e2e/token-detail-view.spec.ts`, `e2e/team-management.spec.ts`, and `e2e/whitelist-jurisdiction.spec.ts`.
+- 🟡 **Documentation currently overstates closure:** `docs/testing/PLAYWRIGHT_STATUS.md` still reports **51** spec files, **20** CI skips, **22** skip calls, says all four critical suites use `loginWithCredentials()`, and says only `wizard-redirect-compat.spec.ts` navigates to `/create/wizard`. The current repo shows **56** spec files, **38** skip calls, blocker-facing `withAuth()` usage in `mvp-signoff-readiness.spec.ts` and `mvp-deterministic-journey.spec.ts`, and one remaining non-compat `/create/wizard` navigation in `mvp-deterministic-journey.spec.ts`.
 
 ### Playwright Compliance vs MVP Blockers
 
@@ -181,7 +181,7 @@ Current Playwright coverage proves canonical auth-first UX intent, wallet-free n
 2. Replace the injected-panel approach in `e2e/backend-deployment-contract.spec.ts` with real token creation/deployment lifecycle assertions: request accepted, status progression, surfaced IDs, and terminal success/failure.
 3. Remove the remaining non-compat `goto('/create/wizard')` usage from `e2e/mvp-deterministic-journey.spec.ts` so legacy route coverage lives only in `e2e/wizard-redirect-compat.spec.ts`.
 4. Stop suppressing console/page errors in blocker suites except for a narrowly documented allowlist of known benign noise; sign-off suites should fail loudly on unhandled regressions.
-5. Eliminate the remaining **69** permissive always-pass and trivial assertions, starting with `e2e/token-standards-view.spec.ts`, `e2e/guided-token-launch.spec.ts`, `e2e/token-discovery-dashboard.spec.ts`, `e2e/token-detail-view.spec.ts`, `e2e/team-management.spec.ts`, and `e2e/whitelist-jurisdiction.spec.ts`.
+5. Eliminate the remaining **68** permissive always-pass and trivial assertions, starting with `e2e/token-standards-view.spec.ts`, `e2e/guided-token-launch.spec.ts`, `e2e/token-discovery-dashboard.spec.ts`, `e2e/token-detail-view.spec.ts`, `e2e/team-management.spec.ts`, and `e2e/whitelist-jurisdiction.spec.ts`.
 6. Reduce `withAuth()` dependency in blocker-facing suites so the suite converges on one backend-validated auth path instead of **28** seeded-auth references versus **12** backend-login references.
 7. Keep documentation honest: green CI is necessary, but it is still insufficient until live-backend auth proof and live deployment proof exist.
 
@@ -441,9 +441,9 @@ Based on comprehensive product review including source code analysis, E2E test c
 - Playwright skip calls (`test.skip` + `test.describe.skip`): **38 currently remain** in the `e2e/` corpus; target stays **0 in blocker-facing suites**
 - Broad Playwright error-suppression references: **34 files currently**
 - Playwright auth split: **28 `withAuth()` files** vs **12 `loginWithCredentials()` files**
-- Low-signal assertion debt: **69 assertions currently** targeted for cleanup
+- Low-signal assertion debt: **68 assertions currently** targeted for cleanup
 
 ---
 
-**Last Updated:** March 10, 2026 (reality-check refresh: latest green main-branch workflow, fresh local build/unit baseline, and Playwright MVP blocker evidence re-verified against the current repo)
-**Next Review:** March 17, 2026
+**Last Updated:** March 11, 2026 (reality-check refresh: current-head Playwright workflow, fresh local build/unit baseline, and Playwright MVP blocker evidence re-verified against the current repo)
+**Next Review:** March 18, 2026
