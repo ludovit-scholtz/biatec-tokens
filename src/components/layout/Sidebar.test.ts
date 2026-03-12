@@ -23,6 +23,9 @@ vi.mock('@heroicons/vue/24/outline', () => ({
   ShieldCheckIcon: {
     template: '<svg class="h-5 w-5"></svg>',
   },
+  UsersIcon: {
+    template: '<svg class="h-5 w-5"></svg>',
+  },
   CurrencyDollarIcon: {
     template: '<svg class="h-5 w-5"></svg>',
   },
@@ -31,10 +34,11 @@ vi.mock('@heroicons/vue/24/outline', () => ({
   },
 }));
 
-// Mock router-link
+// Mock router-link — passes 'to' as a prop; class and other attributes fall through naturally
+// (inheritAttrs: true by default) so that :class bindings on router-link appear on the <a>
 const RouterLinkStub = {
   template: '<a :to="to" @click="$emit(\'click\')"><slot /></a>',
-  props: ['to'],
+  props: ['to', 'aria-current'],
 };
 
 describe('Sidebar Component', () => {
@@ -50,6 +54,11 @@ describe('Sidebar Component', () => {
         { path: '/dashboard', name: 'dashboard' },
         { path: '/token-standards', name: 'token-standards' },
         { path: '/enterprise-guide', name: 'enterprise-guide' },
+        { path: '/launch/workspace', name: 'GuidedLaunchWorkspace' },
+        { path: '/launch/guided', name: 'GuidedTokenLaunch' },
+        { path: '/enterprise/onboarding', name: 'EnterpriseOnboarding' },
+        { path: '/compliance-monitoring', name: 'ComplianceMonitoring' },
+        { path: '/compliance/whitelists', name: 'WhitelistManagement' },
       ],
     });
 
@@ -148,7 +157,8 @@ describe('Sidebar Component', () => {
       });
 
       const svgs = wrapper.findAll('svg');
-      expect(svgs).toHaveLength(7); // 7 icons for quick actions (including Onboarding Center and Compliance Monitoring)
+      // 8 links each with an SVG icon (UsersIcon replaces the old <i class="pi pi-users">)
+      expect(svgs).toHaveLength(8);
     });
   });
 
@@ -263,6 +273,22 @@ describe('Sidebar Component', () => {
       // Verify Recent Activity section exists
       expect(wrapper.text()).toContain('Recent Activity');
     });
+
+    it('empty state has role="status" and aria-live="polite" for screen readers (WCAG SC 4.1.3)', () => {
+      const wrapper = mount(Sidebar, {
+        global: {
+          plugins: [router, pinia],
+          components: {
+            'router-link': RouterLinkStub,
+            Badge,
+          },
+        },
+      });
+
+      const emptyState = wrapper.find('[role="status"]');
+      expect(emptyState.exists()).toBe(true);
+      expect(emptyState.attributes('aria-live')).toBe('polite');
+    });
   });
 
   describe('Responsive Design', () => {
@@ -352,6 +378,130 @@ describe('Sidebar Component', () => {
       expect(nav.exists()).toBe(true);
       // aria-label distinguishes sidebar nav from the primary "Main navigation" landmark
       expect(nav.attributes('aria-label')).toBe('Sidebar navigation');
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // WCAG 2.1 AA Accessibility Tests
+  // ---------------------------------------------------------------------------
+  describe('WCAG 2.1 AA Accessibility', () => {
+    it('all quick action links have focus-visible ring classes (WCAG SC 2.4.7)', () => {
+      const wrapper = mount(Sidebar, {
+        global: {
+          plugins: [router, pinia],
+          components: {
+            'router-link': RouterLinkStub,
+            Badge,
+          },
+        },
+      });
+
+      const links = wrapper.findAll('a');
+      links.forEach((link) => {
+        const classes = link.classes().join(' ');
+        // Each link must have keyboard focus-visible ring classes
+        expect(classes).toMatch(/focus-visible:ring-2/);
+        expect(classes).toMatch(/focus-visible:ring-blue-500/);
+        expect(classes).toMatch(/focus:outline-none/);
+      });
+    });
+
+    it('status dots have aria-hidden="true" to prevent screen reader redundancy (WCAG SC 1.1.1)', () => {
+      const tokenStore = useTokenStore();
+      vi.mocked(tokenStore).tokenStandards = [
+        { name: 'ASA', count: 1, bgClass: 'bg-blue-500' },
+      ];
+
+      const wrapper = mount(Sidebar, {
+        global: {
+          plugins: [router, pinia],
+          components: {
+            'router-link': RouterLinkStub,
+            Badge,
+          },
+        },
+      });
+
+      // Status dots are decorative; aria-hidden prevents screen reader confusion
+      const dot = wrapper.find('.w-2.h-2.rounded-full');
+      expect(dot.exists()).toBe(true);
+      expect(dot.attributes('aria-hidden')).toBe('true');
+    });
+
+    it('aside has supplemental aria-label (WCAG SC 1.3.6 landmark disambiguation)', () => {
+      const wrapper = mount(Sidebar, {
+        global: {
+          plugins: [router, pinia],
+          components: {
+            'router-link': RouterLinkStub,
+            Badge,
+          },
+        },
+      });
+
+      const aside = wrapper.find('aside');
+      expect(aside.attributes('aria-label')).toBe('Supplemental navigation');
+    });
+
+    it('nav has aria-label "Sidebar navigation" for accessible name (WCAG SC 1.3.1)', () => {
+      const wrapper = mount(Sidebar, {
+        global: {
+          plugins: [router, pinia],
+          components: {
+            'router-link': RouterLinkStub,
+            Badge,
+          },
+        },
+      });
+
+      const nav = wrapper.find('nav');
+      // aria-label provides the accessible name for the nav landmark.
+      // aria-labelledby is NOT used here because the nearby heading ("Quick Actions") describes
+      // a section within the nav, not the nav landmark itself. Using aria-label is therefore
+      // more precise and avoids attributing the wrong label.
+      expect(nav.attributes('aria-label')).toBe('Sidebar navigation');
+      expect(nav.attributes('aria-labelledby')).toBeUndefined();
+    });
+
+    it('whitelist management link uses SVG icon (not icon font) for accessibility (WCAG SC 1.1.1)', () => {
+      const wrapper = mount(Sidebar, {
+        global: {
+          plugins: [router, pinia],
+          components: {
+            'router-link': RouterLinkStub,
+            Badge,
+          },
+        },
+      });
+
+      // Should NOT have an <i> element (icon font) — replaced with SVG UsersIcon
+      const iconFonts = wrapper.findAll('i.pi');
+      expect(iconFonts).toHaveLength(0);
+
+      // WhitelistManagement link should contain an SVG
+      const whitelistLink = wrapper.find('a[to="/compliance/whitelists"]');
+      expect(whitelistLink.find('svg').exists()).toBe(true);
+    });
+
+    it('section headings use higher-contrast gray-600 (not gray-500) for WCAG AA compliance', () => {
+      const wrapper = mount(Sidebar, {
+        global: {
+          plugins: [router, pinia],
+          components: {
+            'router-link': RouterLinkStub,
+            Badge,
+          },
+        },
+      });
+
+      const headers = wrapper.findAll('h3');
+      headers.forEach((header) => {
+        // text-gray-600 (#4b5563) has 7.0:1 contrast on white — passes WCAG AA
+        // text-gray-500 (#6b7280) has only 4.5:1 — borderline
+        expect(header.classes()).toContain('text-gray-600');
+        // Must NOT use text-gray-500 for section headings (risk of WCAG AA failure on tinted surfaces)
+        expect(header.classes()).not.toContain('text-gray-500');
+      });
     });
   });
 });
