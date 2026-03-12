@@ -272,12 +272,12 @@ Based on comprehensive product review including source code analysis, E2E test c
 
 ---
 
-#### 3. **Legacy Wizard Flow Cleanup** 🟡 **PRIORITY: MEDIUM**
+#### 3. **Legacy Wizard Flow Cleanup** ✅ **PRIORITY: LOW**
 
-**Status:** `/create/wizard` direct navigation is reduced but **not yet fully isolated** to `wizard-redirect-compat.spec.ts`.
+**Status:** `/create/wizard` direct navigation is now correctly isolated to `wizard-redirect-compat.spec.ts`.
 
 **Evidence:**
-- Direct `goto('/create/wizard')` calls appear in `e2e/wizard-redirect-compat.spec.ts` (**3** assertions), `e2e/mvp-deterministic-journey.spec.ts` (**1** assertion), and `e2e/mvp-stabilization.spec.ts` (**2** assertions).
+- Direct `goto('/create/wizard')` calls now appear only in `e2e/wizard-redirect-compat.spec.ts` (**3** redirect-source assertions).
 - Canonical flow coverage is centered on `/launch/guided` in MVP hardening suites.
 
 **Business Impact:**
@@ -285,9 +285,9 @@ Based on comprehensive product review including source code analysis, E2E test c
 - Lower regression risk for canonical launch path messaging
 
 **Remaining Action:**
-1. Remove the remaining non-compat `goto('/create/wizard')` calls from `mvp-deterministic-journey.spec.ts` and `mvp-stabilization.spec.ts`.
-2. Keep redirect-compat tests isolated to the dedicated compatibility spec.
-3. Reject any new direct `/create/wizard` navigation in non-compat tests during review.
+1. Keep redirect-compat tests isolated to the dedicated compatibility spec.
+2. Reject any new direct `/create/wizard` navigation in non-compat tests during review.
+3. Preserve `/launch/guided` as the only canonical destination in new blocker-facing coverage.
 
 ---
 
@@ -412,11 +412,11 @@ Based on comprehensive product review including source code analysis, E2E test c
 **Phase 1 (MVP Blockers - Next 2 Weeks):**
 1. 🔴 **Live backend auth proof in Playwright** - Must fail on localStorage fallback and prove real ARC76-backed session establishment
 2. 🔴 **Real deployment lifecycle E2E** - Must replace DOM injection with backend-accepted creation, progression, and terminal assertions
-3. 🟡 **Legacy route cleanup in blocker suites** - Remove the remaining direct `/create/wizard` navigation outside redirect compatibility coverage
+3. 🟡 **Strict sign-off CI enforcement** - Run the real-backend lane in protected automation instead of leaving it opt-in/skipped
 
 **Phase 2 (Post-MVP Test Hardening - Weeks 3-6):**
 4. 🟡 **Error suppression reduction** - Restrict `suppressBrowserErrors()` to a small allowlist and fail blocker suites on real regressions
-5. 🟡 **Assertion quality cleanup** - Eliminate the remaining low-signal Playwright assertions, starting with token standards/detail/discovery and team/whitelist coverage (current heuristic scan flags **115** candidate low-signal assertions)
+5. 🟡 **Assertion quality cleanup** - Eliminate the remaining low-signal Playwright assertions, starting with ARC76 and guided-launch hardening hotspots (current heuristic scan flags **51** candidate matches across **24** spec files)
 6. 🟡 **Seeded auth reduction** - Move blocker-facing coverage from `withAuth()` to backend-validated login flows
 
 **Phase 3 (Continuous Improvement - Q2 2026):**
