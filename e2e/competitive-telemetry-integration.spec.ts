@@ -6,19 +6,12 @@
  */
 
 import { test, expect } from '@playwright/test'
+import { suppressBrowserErrors } from './helpers/auth'
 
 test.describe('Token Creation Journey Tracking', () => {
   test.beforeEach(async ({ page }) => {
     // Suppress console errors for test stability
-    page.on('console', msg => {
-      if (msg.type() === 'error') {
-        console.log(`Browser console error (suppressed): ${msg.text()}`)
-      }
-    })
-
-    page.on('pageerror', error => {
-      console.log(`Page error (suppressed): ${error.message}`)
-    })
+    suppressBrowserErrors(page)
 
     // Set up authenticated user
     await page.addInitScript(() => {
@@ -116,11 +109,7 @@ test.describe('Token Creation Journey Tracking', () => {
 
 test.describe('Standards Comparison Tracking', () => {
   test.beforeEach(async ({ page }) => {
-    page.on('console', msg => {
-      if (msg.type() === 'error') {
-        console.log(`Browser console error (suppressed): ${msg.text()}`)
-      }
-    })
+    suppressBrowserErrors(page)
 
     await page.addInitScript(() => {
       localStorage.setItem('algorand_user', JSON.stringify({

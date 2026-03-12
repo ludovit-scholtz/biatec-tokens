@@ -27,6 +27,7 @@
  */
 
 import { test, expect } from '@playwright/test'
+import { suppressBrowserErrors } from './helpers/auth'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -45,24 +46,13 @@ async function bootstrapAuthSession(page: import('@playwright/test').Page) {
   })
 }
 
-function suppressPageErrors(page: import('@playwright/test').Page) {
-  page.on('console', (msg) => {
-    if (msg.type() === 'error') {
-      console.log(`[browser-console-error] ${msg.text()}`)
-    }
-  })
-  page.on('pageerror', (err) => {
-    console.log(`[browser-pageerror] ${err.message}`)
-  })
-}
-
 // ---------------------------------------------------------------------------
 // AC #1 — Workspace loads and is accessible
 // ---------------------------------------------------------------------------
 
 test.describe('Issuance workspace — primary route accessibility', () => {
   test.beforeEach(async ({ page }) => {
-    suppressPageErrors(page)
+    suppressBrowserErrors(page)
     await bootstrapAuthSession(page)
   })
 
@@ -113,7 +103,7 @@ test.describe('Issuance workspace — primary route accessibility', () => {
 
 test.describe('Issuance workspace — no wallet connector UI', () => {
   test.beforeEach(async ({ page }) => {
-    suppressPageErrors(page)
+    suppressBrowserErrors(page)
     await bootstrapAuthSession(page)
   })
 
@@ -156,7 +146,7 @@ test.describe('Issuance workspace — no wallet connector UI', () => {
 
 test.describe('Issuance workspace — auth-first routing guard', () => {
   test.beforeEach(async ({ page }) => {
-    suppressPageErrors(page)
+    suppressBrowserErrors(page)
   })
 
   test('unauthenticated user cannot silently access the issuance workspace', async ({
@@ -199,7 +189,7 @@ test.describe('Issuance workspace — auth-first routing guard', () => {
 
 test.describe('Issuance workspace — error state accessibility', () => {
   test.beforeEach(async ({ page }) => {
-    suppressPageErrors(page)
+    suppressBrowserErrors(page)
     await bootstrapAuthSession(page)
   })
 
@@ -210,20 +200,18 @@ test.describe('Issuance workspace — error state accessibility', () => {
     const heading = page.getByRole('heading', { name: /Guided Token Launch/i, level: 1 })
     await expect(heading).toBeVisible({ timeout: 60000 })
 
-    // If an error banner is present, it must have role="alert"
-    const alertBanners = page.locator('[role="alert"]')
-    const alertCount = await alertBanners.count()
+    // WCAG 4.1.3: aria-live regions use v-show (not v-if) so screen readers can
+    // subscribe before any error fires. The element is always in the DOM.
+    // GuidedTokenLaunch.vue template: <div v-show="submissionErrorMessage" role="alert"
+    //   aria-live="assertive" :data-testid="ISSUANCE_TEST_IDS.ERROR_BANNER" ...>
+    const alertBanner = page.locator('[data-testid="issuance-error-banner"]')
+    await expect(alertBanner).toBeAttached() // Always in DOM (v-show pattern for WCAG 4.1.3)
+    expect(await alertBanner.getAttribute('role')).toBe('alert')
+    expect(await alertBanner.getAttribute('aria-live')).toBe('assertive')
 
-    // There should be zero alerts on initial load (no errors yet)
-    // If an alert does appear, it must have accessible content
-    if (alertCount > 0) {
-      const firstAlert = alertBanners.first()
-      await expect(firstAlert).toBeVisible()
-      const alertText = await firstAlert.textContent()
-      expect(alertText?.length).toBeGreaterThan(0)
-    }
-    // Either way the page is valid
-    expect(true).toBe(true)
+    // On initial load there is no error — the banner must be hidden (not visible)
+    // This is the correct WCAG 4.1.3 state: present in DOM but not displayed until an error fires
+    await expect(alertBanner).not.toBeVisible()
   })
 
   test('workspace form fields are keyboard-accessible', async ({ page }) => {
@@ -247,7 +235,7 @@ test.describe('Issuance workspace — error state accessibility', () => {
 
 test.describe('Issuance workspace — draft persistence UX', () => {
   test.beforeEach(async ({ page }) => {
-    suppressPageErrors(page)
+    suppressBrowserErrors(page)
     await bootstrapAuthSession(page)
   })
 
@@ -275,7 +263,7 @@ test.describe('Issuance workspace — draft persistence UX', () => {
 
 test.describe('Issuance workspace — page reload resilience', () => {
   test.beforeEach(async ({ page }) => {
-    suppressPageErrors(page)
+    suppressBrowserErrors(page)
     await bootstrapAuthSession(page)
   })
 
