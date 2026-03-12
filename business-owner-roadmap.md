@@ -12,7 +12,7 @@
 
 **Market Opportunity:** $50B+ RWA tokenization market by 2025, with MICA regulation creating demand for compliant platforms. Current competitors lack comprehensive compliance tooling.
 
-**Current Status:** Frontend and backend hardening kept moving through March 2026 (recent merged frontend PRs **#558**, **#560**, **#562**, **#564**, **#566**, **#568**, **#570**, **#572**, **#574**, **#576**; backend PRs **#471**, **#473**, **#477**, **#479**, **#481**, **#483**, **#485**, **#487**, **#491**). The latest `Run Tests`, `Playwright Tests`, and `Build and Deploy FE` workflows on `main` are green on commit `efa78dcb8c7f2215198397b16e3f582dc94edbe9` (updated **2026-03-11 22:16-22:29 UTC**). Fresh local validation in a clean clone also passed (`npm run build`, `npm test`: **308** files, **9691** tests passing, **25** skipped). However, business-owner MVP sign-off is still blocked because the highest-risk Playwright evidence is not yet fully real-backend: `loginWithCredentials()` still falls back to seeded localStorage when no backend is available, `backend-deployment-contract.spec.ts` validates injected UI states rather than a real token deployment lifecycle, and the suite still carries broad error suppression plus low-signal assertions.
+**Current Status:** Frontend and backend hardening kept moving through March 2026 (recent merged frontend PRs now include **#558**, **#560**, **#562**, **#564**, **#566**, **#568**, **#570**, **#572**, **#574**, **#576**, **#584**, **#586**, **#588**, and **#590**; backend PRs **#471**, **#473**, **#477**, **#479**, **#481**, **#483**, **#485**, **#487**, **#491**). The latest `Run Tests`, `Playwright Tests`, and `Build and Deploy FE` workflows on `main` are green on commit `58ccbafb12afa9392f72b2868f3ba22e6a403cca` (updated **2026-03-12 10:19-10:32 UTC**). Fresh local validation in a clean clone also passed (`npm run build`, `npm test`: **309** files, **9741** tests passing, **25** skipped). Business-owner MVP sign-off is still blocked, but the picture is now more nuanced: a strict real-backend Playwright lane exists on `main`, legacy `/create/wizard` drift is contained, and documentation is more honest; however, the strict lane is not wired into standard CI, deployment proof is still partly permissive/soft-failing, and broad suppression plus seeded-auth reliance remain too high for enterprise sign-off.
 
 ---
 
@@ -148,54 +148,56 @@
 
 ---
 
-## MVP Blockers Reality Check (March 11, 2026 - Weekly Update)
+## MVP Blockers Reality Check (March 12, 2026 - Weekly Update)
 
 ### Evidence Reviewed
 
-- Recent hardening/productization work is merged to `main` (notably frontend PRs **#558**, **#560**, **#562**, **#564**, **#566**, **#568**, **#570**, **#572**, **#574**, **#576** and backend PRs **#471**, **#473**, **#477**, **#479**, **#481**, **#483**, **#485**, **#487**, **#491**).
-- Latest `Run Tests`, `Playwright Tests`, and `Build and Deploy FE` workflows on `main` are all green on commit `efa78dcb8c7f2215198397b16e3f582dc94edbe9` (updated **2026-03-11 22:16-22:29 UTC**, all `success`), so CI health is improved versus the February blocker period and the current roadmap commit still sits on a passing main-branch workflow set.
-- Current blocker-facing Playwright evidence now includes dedicated suites for sign-off and hardening: `e2e/mvp-signoff-readiness.spec.ts`, `e2e/mvp-sign-off-hardening.spec.ts`, `e2e/mvp-deterministic-journey.spec.ts`, `e2e/arc76-determinism.spec.ts`, and `e2e/backend-deployment-contract.spec.ts`.
-- `e2e/helpers/auth.ts` shows the suite is **not yet fully real-backend**: `loginWithCredentials()` attempts backend auth but explicitly falls back to `withAuth()` localStorage seeding when `API_BASE_URL` or the backend is unavailable.
-- `e2e/backend-deployment-contract.spec.ts` improves deployment-state coverage, but it still asserts lifecycle UI by injecting DOM panels with `document.body.appendChild(panel)` instead of driving a live create-token -> backend acceptance -> status transition -> terminal confirmation flow.
-- Fresh local baseline validation in a clean clone completed successfully for `npm run build` and `npm test` (**308** test files, **9691** tests passing, **25** skipped), which lowers general frontend regression risk but does **not** close the business-owner blocker because the remaining gap is E2E fidelity, not build/unit stability.
-- Weak Playwright patterns remain broader than a single file: the current `e2e/` corpus contains **56 spec files**, **38** `test.skip` / `test.describe.skip` calls, `suppressBrowserErrors()` is still referenced across **34** TypeScript files under `e2e/`, `withAuth()` still appears in **28** files while `loginWithCredentials()` appears in only **12**, direct `goto('/create/wizard')` calls still exist in **3** spec files (**6** navigations total), and a lightweight heuristic scan still flags **115** potentially low-signal assertions (`expect(true).toBe(true)`, `expect(x || true).toBe(true)`, `toBeTruthy()`, `toBeGreaterThanOrEqual(0)`, etc.) across adjacent suites.
+- Recent hardening/productization work is merged to `main` (frontend PRs now include **#584**, **#586**, **#588**, and **#590** in addition to the earlier March stream; backend PRs remain **#471**, **#473**, **#477**, **#479**, **#481**, **#483**, **#485**, **#487**, **#491**).
+- Latest `Run Tests`, `Playwright Tests`, and `Build and Deploy FE` workflows on `main` are all green on commit `58ccbafb12afa9392f72b2868f3ba22e6a403cca` (updated **2026-03-12 10:19-10:32 UTC**, all `success`).
+- Fresh local baseline validation in a clean clone completed successfully for `npm run build` and `npm test` (**309** test files, **9741** tests passing, **25** skipped), which lowers general frontend regression risk but does **not** by itself close the business-owner blocker because the remaining gap is E2E sign-off fidelity, not build/unit stability.
+- `e2e/mvp-backend-signoff.spec.ts` now provides a genuine strict auth lane on `main`: it uses `loginWithCredentialsStrict()` and will fail loudly instead of falling back to localStorage when the backend is unavailable.
+- `e2e/helpers/auth.ts` still shows the default suite is **not fully real-backend**: `loginWithCredentials()` remains permissive and explicitly falls back to `withAuth()` localStorage seeding when `API_BASE_URL` or the backend is unavailable.
+- `.github/workflows/playwright.yml` currently runs only `npm run test:e2e` with `CI=true`; it does **not** set `BIATEC_STRICT_BACKEND=true` or a live `API_BASE_URL`, so the strict sign-off lane is present in the repo but skipped in standard CI.
+- `e2e/backend-deployment-contract.spec.ts` still uses DOM injection in its permissive lane, while its strict lane verifies endpoint reachability/response shape rather than a full create-token -> accepted deployment -> status progression -> terminal outcome journey.
+- `e2e/mvp-backend-signoff.spec.ts` improves deployment realism, but several AC #3 checks still return early on missing `/initiate`, missing `deploymentId`, unavailable `/validate`, or non-terminal status after polling; that is stronger than the March 11 state, but it is still not blocker-grade sign-off proof.
+- Documentation is more honest than on March 11: `e2e/README.md` now clearly separates strict sign-off coverage from permissive/mock-safe coverage and lists known remaining gaps.
+- Current Playwright debt is still meaningful: the `e2e/` corpus contains **58 spec files**, **54** `test.skip` / `test.describe.skip` calls, `suppressBrowserErrors()` appears in **52 spec files**, `withAuth()` appears in **29 spec files**, `loginWithCredentials()` appears in **11 spec files**, `loginWithCredentialsStrict()` appears in only **2 spec files**, direct `goto('/create/wizard')` now remains in only **1 spec file** (the dedicated redirect-compat suite), and a lightweight heuristic scan still flags **51** candidate low-signal assertions across **24** spec files.
 
 ### Blocker Validation Status
 
-- 🟡 **ARC76 critical-path blocker improved but not closed:** critical journeys increasingly use `loginWithCredentials()`, but `mvp-signoff-readiness.spec.ts` still relies on `withAuth()` and `mvp-deterministic-journey.spec.ts` still seeds auth via `withAuth()` in blocker-facing coverage. Even where `loginWithCredentials()` is used, it can pass through seeded localStorage fallback instead of proving real email/password -> ARC76 -> authenticated backend session. `e2e/arc76-determinism.spec.ts` still carries an explicit TODO for full backend-backed address isolation proof.
-- 🟡 **Backend deployment verification blocker improved but not closed:** `e2e/backend-deployment-contract.spec.ts` adds useful lifecycle-state UI coverage, but it does not yet prove the real token deployment contract end to end. The critical business-owner requirement remains open until Playwright asserts live request acceptance, intermediate status progression, surfaced IDs, and final completion/failure using backend responses.
-- 🟡 **Legacy `/create/wizard` blocker is improved but not yet contained:** legacy route usage is mostly isolated, but direct navigations still remain outside `e2e/wizard-redirect-compat.spec.ts` in both `e2e/mvp-deterministic-journey.spec.ts` and `e2e/mvp-stabilization.spec.ts`, so the policy is not absolute yet.
-- 🟡 **Mock-environment dependency blocker remains open:** helper-level and spec-level `suppressBrowserErrors()` usage still keeps blocker suites tolerant of console/page failures, and the helper is still referenced across **34** TypeScript files under `e2e/`. That may be useful for CI stability, but it is not strong enough for business-owner sign-off.
-- 🔴 **Assertion-quality blocker remains open:** there are still many permissive or trivial assertions in the current `e2e/` corpus; the prior **69**-assertion estimate now looks conservative because a broad heuristic scan flags **115** candidate low-signal assertions. `e2e/token-standards-view.spec.ts` remains the clearest example, but similar patterns also remain in `e2e/guided-token-launch.spec.ts`, `e2e/token-discovery-dashboard.spec.ts`, `e2e/token-detail-view.spec.ts`, `e2e/team-management.spec.ts`, and `e2e/whitelist-jurisdiction.spec.ts`.
-- 🟡 **Documentation currently overstates closure:** `docs/testing/PLAYWRIGHT_STATUS.md` and `docs/implementations/MVP_SIGNOFF_READINESS_BLOCKER_MAPPING.md` document real progress, but they still read closer to closure reports than to a strict business-owner reality check. `PLAYWRIGHT_STATUS.md` says all remaining `goto('/create/wizard')` navigations live only in `wizard-redirect-compat.spec.ts`; the current spec corpus contradicts that because `mvp-deterministic-journey.spec.ts` and `mvp-stabilization.spec.ts` still navigate there directly.
+- 🟡 **ARC76 critical-path blocker materially improved but not closed:** the repo now has a strict real-backend auth lane (`mvp-backend-signoff.spec.ts` + `loginWithCredentialsStrict()`), which closes the old "no suite fails on fallback" gap when that lane is actually enabled. But standard CI does not enable it, and blocker-adjacent coverage still leans on `withAuth()` / permissive `loginWithCredentials()` instead of proving real email/password -> ARC76 -> authenticated backend session by default.
+- 🔴 **Backend deployment verification blocker remains open:** the repo now contains more real-backend deployment requests and polling, but the strict deployment proof is still not hard enough. `backend-deployment-contract.spec.ts` strict mode is mostly reachability/shape validation, and `mvp-backend-signoff.spec.ts` still allows several early-return paths that avoid failing the sign-off run when lifecycle evidence is missing.
+- ✅ **Legacy `/create/wizard` blocker is now contained on main:** direct `goto('/create/wizard')` calls are isolated to `e2e/wizard-redirect-compat.spec.ts`, which is the correct redirect-compat location.
+- 🟡 **Mock-environment dependency blocker remains open:** the strict lane is skipped in ordinary CI, `withAuth()` still outnumbers backend-backed login usage, and `suppressBrowserErrors()` remains widespread enough that non-blocker regressions can still hide inside permissive coverage.
+- 🔴 **Assertion-quality blocker remains open:** the debt is smaller than the March 11 estimate, but still real. A lightweight heuristic scan now flags **51** candidate low-signal assertions across **24** spec files, with notable hotspots in `e2e/arc76-determinism.spec.ts`, `e2e/canonical-launch-aa-hardening.spec.ts`, `e2e/guided-token-launch.spec.ts`, `e2e/guided-portfolio-onboarding.spec.ts`, and `e2e/arc76-validation.spec.ts`.
+- ✅ **Documentation honesty improved:** `e2e/README.md` now clearly distinguishes strict sign-off evidence from permissive/mock-safe coverage and explicitly lists the remaining gaps (full UI form submission, real-time polling, rollback/retry, compliance evidence upload). The problem is now less documentation honesty and more workflow enforcement.
 
 ### Playwright Compliance vs MVP Blockers
 
-**Status:** 🟡 **Partially compliant — materially improved, but not yet business-owner sign-off ready**
+**Status:** 🟡 **Partially compliant — much stronger than March 11, but still not business-owner sign-off ready**
 
-Current Playwright coverage proves canonical auth-first UX intent, wallet-free navigation direction, accessibility baselines, and better CI stability. It still does **not** provide business-owner-grade proof that the highest-risk production path is stable end to end, because the most important auth and deployment assertions can still pass in fallback/mock modes instead of a real backend-backed flow.
+Current Playwright coverage now proves more than it did a day ago: the repository contains a strict backend-auth lane, clearer documentation about what is and is not real-backend, and cleaner canonical-route discipline. It still does **not** provide business-owner-grade proof that the highest-risk production path is enforced in release automation, because the strict lane is skipped in ordinary CI and the deployment sign-off path can still complete without hard-failing on missing lifecycle evidence.
 
 ### Required Playwright Improvements Before MVP Sign-off
 
-1. Add at least one blocker suite that must use a live backend auth response in CI/staging and **fail if `loginWithCredentials()` falls back** to seeded localStorage.
-2. Replace the injected-panel approach in `e2e/backend-deployment-contract.spec.ts` with real token creation/deployment lifecycle assertions: request accepted, status progression, surfaced IDs, and terminal success/failure.
-3. Remove the remaining non-compat `goto('/create/wizard')` usage from `e2e/mvp-deterministic-journey.spec.ts` and `e2e/mvp-stabilization.spec.ts` so legacy route coverage lives only in `e2e/wizard-redirect-compat.spec.ts`.
-4. Stop suppressing console/page errors in blocker suites except for a narrowly documented allowlist of known benign noise; sign-off suites should fail loudly on unhandled regressions.
-5. Eliminate the remaining low-signal assertions, starting with `e2e/token-standards-view.spec.ts`, `e2e/guided-token-launch.spec.ts`, `e2e/token-discovery-dashboard.spec.ts`, `e2e/token-detail-view.spec.ts`, `e2e/team-management.spec.ts`, and `e2e/whitelist-jurisdiction.spec.ts` (the prior **69**-assertion estimate now looks conservative; a broad heuristic scan flags **115** candidates).
-6. Reduce `withAuth()` dependency in blocker-facing suites so the suite converges on one backend-validated auth path instead of **28** seeded-auth references versus **12** backend-login references.
-7. Keep documentation honest: green CI is necessary, but it is still insufficient until live-backend auth proof and live deployment proof exist.
+1. Wire the strict sign-off lane into a protected CI/staging job by setting `BIATEC_STRICT_BACKEND=true` and a live `API_BASE_URL`, so blocker-grade auth proof runs automatically instead of silently skipping in normal CI.
+2. Upgrade `e2e/mvp-backend-signoff.spec.ts` so sign-off AC #3 fails when `/initiate` is unreachable, when no `deploymentId` is returned, when `/validate` is unavailable, or when no terminal lifecycle evidence is surfaced in the designated sign-off environment.
+3. Replace the strict portion of `e2e/backend-deployment-contract.spec.ts` with full lifecycle assertions (or demote it to supporting contract coverage and keep one canonical blocker-grade suite elsewhere); endpoint reachability and shape checks alone are not enough for business-owner release proof.
+4. Continue shrinking broad console/page-error suppression and seeded-auth usage across blocker and blocker-adjacent suites so ordinary CI evidence becomes closer to production reality.
+5. Eliminate the remaining low-signal assertions, starting with `e2e/arc76-determinism.spec.ts`, `e2e/canonical-launch-aa-hardening.spec.ts`, `e2e/guided-token-launch.spec.ts`, `e2e/guided-portfolio-onboarding.spec.ts`, and `e2e/arc76-validation.spec.ts`.
+6. Keep documentation and workflow descriptions aligned: standard CI can stay permissive for developer feedback, but business-owner sign-off must explicitly require the strict lane and state what it proves.
 
 ### Priority Action Items
 
-- **URGENT:** Provide a live backend/auth endpoint to Playwright in CI or a protected staging lane, then make at least one blocker suite fail hard on fallback auth.
-- **URGENT:** Turn backend deployment verification into a real end-to-end test rather than DOM injection.
-- **HIGH:** Remove permissive assertions and broad error suppression from blocker and adjacent suites (`e2e/token-standards-view.spec.ts` first, then the broader low-signal set identified in token discovery, token detail, team management, whitelist, and vision/workspace coverage).
-- **HIGH:** Finish isolating `/create/wizard` to redirect compatibility only by removing the remaining direct navigations in `e2e/mvp-deterministic-journey.spec.ts` and `e2e/mvp-stabilization.spec.ts`.
-- **MEDIUM:** Continue reducing raw seeded session usage and CI skips in secondary flows.
+- **URGENT:** Add a dedicated strict Playwright job (or protected staging gate) that exports `BIATEC_STRICT_BACKEND=true` and a live `API_BASE_URL`, then treat failure there as a release blocker.
+- **URGENT:** Make strict deployment sign-off fail hard when lifecycle proof is missing; remove the current early-return escape hatches in `e2e/mvp-backend-signoff.spec.ts`.
+- **HIGH:** Rework `e2e/backend-deployment-contract.spec.ts` so strict coverage proves real lifecycle behavior, while DOM-injection tests stay clearly labeled as supporting UI-contract coverage only.
+- **HIGH:** Remove low-signal assertions and broad suppression from the current hotspot files, starting with ARC76 and guided-launch hardening suites.
+- **MEDIUM:** Continue reducing seeded session usage and skip density in secondary flows.
 
 ### Roadmap Adjustment
 
-- **MVP Foundation confidence remains capped at 60%**: recent PRs and green workflows prove strong forward motion, but MVP sign-off blockers are still open because the most important Playwright evidence remains partially fallback/mock/injected rather than fully real-backend.
+- **MVP Foundation confidence can rise modestly to 65%**: green workflows, fresh local validation, strict-auth scaffolding on `main`, and legacy-route containment all improve credibility. But business-owner sign-off is still blocked until strict backend evidence is enforced in automation and deployment lifecycle proof becomes hard-failing instead of partially permissive.
 
 ---
 
@@ -438,14 +440,14 @@ Based on comprehensive product review including source code analysis, E2E test c
 - User satisfaction (error scenarios): Baseline → +40%
 
 **Code Quality:**
-- Playwright skip calls (`test.skip` + `test.describe.skip`): **38 currently remain** in the `e2e/` corpus; target stays **0 in blocker-facing suites**
-- Broad Playwright error-suppression references: **34 files currently**
-- Playwright auth split: **28 `withAuth()` files** vs **12 `loginWithCredentials()` files**
-- Legacy route debt: direct `goto('/create/wizard')` still appears in **3 spec files / 6 navigations**
+- Playwright skip calls (`test.skip` + `test.describe.skip`): **54 currently remain** in the `e2e/` corpus; target stays **0 in blocker-facing suites**
+- Broad Playwright error-suppression references: **52 spec files currently**
+- Playwright auth split: **29 `withAuth()` spec files** vs **11 `loginWithCredentials()` spec files** vs **2 `loginWithCredentialsStrict()` spec files**
+- Legacy route debt: direct `goto('/create/wizard')` now appears in only **1 spec file**, the dedicated redirect-compat suite
 - `waitForTimeout` debt: **1 runtime call remains** (`e2e/full-e2e-journey.spec.ts`, cursor animation helper)
-- Low-signal assertion debt: prior **69** count is now clearly conservative; a lightweight heuristic scan flags **115** candidates targeted for cleanup
+- Low-signal assertion debt: a lightweight heuristic scan flags **51** candidate matches across **24** spec files targeted for cleanup
 
 ---
 
-**Last Updated:** March 11, 2026 (reality-check refresh: latest green main-branch workflow set, fresh local build/unit baseline, and Playwright MVP blocker evidence re-verified against the current repo)
-**Next Review:** March 18, 2026
+**Last Updated:** March 12, 2026 (reality-check refresh: latest green main-branch workflow set, fresh local build/unit baseline, workflow wiring reviewed, and Playwright MVP blocker evidence re-verified against the current repo)
+**Next Review:** March 19, 2026
