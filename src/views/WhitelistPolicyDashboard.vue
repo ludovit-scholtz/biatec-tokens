@@ -49,7 +49,10 @@
         </div>
 
         <!-- Loading skeleton -->
-        <div v-if="isLoading" class="space-y-6 animate-pulse" aria-busy="true" aria-label="Loading policy">
+        <!-- Screen-reader announcement for loading state -->
+        <div v-if="isLoading" class="sr-only" role="status" aria-live="polite">Loading policy, please wait…</div>
+        <!-- Visual skeleton — aria-hidden: no meaningful content for AT (bg-white/10 skips axe contrast check) -->
+        <div v-if="isLoading" class="space-y-6 animate-pulse" aria-hidden="true">
           <div class="glass-effect rounded-xl p-6">
             <div class="h-5 bg-white/10 rounded w-1/3 mb-3"></div>
             <div class="h-4 bg-white/10 rounded w-full mb-2"></div>
@@ -128,7 +131,7 @@
               <div class="flex items-center gap-2 mb-3">
                 <i class="pi pi-check-circle text-green-400" aria-hidden="true"></i>
                 <h3 class="text-sm font-semibold text-green-400">Allowed Regions</h3>
-                <span class="ml-auto text-xs bg-green-900/40 text-green-300 px-2 py-0.5 rounded-full">
+                <span class="ml-auto text-xs bg-green-800 text-green-300 px-2 py-0.5 rounded-full">
                   {{ policy.allowedJurisdictions.length }}
                 </span>
               </div>
@@ -140,7 +143,7 @@
                 <span
                   v-for="j in policy.allowedJurisdictions"
                   :key="j.code"
-                  class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-green-900/40 text-green-300 border border-green-700/50"
+                  class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-green-800 text-green-200 border border-green-700"
                   :title="j.reason"
                 >
                   {{ j.name }}
@@ -153,7 +156,7 @@
               <div class="flex items-center gap-2 mb-3">
                 <i class="pi pi-exclamation-triangle text-amber-400" aria-hidden="true"></i>
                 <h3 class="text-sm font-semibold text-amber-400">Restricted Regions</h3>
-                <span class="ml-auto text-xs bg-amber-900/40 text-amber-300 px-2 py-0.5 rounded-full">
+                <span class="ml-auto text-xs bg-amber-800 text-amber-200 px-2 py-0.5 rounded-full">
                   {{ policy.restrictedJurisdictions.length }}
                 </span>
               </div>
@@ -165,7 +168,7 @@
                 <span
                   v-for="j in policy.restrictedJurisdictions"
                   :key="j.code"
-                  class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-900/40 text-amber-300 border border-amber-700/50"
+                  class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-800 text-amber-200 border border-amber-700"
                   :title="j.reason"
                 >
                   {{ j.name }}
@@ -178,7 +181,7 @@
               <div class="flex items-center gap-2 mb-3">
                 <i class="pi pi-ban text-red-400" aria-hidden="true"></i>
                 <h3 class="text-sm font-semibold text-red-400">Blocked Regions</h3>
-                <span class="ml-auto text-xs bg-red-900/40 text-red-300 px-2 py-0.5 rounded-full">
+                <span class="ml-auto text-xs bg-red-800 text-red-200 px-2 py-0.5 rounded-full">
                   {{ policy.blockedJurisdictions.length }}
                 </span>
               </div>
@@ -190,7 +193,7 @@
                 <span
                   v-for="j in policy.blockedJurisdictions"
                   :key="j.code"
-                  class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-red-900/40 text-red-300 border border-red-700/50"
+                  class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-red-800 text-red-200 border border-red-700"
                   :title="j.reason"
                 >
                   {{ j.name }}
@@ -221,8 +224,8 @@
                     <td class="py-3">
                       <span
                         :class="cat.allowed
-                          ? 'bg-green-900/40 text-green-300 border border-green-700/50'
-                          : 'bg-red-900/40 text-red-300 border border-red-700/50'"
+                          ? 'bg-green-800 text-green-200 border border-green-700'
+                          : 'bg-red-800 text-red-200 border border-red-700'"
                         class="px-2.5 py-0.5 rounded-full text-xs font-semibold"
                       >
                         {{ cat.allowed ? 'Allowed' : 'Denied' }}
@@ -250,7 +253,7 @@
               <li
                 v-for="gap in policy.gaps"
                 :key="gap.id"
-                :class="gap.severity === 'error' ? 'border-red-700/50 bg-red-900/20' : 'border-amber-700/50 bg-amber-900/20'"
+                :class="gap.severity === 'error' ? 'border-red-700 bg-red-800' : 'border-amber-700 bg-amber-800'"
                 class="flex items-start gap-3 border rounded-lg px-4 py-3 text-sm"
               >
                 <i
@@ -258,7 +261,7 @@
                   class="pi mt-0.5 flex-shrink-0"
                   aria-hidden="true"
                 ></i>
-                <span :class="gap.severity === 'error' ? 'text-red-300' : 'text-amber-300'">{{ gap.message }}</span>
+                <span :class="gap.severity === 'error' ? 'text-red-200' : 'text-amber-200'">{{ gap.message }}</span>
               </li>
             </ul>
           </div>
