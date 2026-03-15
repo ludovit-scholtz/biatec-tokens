@@ -12,7 +12,7 @@
 
 **Market Opportunity:** $50B+ RWA tokenization market by 2025, with MICA regulation creating demand for compliant platforms. Current competitors lack comprehensive compliance tooling.
 
-**Current Status:** March 14, 2026 reality check: frontend and enterprise-compliance proof advanced materially again with the March hardening stream through **#642** on `main`, including green procurement-grade accessibility evidence, fixed compliance-policy contrast behavior, and a regulator-ready compliance evidence workspace. The latest `Run Tests` (**23097982730**) and permissive `Playwright Tests` (**23097982717**) both passed on current head `15fdc2a`, so the earlier contrast blocker is no longer active. Business-owner MVP sign-off is still blocked because the protected strict-backend Playwright lane failed on the same commit before test execution (**23097982712**) with missing `SIGNOFF_API_BASE_URL` / `SIGNOFF_TEST_PASSWORD`, and the public Playwright status documents now lag the real suite shape and risk profile.
+**Current Status:** March 15, 2026 reality check: the March hardening stream through **#642** stayed green and **#650** added an enterprise approval queue / release sign-off cockpit on `main`, materially improving operator-facing governance for regulated launches. The latest `Run Tests` (**23108386475**) and permissive `Playwright Tests` (**23108386470**) both passed on current head `549b683`, and fresh local validation also passed (`npm run build`, `npm test`: **340** files, **11000** tests passing, **25** skipped). Business-owner MVP sign-off is still blocked because the protected strict-backend Playwright lane failed on the same commit before test execution (**23108386459**) with empty `API_BASE_URL` / `TEST_USER_PASSWORD`, which maps back to missing `SIGNOFF_API_BASE_URL` / `SIGNOFF_TEST_PASSWORD`; public Playwright status documents also still lag the real suite shape and risk profile.
 
 ---
 
@@ -44,7 +44,7 @@
 
 ---
 
-## Phase 2: Enterprise Compliance (Q2 2025) - 49% Complete 🟡
+## Phase 2: Enterprise Compliance (Q2 2025) - 52% Complete 🟡
 
 ### Advanced MICA Compliance - 58% Complete 🟡
 
@@ -54,13 +54,13 @@
 - **AML Screening** (5%): Automated sanctions checking - policy framing exists, but no live screening integration is implemented
 - **Compliance Reporting** (52%): Policy summaries, audit metadata, and operator-facing evidence improved further, but regulator-grade reporting remains partial
 
-### Enterprise Dashboard - 60% Complete 🟡
+### Enterprise Dashboard - 64% Complete 🟡
 
-- **Compliance Monitoring** (68%): Compliance policy dashboard, evidence views, and procurement-grade accessibility assertions now exist, though live operational data integration still needs work
-- **Risk Assessment** (40%): Policy health summaries and contradiction warnings improve operator risk awareness, but scoring remains partial
+- **Compliance Monitoring** (70%): Compliance policy dashboard, evidence views, procurement-grade accessibility assertions, and the new approval cockpit now give operators a stronger release-governance surface, though live operational data integration still needs work
+- **Risk Assessment** (45%): Policy health summaries, contradiction warnings, and cockpit stage/blocker rollups improve operator risk awareness, but scoring remains partial
 - **Audit Export** (60%): CSV/JSON compliance exports - Export functionality exists
-- **Multi-User Access** (50%): Team workspace, reviewer queues, approval-state UX, and accessibility proof are now shipped in the frontend, but backend roles/permissions are still immature
-- **Custom Reporting** (28%): Dashboard surfaces are expanding, but configurable reporting is still early-stage
+- **Multi-User Access** (58%): Team workspace, reviewer queues, approval-state UX, and the new staged enterprise approval cockpit are now shipped in the frontend, but backend roles/permissions are still immature
+- **Custom Reporting** (32%): Dashboard/reporting surfaces are expanding with approval-stage summaries and evidence links, but configurable reporting is still early-stage
 
 ### Regulatory Integration - 15% Complete 🔴
 
@@ -148,23 +148,23 @@
 
 ---
 
-## MVP Blockers Reality Check (March 14, 2026 - post PRs #632, #634, #636, #638, #640, and #642)
+## MVP Blockers Reality Check (March 15, 2026 - post PRs #632, #634, #636, #638, #640, #642, and #650)
 
 ### Evidence Reviewed
 
-- Recent hardening/productization work is merged to `main`: **#632**, **#634**, **#636**, **#638**, **#640**, and **#642** add release-grade screen-reader evidence, fix the compliance contrast regression and its flakiness, and ship a regulator-ready compliance evidence pack workspace.
-- Latest `Run Tests` on `main` is green on commit `15fdc2aec373b5fe04d8cb0de03c6b86d4483566` (`run 23097982730`, `success`).
-- Latest `Playwright Tests` on `main` is also green on the same commit (`run 23097982717`, `success`), which closes the prior compliance policy dashboard contrast blocker in the permissive lane.
+- Recent hardening/productization work is merged to `main`: **#632**, **#634**, **#636**, **#638**, **#640**, and **#642** add release-grade screen-reader evidence, fix the compliance contrast regression and its flakiness, and ship a regulator-ready compliance evidence pack workspace; **#650** adds an enterprise approval queue / release sign-off cockpit that turns readiness evidence into staged reviewer workflows.
+- Latest `Run Tests` on `main` is green on commit `549b683041d3803eaa9fc75555f3f3e6fd821190` (`run 23108386475`, `success`).
+- Latest `Playwright Tests` on `main` is also green on the same commit (`run 23108386470`, `success`), so the permissive lane remains healthy after the approval-cockpit merge.
 - Issue **#617** (mobile-first app-shell parity and keyboard-only accessibility proof) remains closed by PR **#618**, and `e2e/mobile-first-shell-parity.spec.ts` still provides shell-level proof for phone-sized navigation, Escape-key focus restoration, route live-region announcements, keyboard traversal, and wallet-free navigation.
 - Screen-reader review evidence now exists in `docs/accessibility/SCREEN_READER_REVIEW_ARTIFACT.md`, `docs/accessibility/SCREEN_READER_RELEASE_EVIDENCE.md`, `docs/accessibility/SCREEN_READER_REVIEW_CHECKLIST.md`, and `e2e/screen-reader-review-evidence.spec.ts`, so the former manual-evidence gap is closed.
 - The protected workflow `.github/workflows/strict-signoff.yml` exists, triggers on push to `main` for sign-off-critical files plus `workflow_dispatch`, sets `BIATEC_STRICT_BACKEND=true`, and fails fast when required secrets are missing.
-- The latest strict-signoff workflow run is still a prerequisite failure on current head (`run 23097982712` on commit `15fdc2aec373b5fe04d8cb0de03c6b86d4483566`); it stops before the Playwright suite starts because `API_BASE_URL` and `TEST_USER_PASSWORD` are empty, which traces back to missing `SIGNOFF_API_BASE_URL` and `SIGNOFF_TEST_PASSWORD` secrets. That means the release gate is wired, but still not operationally usable as enterprise sign-off evidence.
+- The latest strict-signoff workflow run is still a prerequisite failure on current head (`run 23108386459` on commit `549b683041d3803eaa9fc75555f3f3e6fd821190`); it stops before the Playwright suite starts because `API_BASE_URL` and `TEST_USER_PASSWORD` are empty, which traces back to missing `SIGNOFF_API_BASE_URL` and `SIGNOFF_TEST_PASSWORD` secrets. That means the release gate is wired, but still not operationally usable as enterprise sign-off evidence.
 - `e2e/mvp-backend-signoff.spec.ts` remains genuinely fail-closed for the canonical blocker path: missing bearer token, unreachable `/initiate`, missing `deploymentId`, unreachable `/status`, missing terminal state within the 60s poll window, missing `assetId` / `userGuidance`, and unreachable `/validate` all hard-fail with `[STRICT SIGN-OFF FAILURE]`.
 - `e2e/compliance-setup-workspace.spec.ts` no longer carries the old CI-only blocker narrative; the suite now uses draft pre-seeding to prove deeper multi-step workspace states within CI budgets, and the current permissive lane is green on `main`.
 - `e2e/accessibility-enterprise-journeys.spec.ts`, `e2e/procurement-accessibility-evidence.spec.ts`, and the newer screen-reader evidence work now keep procurement-grade axe WCAG 2.1 AA coverage green in the permissive lane for Home, sign-in, Guided Launch, Compliance Launch Console, Compliance policy dashboard, Compliance Setup Workspace, whitelist management, and Team Workspace.
 - `e2e/helpers/auth.ts` still confirms the default corpus is **not** real-backend by default: `loginWithCredentials()` remains permissive and falls back to `withAuth()` localStorage seeding when the backend is unavailable, while only `loginWithCredentialsStrict()` is fail-closed.
 - `.github/workflows/playwright.yml` remains the permissive developer-feedback lane: it runs `npm run test:e2e` with `CI=true` only and does **not** export live-backend variables, which is acceptable only because the strict lane now exists separately.
-- The live suite shape has moved materially since the last public documentation refresh: the repo now contains **70** Playwright spec files, **43** `test.skip()` / `test.describe.skip()` calls, **41** spec files still using `withAuth()`, **12** using `loginWithCredentials()`, **2** using `loginWithCredentialsStrict()`, and **10** runtime `waitForTimeout()` calls across **8** spec files.
+- The live suite shape has moved materially since the last public documentation refresh: the repo now contains **73** Playwright spec files, **43** `test.skip()` / `test.describe.skip()` calls, **44** spec files still using `withAuth()`, **12** using `loginWithCredentials()`, **2** using `loginWithCredentialsStrict()`, **245** `suppressBrowserErrors()` references across **62** spec files, and **59** `waitForTimeout()` references across **40** spec files.
 - `docs/testing/PLAYWRIGHT_STATUS.md` and `docs/implementations/MVP_SIGNOFF_READINESS_BLOCKER_MAPPING.md` are now stale on suite size, skip counts, strict-auth coverage, and remaining-open-items framing, so stakeholder-facing proof should prioritize the latest workflow evidence until those docs are refreshed.
 
 ### Blocker Validation Status
@@ -174,7 +174,7 @@
 - ✅ **Shell accessibility / mobile parity blocker is closed in code and CI for the shared shell:** PR **#618** closes Issue **#617**, and `e2e/mobile-first-shell-parity.spec.ts` proves phone-sized menu parity, Escape-key focus restoration, route live-region behavior, keyboard traversal, and wallet-free shell semantics.
 - ✅ **Legacy `/create/wizard` blocker is contained on `main`:** direct `goto('/create/wizard')` usage is isolated to `e2e/wizard-redirect-compat.spec.ts`, which is the correct redirect-compat location.
 - ✅ **Accessibility-evidence blocker is closed on current `main`:** automated axe/contrast verification is green on `main`, the compliance policy dashboard contrast regression is fixed, and explicit screen-reader review artifacts now exist for the highest-value enterprise journeys.
-- 🟡 **Mock-environment dependency blocker remains open outside the canonical gate:** the strict lane exists, but the broader corpus still leans heavily on permissive helpers (`withAuth()` in **41** files, `loginWithCredentials()` in **12**, `loginWithCredentialsStrict()` in **2**) and broad suppression patterns, so much of the ordinary E2E evidence is still more permissive than production reality.
+- 🟡 **Mock-environment dependency blocker remains open outside the canonical gate:** the strict lane exists, but the broader corpus still leans heavily on permissive helpers (`withAuth()` in **44** files, `loginWithCredentials()` in **12**, `loginWithCredentialsStrict()` in **2**) plus **245** `suppressBrowserErrors()` references across **62** spec files, so much of the ordinary E2E evidence is still more permissive than production reality.
 - ✅ **CI-depth / pacing debt is materially reduced for compliance setup and enterprise evidence:** the newer accessibility and evidence-pack suites are green on `main`, and the roadmap can now cite deeper compliance workspace proof without relying on the older skipped-flow story.
 - 🟡 **Documentation honesty is materially better in the roadmap, but cross-doc cleanup still remains:** the roadmap can now cite strict release-gate posture, shell-parity proof, green accessibility automation, and screen-reader evidence without overstating business-owner sign-off. The remaining documentation problem is stale summary language elsewhere and outdated suite-shape summaries.
 
@@ -189,7 +189,7 @@ Current Playwright coverage satisfies the important **frontend/code-level** MVP 
 1. Configure `SIGNOFF_API_BASE_URL` and `SIGNOFF_TEST_PASSWORD` (and confirm `SIGNOFF_TEST_EMAIL`) so the protected strict workflow can actually run against a live backend and produce one passing artifact-backed sign-off result.
 2. Make the `Strict Backend Sign-off Gate` a required release / environment promotion status, not just a workflow that exists on `main`.
 3. Keep `e2e/mvp-backend-signoff.spec.ts` as the canonical blocker suite and do **not** rely on softer supporting suites as release proof.
-4. Refresh `docs/testing/PLAYWRIGHT_STATUS.md` and `docs/implementations/MVP_SIGNOFF_READINESS_BLOCKER_MAPPING.md` so public status claims match the real suite shape (**70** specs, **43** skip calls, **2** strict-auth spec files, **10** `waitForTimeout()` calls).
+4. Refresh `docs/testing/PLAYWRIGHT_STATUS.md` and `docs/implementations/MVP_SIGNOFF_READINESS_BLOCKER_MAPPING.md` so public status claims match the real suite shape (**73** specs, **43** skip calls, **44** `withAuth()` files, **2** strict-auth spec files, **245** `suppressBrowserErrors()` references, **59** `waitForTimeout()` references).
 5. Preserve the now-green automated accessibility evidence for Home, Guided Launch, Compliance, Compliance Setup Workspace, whitelist management, Team Workspace, and shell-adjacent patterns so accessibility claims remain procurement-grade evidence instead of a one-off push artifact.
 6. Keep screen-reader review artifacts current whenever a covered journey changes; the evidence now exists, but it must stay release-cycle current.
 7. Continue shrinking broad console/page-error suppression and seeded-auth usage across blocker-adjacent suites so ordinary CI evidence becomes materially closer to production reality.
@@ -207,7 +207,7 @@ Current Playwright coverage satisfies the important **frontend/code-level** MVP 
 ### Roadmap Adjustment
 
 - **MVP Foundation confidence should move up to 72%**: wallet-free auth/routing, canonical route control, MVP stabilization, shell-parity proof, green accessibility automation, and explicit screen-reader evidence are now all present on `main`. Business-owner sign-off is still blocked only because the strict workflow is not yet configured for a real backend.
-- **Enterprise compliance maturity is improving faster than the old roadmap reflected**: whitelist policy authoring, policy evidence review, team approval UX, compliance setup workspace depth, screen-reader artifacts, and the new compliance evidence pack are now visible product strengths, so the roadmap should treat them as in-progress monetizable capabilities rather than as barely-started placeholders.
+- **Enterprise compliance maturity is improving faster than the old roadmap reflected**: whitelist policy authoring, policy evidence review, team approval UX, compliance setup workspace depth, screen-reader artifacts, the compliance evidence pack, and the new approval cockpit are now visible product strengths, so the roadmap should treat them as in-progress monetizable capabilities rather than as barely-started placeholders.
 - **Accessibility risk moved from blocker to maintainable trust asset:** the navigation/keyboard blocker and contrast blocker are no longer the main gaps. The remaining priority is sustaining that evidence and connecting it to the final strict backend release gate.
 
 ---
@@ -448,13 +448,13 @@ Based on comprehensive product review including source code analysis, E2E test c
 
 **Code Quality:**
 - Playwright skip calls (`test.skip` + `test.describe.skip`): **43 currently remain** in the `e2e/` corpus; target stays **0 in blocker-facing suites**
-- Broad Playwright error-suppression references: **59 files currently**
-- Playwright auth split: **41 files with `withAuth()`** vs **12 files with `loginWithCredentials()`** vs **2 files with `loginWithCredentialsStrict()`**
+- Broad Playwright error-suppression references: **245 references across 62 spec files currently**
+- Playwright auth split: **44 files with `withAuth()`** vs **12 files with `loginWithCredentials()`** vs **2 files with `loginWithCredentialsStrict()`**
 - Legacy route debt: direct `goto('/create/wizard')` now appears in only **1 spec file**, the dedicated redirect-compat suite
-- `waitForTimeout` debt: **10 runtime calls remain across 8 spec files**
+- `waitForTimeout` debt: **59 references remain across 40 spec files**, so timeout cleanup should stay focused on blocker-adjacent suites first
 - Documentation drift: `docs/testing/PLAYWRIGHT_STATUS.md` and `docs/implementations/MVP_SIGNOFF_READINESS_BLOCKER_MAPPING.md` still need refresh before their aggregate metrics should be reused in stakeholder communication
 
 ---
 
-**Last Updated:** March 14, 2026 (post-merge reality check for current head `15fdc2a`; `Run Tests` and permissive `Playwright Tests` are green on `main`, screen-reader evidence is now in place, and the remaining business-owner blocker is the unconfigured strict-backend sign-off lane plus stale public testing summaries)
-**Next Review:** March 21, 2026
+**Last Updated:** March 15, 2026 (post-merge reality check for current head `549b683`; `Run Tests` and permissive `Playwright Tests` are green on `main`, the enterprise approval cockpit is now live, local `npm run build` / `npm test` also passed, and the remaining business-owner blocker is the unconfigured strict-backend sign-off lane plus stale public testing summaries)
+**Next Review:** March 22, 2026
