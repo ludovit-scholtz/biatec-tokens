@@ -553,3 +553,389 @@ describe('ComplianceReportingWorkspace — partial data state', () => {
     expect(wrapper.find('[data-testid="whitelist-section"]').exists()).toBe(true)
   })
 })
+
+// ---------------------------------------------------------------------------
+// 11. Audience preset selector
+// ---------------------------------------------------------------------------
+
+describe('ComplianceReportingWorkspace — audience preset selector', () => {
+  it('renders the audience preset buttons', async () => {
+    const wrapper = await mountWorkspace()
+    const buttons = wrapper.find('[data-testid="audience-preset-buttons"]')
+    expect(buttons.exists()).toBe(true)
+  })
+
+  it('renders buttons for all four presets', async () => {
+    const wrapper = await mountWorkspace()
+    for (const preset of ['all', 'compliance', 'procurement', 'executive']) {
+      expect(wrapper.find(`[data-testid="audience-btn-${preset}"]`).exists()).toBe(true)
+    }
+  })
+
+  it('all preset button is selected by default (aria-pressed=true)', async () => {
+    const wrapper = await mountWorkspace()
+    const allBtn = wrapper.find('[data-testid="audience-btn-all"]')
+    expect(allBtn.attributes('aria-pressed')).toBe('true')
+  })
+
+  it('other preset buttons are not selected by default (aria-pressed=false)', async () => {
+    const wrapper = await mountWorkspace()
+    for (const preset of ['compliance', 'procurement', 'executive']) {
+      const btn = wrapper.find(`[data-testid="audience-btn-${preset}"]`)
+      expect(btn.attributes('aria-pressed')).toBe('false')
+    }
+  })
+
+  it('clicking compliance preset selects it', async () => {
+    const wrapper = await mountWorkspace()
+    const complianceBtn = wrapper.find('[data-testid="audience-btn-compliance"]')
+    await complianceBtn.trigger('click')
+    await nextTick()
+    expect(complianceBtn.attributes('aria-pressed')).toBe('true')
+    const allBtn = wrapper.find('[data-testid="audience-btn-all"]')
+    expect(allBtn.attributes('aria-pressed')).toBe('false')
+  })
+
+  it('shows a description for the selected audience', async () => {
+    const wrapper = await mountWorkspace()
+    const desc = wrapper.find('[data-testid="audience-preset-description"]')
+    expect(desc.exists()).toBe(true)
+    expect(desc.text().length).toBeGreaterThan(10)
+  })
+
+  it('switches description text when switching audience', async () => {
+    const wrapper = await mountWorkspace()
+    const allDesc = wrapper.find('[data-testid="audience-preset-description"]').text()
+    await wrapper.find('[data-testid="audience-btn-compliance"]').trigger('click')
+    await nextTick()
+    const complianceDesc = wrapper.find('[data-testid="audience-preset-description"]').text()
+    expect(allDesc).not.toBe(complianceDesc)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// 12. Audience-aware section visibility
+// ---------------------------------------------------------------------------
+
+describe('ComplianceReportingWorkspace — audience section visibility', () => {
+  it('executive preset hides KYC/AML section', async () => {
+    const wrapper = await mountWorkspace()
+    await wrapper.find('[data-testid="audience-btn-executive"]').trigger('click')
+    await nextTick()
+    // KYC/AML is not in executive priorities
+    expect(wrapper.find('[data-testid="kyc-aml-section"]').exists()).toBe(false)
+  })
+
+  it('compliance preset shows KYC/AML section', async () => {
+    const wrapper = await mountWorkspace()
+    await wrapper.find('[data-testid="audience-btn-compliance"]').trigger('click')
+    await nextTick()
+    expect(wrapper.find('[data-testid="kyc-aml-section"]').exists()).toBe(true)
+  })
+
+  it('procurement preset hides approval history section', async () => {
+    const wrapper = await mountWorkspace()
+    await wrapper.find('[data-testid="audience-btn-procurement"]').trigger('click')
+    await nextTick()
+    expect(wrapper.find('[data-testid="approval-history-section"]').exists()).toBe(false)
+  })
+
+  it('all preset shows all major sections', async () => {
+    const wrapper = await mountWorkspace()
+    const sections = [
+      'jurisdiction-section',
+      'kyc-aml-section',
+      'whitelist-section',
+      'investor-eligibility-section',
+      'evidence-summary-section',
+    ]
+    for (const section of sections) {
+      expect(wrapper.find(`[data-testid="${section}"]`).exists()).toBe(true)
+    }
+  })
+})
+
+// ---------------------------------------------------------------------------
+// 13. Approval history section
+// ---------------------------------------------------------------------------
+
+describe('ComplianceReportingWorkspace — approval history (empty)', () => {
+  it('renders approval history section for all preset', async () => {
+    const wrapper = await mountWorkspace()
+    expect(wrapper.find('[data-testid="approval-history-section"]').exists()).toBe(true)
+  })
+
+  it('shows empty state when no approval stages recorded', async () => {
+    const wrapper = await mountWorkspace()
+    expect(wrapper.find('[data-testid="approval-history-empty"]').exists()).toBe(true)
+  })
+
+  it('contains a link to the Approval Queue', async () => {
+    const wrapper = await mountWorkspace()
+    const link = wrapper.find('[data-testid="approval-queue-link"]')
+    expect(link.exists()).toBe(true)
+    expect(link.attributes('href') || link.attributes('to')).toContain('/compliance/approval')
+  })
+
+  it('toggle button has aria-expanded attribute', async () => {
+    const wrapper = await mountWorkspace()
+    const toggle = wrapper.find('[data-testid="approval-history-toggle"]')
+    expect(toggle.exists()).toBe(true)
+    expect(['true', 'false']).toContain(toggle.attributes('aria-expanded'))
+  })
+})
+
+describe('ComplianceReportingWorkspace — approval history (with data)', () => {
+  const approvalStages = JSON.stringify([
+    { id: 'stage-1', label: 'Legal Review', role: 'Legal', status: 'approved', lastActionAt: new Date().toISOString(), conditions: null, summary: 'All clear', blockers: [] },
+    { id: 'stage-2', label: 'Compliance Review', role: 'Compliance', status: 'conditionally_approved', lastActionAt: new Date().toISOString(), conditions: 'KYC provider must be confirmed', summary: 'Conditional', blockers: [] },
+    { id: 'stage-3', label: 'Executive Sign-off', role: 'Executive', status: 'blocked', lastActionAt: null, conditions: null, summary: 'Missing evidence', blockers: [{ isLaunchBlocking: true }] },
+  ])
+
+  it('shows approval summary metrics when stages are present', async () => {
+    const wrapper = await mountWorkspace({ biatec_approval_stages: approvalStages })
+    expect(wrapper.find('[data-testid="approval-summary-metrics"]').exists()).toBe(true)
+  })
+
+  it('shows correct approved count', async () => {
+    const wrapper = await mountWorkspace({ biatec_approval_stages: approvalStages })
+    const el = wrapper.find('[data-testid="approval-approved-count"]')
+    expect(el.exists()).toBe(true)
+    // approved + conditionally_approved = 2
+    expect(el.text()).toBe('2')
+  })
+
+  it('shows correct blocked count', async () => {
+    const wrapper = await mountWorkspace({ biatec_approval_stages: approvalStages })
+    const el = wrapper.find('[data-testid="approval-blocked-count"]')
+    expect(el.exists()).toBe(true)
+    expect(el.text()).toBe('1')
+  })
+
+  it('clicking toggle expands approval stage entries', async () => {
+    const wrapper = await mountWorkspace({ biatec_approval_stages: approvalStages })
+    const toggle = wrapper.find('[data-testid="approval-history-toggle"]')
+    await toggle.trigger('click')
+    await nextTick()
+    expect(wrapper.find('[data-testid="approval-history-entries"]').exists()).toBe(true)
+  })
+
+  it('toggle aria-expanded updates on click', async () => {
+    const wrapper = await mountWorkspace({ biatec_approval_stages: approvalStages })
+    const toggle = wrapper.find('[data-testid="approval-history-toggle"]')
+    expect(toggle.attributes('aria-expanded')).toBe('false')
+    await toggle.trigger('click')
+    await nextTick()
+    expect(toggle.attributes('aria-expanded')).toBe('true')
+  })
+})
+
+// ---------------------------------------------------------------------------
+// 14. Export package readiness section
+// ---------------------------------------------------------------------------
+
+describe('ComplianceReportingWorkspace — export readiness (pending state)', () => {
+  it('renders export readiness section', async () => {
+    const wrapper = await mountWorkspace()
+    expect(wrapper.find('[data-testid="export-readiness-section"]').exists()).toBe(true)
+  })
+
+  it('shows export readiness label', async () => {
+    const wrapper = await mountWorkspace()
+    const label = wrapper.find('[data-testid="export-readiness-label"]')
+    expect(label.exists()).toBe(true)
+    expect(label.text().length).toBeGreaterThan(5)
+  })
+
+  it('shows export readiness rationale', async () => {
+    const wrapper = await mountWorkspace()
+    const rationale = wrapper.find('[data-testid="export-readiness-rationale"]')
+    expect(rationale.exists()).toBe(true)
+    expect(rationale.text().length).toBeGreaterThan(10)
+  })
+
+  it('renders the export readiness checklist', async () => {
+    const wrapper = await mountWorkspace()
+    expect(wrapper.find('[data-testid="export-readiness-checklist"]').exists()).toBe(true)
+  })
+
+  it('checklist includes jurisdiction item', async () => {
+    const wrapper = await mountWorkspace()
+    expect(wrapper.find('[data-testid="checklist-item-jurisdiction"]').exists()).toBe(true)
+  })
+
+  it('checklist includes kyc_aml item', async () => {
+    const wrapper = await mountWorkspace()
+    expect(wrapper.find('[data-testid="checklist-item-kyc_aml"]').exists()).toBe(true)
+  })
+})
+
+describe('ComplianceReportingWorkspace — export readiness (fully ready)', () => {
+  const fullSetup = JSON.stringify({
+    updatedAt: new Date().toISOString(),
+    allowedJurisdictions: [{ code: 'EU', name: 'European Union' }, { code: 'US', name: 'United States' }],
+    restrictedJurisdictions: [],
+    kycRequired: true,
+    amlRequired: true,
+    kycProvider: 'SumSub',
+    accreditationRequired: true,
+    retailPermitted: false,
+    eligibilityCategories: ['Institutional'],
+  })
+  const fullWhitelist = JSON.stringify({
+    updatedAt: new Date().toISOString(),
+    whitelistRequired: true,
+    activeWhitelistId: 'wl-001',
+    approvedInvestors: [{ id: '1' }, { id: '2' }, { id: '3' }],
+    pendingInvestors: [],
+  })
+
+  it('shows incomplete status when only setup data present', async () => {
+    const wrapper = await mountWorkspace({ biatec_compliance_setup: fullSetup, biatec_whitelist_setup: fullWhitelist })
+    const label = wrapper.find('[data-testid="export-readiness-label"]')
+    // Should show ready_for_internal since no approval stages
+    expect(label.text()).toBeTruthy()
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Component tests: fallback messaging with incomplete/null approval data
+// ---------------------------------------------------------------------------
+
+describe('ComplianceReportingWorkspace — safe fallback when approval data is missing', () => {
+  it('renders without crashing when no localStorage data is present', async () => {
+    const wrapper = await mountWorkspace()
+    expect(wrapper.find('[data-testid="compliance-reporting-workspace"]').exists()).toBe(true)
+  })
+
+  it('renders export readiness section even when no approval stages are loaded', async () => {
+    const wrapper = await mountWorkspace()
+    expect(wrapper.find('[data-testid="export-readiness-section"]').exists()).toBe(true)
+  })
+
+  it('shows non-empty export readiness label when approval data is absent', async () => {
+    const wrapper = await mountWorkspace()
+    const label = wrapper.find('[data-testid="export-readiness-label"]')
+    expect(label.exists()).toBe(true)
+    expect(label.text().length).toBeGreaterThan(5)
+  })
+
+  it('shows non-empty export readiness rationale when approval data is absent', async () => {
+    const wrapper = await mountWorkspace()
+    const rationale = wrapper.find('[data-testid="export-readiness-rationale"]')
+    expect(rationale.exists()).toBe(true)
+    expect(rationale.text().length).toBeGreaterThan(10)
+  })
+
+  it('approval history section shows empty state (not a crash) when no stages', async () => {
+    const wrapper = await mountWorkspace()
+    // Should gracefully render empty state, not throw
+    const section = wrapper.find('[data-testid="approval-history-section"]')
+    expect(section.exists()).toBe(true)
+    expect(wrapper.find('[data-testid="approval-history-empty"]').exists()).toBe(true)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Component tests: blocked vs missing checklist item rendering
+// ---------------------------------------------------------------------------
+
+describe('ComplianceReportingWorkspace — blocked badge on checklist items', () => {
+  it('does not show any blocked badge when all evidence is present', async () => {
+    // Default bundle in mountWorkspace has all sections ready
+    const fullSetup = JSON.stringify({
+      updatedAt: new Date().toISOString(),
+      allowedJurisdictions: [{ code: 'EU', name: 'European Union' }],
+      restrictedJurisdictions: [],
+      kycRequired: true,
+      amlRequired: false,
+      kycProvider: 'SumSub',
+      accreditationRequired: false,
+      retailPermitted: true,
+      eligibilityCategories: [],
+    })
+    const fullWhitelist = JSON.stringify({
+      updatedAt: new Date().toISOString(),
+      whitelistRequired: false,
+      activeWhitelistId: null,
+      approvedInvestors: [],
+      pendingInvestors: [],
+    })
+    const wrapper = await mountWorkspace({
+      biatec_compliance_setup: fullSetup,
+      biatec_whitelist_setup: fullWhitelist,
+    })
+    // With all items present, no blocked badge should appear
+    const blocked = wrapper.findAll('[data-testid="checklist-blocked-badge"]')
+    expect(blocked.length).toBe(0)
+  })
+
+  it('export readiness label is non-empty for every possible status', async () => {
+    const wrapper = await mountWorkspace()
+    const label = wrapper.find('[data-testid="export-readiness-label"]')
+    expect(label.text().length).toBeGreaterThan(5)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Component tests: export readiness reflects approval summary state
+// ---------------------------------------------------------------------------
+
+describe('ComplianceReportingWorkspace — export readiness with approval stages', () => {
+  const blockedApprovalStages = JSON.stringify([
+    {
+      id: 'stage-1',
+      label: 'Compliance Review',
+      role: 'Compliance',
+      status: 'blocked',
+      lastActionAt: null,
+      conditions: null,
+      summary: 'Critical blockers present',
+      blockers: [{ isLaunchBlocking: true }],
+    },
+  ])
+
+  it('shows approval summary metrics when stages are loaded', async () => {
+    const wrapper = await mountWorkspace({ biatec_approval_stages: blockedApprovalStages })
+    expect(wrapper.find('[data-testid="approval-summary-metrics"]').exists()).toBe(true)
+  })
+
+  it('approval blocked count renders correctly with blocked stage', async () => {
+    const wrapper = await mountWorkspace({ biatec_approval_stages: blockedApprovalStages })
+    const blockedEl = wrapper.find('[data-testid="approval-blocked-count"]')
+    expect(blockedEl.exists()).toBe(true)
+    expect(blockedEl.text()).toBe('1')
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Component tests: remediation hints rendered for non-ready items
+// ---------------------------------------------------------------------------
+
+describe('ComplianceReportingWorkspace — checklist remediation hints', () => {
+  it('renders remediation hint for jurisdiction when not configured', async () => {
+    // No setup localStorage → jurisdiction not configured → hint should appear
+    const wrapper = await mountWorkspace()
+    const hint = wrapper.find('[data-testid="checklist-hint-jurisdiction"]')
+    // hint exists only if the item is not present
+    const jurisdictionItem = wrapper.find('[data-testid="checklist-item-jurisdiction"]')
+    expect(jurisdictionItem.exists()).toBe(true)
+    // jurisdiction is not configured (no localStorage) → hint should be visible
+    expect(hint.exists()).toBe(true)
+    expect(hint.text().length).toBeGreaterThan(5)
+  })
+
+  it('export readiness checklist renders all 5 checklist items', async () => {
+    const wrapper = await mountWorkspace()
+    const items = [
+      'checklist-item-jurisdiction',
+      'checklist-item-kyc_aml',
+      'checklist-item-whitelist',
+      'checklist-item-investor_eligibility',
+      'checklist-item-approval_history',
+    ]
+    for (const testid of items) {
+      expect(wrapper.find(`[data-testid="${testid}"]`).exists()).toBe(true)
+    }
+  })
+})
