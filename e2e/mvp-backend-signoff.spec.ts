@@ -82,31 +82,17 @@
 import { test, expect } from '@playwright/test'
 import {
   loginWithCredentialsStrict,
-  isStrictBackendMode,
   getBackendBaseUrl,
   clearAuthScript,
   getNavText,
 } from './helpers/auth'
+import { requireStrictBackend } from '../src/utils/backendSignoffConfig'
 
 // ---------------------------------------------------------------------------
-// Guard: all tests in this file require BIATEC_STRICT_BACKEND=true
+// Guard: all tests in this file require BIATEC_STRICT_BACKEND=true AND a real
+// non-localhost API_BASE_URL. The guard is now exported from backendSignoffConfig
+// for testability — this import replaces the previous inline private function.
 // ---------------------------------------------------------------------------
-
-/**
- * Skip guard used by every test in this spec.
- * When `BIATEC_STRICT_BACKEND` is not set, the tests skip with a documented message.
- * When it IS set, tests run against a real backend and fail on any fallback.
- */
-function requireStrictBackend() {
-  if (!isStrictBackendMode()) {
-    return (
-      'Strict backend sign-off lane requires BIATEC_STRICT_BACKEND=true. ' +
-      'Set API_BASE_URL and BIATEC_STRICT_BACKEND=true to run against a live backend. ' +
-      'This skip is intentional: the test must fail (not silently pass) if run without a real backend.'
-    )
-  }
-  return undefined
-}
 
 // ===========================================================================
 // AC #1 + AC #2: Strict backend authentication
