@@ -3899,6 +3899,70 @@ async function mountWorkspace() {
 - ❌ Create a new view component without a matching `.test.ts` file in the same commit (see section 7m)
 - ❌ Write component tests for loading-state views without `vi.useFakeTimers()` to advance the loading timeout
 
+---
+
+### 7ab. `vi.runAllTimersAsync()` MUST NOT Be Used in Tests With `vi.useFakeTimers()` at Module Level (MANDATORY) 🆕
+
+**🚨 CRITICAL RECURRING VIOLATION - March 2026 (PR #686 — 14 sub-PR retry loops) 🚨**
+
+**Violation**: `vi.runAllTimersAsync()` was used in `TokenCreator.test.ts` (line 1087) inside the test "should track wizard completion analytics". With Vitest 4.1.0 + happy-dom, when `vi.useFakeTimers()` is called at **module level** (outside `beforeEach`), `vi.runAllTimersAsync()` inadvertently fires the test-timeout fake timer. This caused:
+1. The test calling `vi.runAllTimersAsync()` to fail with "Test timed out in 10000ms"
+2. Timer state corruption for subsequent tests (every 3rd test fails)
+3. 5 total test failures cascading from this single `vi.runAllTimersAsync()` call
+4. 14 separate sub-PR retry loops by previous Copilot agents, each creating a fresh branch without successfully fixing the root cause
+
+**Root Cause**:
+- `vi.useFakeTimers()` at **module level** (line 224 of `TokenCreator.test.ts`) replaces ALL timers globally, including Vitest's internal test-timeout timer
+- In Vitest 4.1.0, `getSafeTimers()` returns FAKE timers when called in this context
+- `vi.runAllTimersAsync()` fires ALL pending timers including the test-timeout timer → test times out immediately
+- `vi.advanceTimersByTimeAsync(N)` only advances by N milliseconds → does NOT fire the test-timeout timer
+
+**Correct Fix** (one-line change):
+```typescript
+// ❌ WRONG — fires test-timeout timer in Vitest 4.1.0 + module-level vi.useFakeTimers()
+const deploymentPromise = wrapper!.vm.executeDeployment();
+await vi.runAllTimersAsync();
+await deploymentPromise;
+
+// ✅ CORRECT — advance by exact sum of setTimeout delays in the code path
+const deploymentPromise = wrapper!.vm.executeDeployment();
+await vi.advanceTimersByTimeAsync(5000); // 500 (preparing) + 1000 (signing) + 1500 (confirming) + 2000 (success)
+await deploymentPromise;
+```
+
+**How to Calculate N for `vi.advanceTimersByTimeAsync(N)`**:
+1. Find all `setTimeout` calls in the code path under test
+2. Sum all their delay values
+3. Use that sum as N
+
+**Example — TokenCreator `executeDeployment()` success path**:
+- `setTimeout(... 500)` — "preparing transaction"
+- `setTimeout(... 1000)` — "signing transaction"
+- `setTimeout(... 1500)` — "confirming on network"
+- `setTimeout(... 2000)` — "success display"
+- **Total N = 5000ms**
+
+**Pre-Commit Mandatory Check** (before committing ANY test that uses fake timers):
+```bash
+# Find all vi.runAllTimersAsync() calls in test files:
+grep -rn "vi\.runAllTimersAsync\(\)" src/ --include="*.test.ts" --include="*.spec.ts"
+# Any result means RISK OF FAILURE in Vitest 4.1.0 with module-level useFakeTimers()
+# Replace each with: await vi.advanceTimersByTimeAsync(N) where N = sum of setTimeout delays
+```
+
+**Why This Kept Recurring Across 14 Sub-PRs**:
+- Each sub-PR agent started fresh without seeing the actual test failure output
+- The stored memories documented the fix, but agents failed to apply it because they were looking at different areas of the codebase
+- The `action_required` CI status (not `failed`) meant no job logs were available — agents couldn't directly read the failure
+- **Prevention**: When CI shows `action_required` on a Dependabot PR, ALWAYS run tests locally first with `npm test` before investigating CI logs
+
+**Never Again**:
+- ❌ Use `vi.runAllTimersAsync()` in any test file that has `vi.useFakeTimers()` at module scope
+- ❌ Create a new sub-PR for a Dependabot bump without first running `npm test` locally
+- ❌ Assume "no failed jobs" in CI means tests are passing — `action_required` means the run needs approval, not that tests passed
+- ✅ Use `vi.advanceTimersByTimeAsync(N)` where N = sum of all setTimeout delays in the code path
+- ✅ Run `grep -rn "vi\.runAllTimersAsync" src/` to find all risky usages before bumping Vitest versions
+
 ## Additional Notes
 
 - The application uses Vue Router for navigation
