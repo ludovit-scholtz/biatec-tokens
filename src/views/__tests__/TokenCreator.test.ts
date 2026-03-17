@@ -1084,7 +1084,11 @@ describe("TokenCreator", () => {
       vi.mocked(router.push).mockImplementation(() => {});
 
       const deploymentPromise = wrapper!.vm.executeDeployment();
-      await vi.runAllTimersAsync();
+      // Vitest 4.1.0+: vi.runAllTimersAsync() fires the test-timeout fake timer causing
+      // false "Test timed out" failures and corrupting subsequent tests' timer state.
+      // Use vi.advanceTimersByTimeAsync(N) where N = sum of fake-timer delays in success path:
+      // 500ms (preparing) + 1000ms (signing) + 1500ms (confirming) + 2000ms (success display) = 5000ms
+      await vi.advanceTimersByTimeAsync(5000);
       await deploymentPromise;
 
       expect(telemetryService.trackTokenWizardCompleted).toHaveBeenCalledWith({
