@@ -3899,6 +3899,60 @@ async function mountWorkspace() {
 - ❌ Create a new view component without a matching `.test.ts` file in the same commit (see section 7m)
 - ❌ Write component tests for loading-state views without `vi.useFakeTimers()` to advance the loading timeout
 
+### 7ab. `vi.runAllTimersAsync()` Must NEVER Be Used in Tests With Module-Level `vi.useFakeTimers()` (MANDATORY) 🆕
+
+**🚨 CRITICAL VIOLATION — Vitest 4.1.0 + happy-dom (March 2026) 🚨**
+
+**Violation**: `TokenCreator.test.ts` had `vi.useFakeTimers()` called at module level (line 224) and used `vi.runAllTimersAsync()` in the "should track wizard completion analytics" test. This caused 5 tests to fail with "Test timed out in 10000ms" across the test file.
+
+**Root Cause**: In Vitest 4.1.0 + happy-dom, `vi.runAllTimersAsync()` fires **the test-timeout fake timer** when `vi.useFakeTimers()` is called at module level. This causes:
+1. The test containing `vi.runAllTimersAsync()` to immediately report "Test timed out"
+2. Subsequent tests in the same file to have their timer state corrupted — approximately every 3rd subsequent test also fails
+
+**Correct Pattern** (MANDATORY — effective from Vitest 4.1.0):
+```typescript
+// ❌ WRONG — fires the test-timeout fake timer, causes "Test timed out" + corrupts subsequent tests
+const deploymentPromise = wrapper!.vm.executeDeployment()
+await vi.runAllTimersAsync()
+await deploymentPromise
+
+// ✅ CORRECT — advance exactly the sum of all setTimeout delays in the code path
+// TokenCreator success path: 500 (preparing) + 1000 (signing) + 1500 (confirming) + 2000 (success) = 5000ms
+const deploymentPromise = wrapper!.vm.executeDeployment()
+await vi.advanceTimersByTimeAsync(5000)
+await deploymentPromise
+```
+
+**How to calculate N for `vi.advanceTimersByTimeAsync(N)`**:
+1. Search the source code under test for all `setTimeout` calls in the relevant code path
+2. Sum all delay values in that code path
+3. Use that sum as N
+
+```bash
+# Example: find all setTimeout delays in TokenCreator.vue
+grep -n "setTimeout" src/views/TokenCreator.vue
+# 846: await new Promise(resolve => setTimeout(resolve, 500));   ← preparing
+# 868: await new Promise(resolve => setTimeout(resolve, 1000));  ← signing
+# 890: await new Promise(resolve => setTimeout(resolve, 1500));  ← confirming
+# 913: await new Promise(resolve => setTimeout(resolve, 2000));  ← success
+# Total for success path = 5000ms
+# For error path (fails before success): = 500 + (time until error is thrown) ≈ 2000ms suffices
+```
+
+**Pre-Commit Check** (MANDATORY when writing tests that use fake timers):
+```bash
+# Search for all usages of runAllTimersAsync in test files
+grep -rn "runAllTimersAsync" src/ --include="*.test.ts" --include="*.spec.ts"
+# Every result is a potential bug if the file also has vi.useFakeTimers() at module level
+# Fix: replace with vi.advanceTimersByTimeAsync(N) where N = sum of setTimeout delays
+```
+
+**Never Again**:
+- ❌ Use `vi.runAllTimersAsync()` in any test file where `vi.useFakeTimers()` is called at module level
+- ❌ Use `vi.runAllTimersAsync()` at all — prefer `vi.advanceTimersByTimeAsync(N)` with calculated N
+- ❌ Merge a vitest major/minor version bump without verifying all fake-timer tests still pass
+- ✅ When upgrading vitest: immediately run `grep -rn "runAllTimersAsync" src/` and replace all usages
+
 ## Additional Notes
 
 - The application uses Vue Router for navigation
