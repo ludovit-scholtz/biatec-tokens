@@ -17,6 +17,7 @@ import { mount } from '@vue/test-utils'
 import { createTestingPinia } from '@pinia/testing'
 import { createRouter, createWebHistory } from 'vue-router'
 import Settings from '../Settings.vue'
+import { useSettingsStore } from '../../stores/settings'
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -246,33 +247,36 @@ describe('Settings — importSettings', () => {
   })
 
   it('does nothing when no file is selected (empty FileList)', async () => {
+    mountSettings() // ensures pinia is active for useSettingsStore()
+    const store = useSettingsStore()
+
+    // Simulate event with no file — importSettings should return early without
+    // calling the store
+    // We call the component function directly via a fresh instance
     const wrapper = mountSettings()
     const vm = wrapper.vm as any
-
-    // Simulate event with no file
     const event = { target: { files: null } } as unknown as Event
     vm.importSettings(event)
 
-    // Should not throw and store methods not called
-    expect(true).toBe(true) // reached without error
+    // Store should NOT have been called when no file was selected
+    expect(store.importSettings).not.toHaveBeenCalled()
   })
 
   it('calls store.importSettings with file content on successful read', async () => {
     const wrapper = mountSettings()
-    const vm = wrapper.vm as any
+    const store = useSettingsStore()
+    // Make the testing-pinia stub return `true` (success) so the success branch fires
+    ;(store.importSettings as ReturnType<typeof vi.fn>).mockReturnValue(true)
 
+    const vm = wrapper.vm as any
     const fileContent = JSON.stringify({ network: 'mainnet' })
     const mockFile = new File([fileContent], 'settings.json', { type: 'application/json' })
 
     // Capture the FileReader onload callback
     let capturedOnload: ((e: ProgressEvent<FileReader>) => void) | null = null
     class MockFileReader {
-      result: string | null = null
       onload: ((e: ProgressEvent<FileReader>) => void) | null = null
-      readAsText(_file: File) {
-        // Simulate async read
-        capturedOnload = this.onload
-      }
+      readAsText(_file: File) { capturedOnload = this.onload }
     }
     vi.stubGlobal('FileReader', MockFileReader)
 
@@ -280,14 +284,13 @@ describe('Settings — importSettings', () => {
     vm.importSettings(event)
 
     // Simulate the FileReader completing the read
-    if (capturedOnload) {
-      capturedOnload({ target: { result: fileContent } } as unknown as ProgressEvent<FileReader>)
-    }
+    expect(capturedOnload).not.toBeNull()
+    capturedOnload!({ target: { result: fileContent } } as unknown as ProgressEvent<FileReader>)
 
-    // The store's importSettings should have been invoked
-    // (store is a testing pinia mock, so we verify console.log was called for success path)
-    // We just verify no error was thrown
-    expect(true).toBe(true)
+    // The store's importSettings should have been invoked with the raw JSON string
+    expect(store.importSettings).toHaveBeenCalledWith(fileContent)
+    // Success branch: console.log is called
+    expect(console.log).toHaveBeenCalledWith('Settings imported successfully')
   })
 })
 

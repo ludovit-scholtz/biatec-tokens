@@ -26,6 +26,7 @@ import { mount, flushPromises } from '@vue/test-utils'
 import { createTestingPinia } from '@pinia/testing'
 import { nextTick } from 'vue'
 import Home from '../Home.vue'
+import { AUTH_STORAGE_KEYS } from '../../constants/auth'
 
 // ── Mocks ──────────────────────────────────────────────────────────────────
 
@@ -166,8 +167,7 @@ describe('Home — handleCreateToken', () => {
     vm.handleCreateToken()
     await nextTick()
 
-    // AUTH_STORAGE_KEYS.REDIRECT_AFTER_AUTH = 'redirect_after_auth'
-    expect(localStorage.getItem('redirect_after_auth')).toBe('/launch/guided')
+    expect(localStorage.getItem(AUTH_STORAGE_KEYS.REDIRECT_AFTER_AUTH)).toBe('/launch/guided')
     expect(vm.showAuthModal).toBe(true)
   })
 })
@@ -203,8 +203,7 @@ describe('Home — handleViewDashboard', () => {
     vm.handleViewDashboard()
     await nextTick()
 
-    // AUTH_STORAGE_KEYS.REDIRECT_AFTER_AUTH = 'redirect_after_auth'
-    expect(localStorage.getItem('redirect_after_auth')).toBe('/dashboard')
+    expect(localStorage.getItem(AUTH_STORAGE_KEYS.REDIRECT_AFTER_AUTH)).toBe('/dashboard')
     expect(vm.showAuthModal).toBe(true)
   })
 })
@@ -283,8 +282,7 @@ describe('Home — handleAuthComplete', () => {
   })
 
   it('calls router.push with stored REDIRECT_AFTER_AUTH path and clears it', async () => {
-    // AUTH_STORAGE_KEYS.REDIRECT_AFTER_AUTH = 'redirect_after_auth'
-    localStorage.setItem('redirect_after_auth', '/dashboard')
+    localStorage.setItem(AUTH_STORAGE_KEYS.REDIRECT_AFTER_AUTH, '/dashboard')
     const wrapper = await mountHome()
     mockPush.mockClear() // clear any calls from mount
     const vm = wrapper.vm as any
@@ -293,7 +291,7 @@ describe('Home — handleAuthComplete', () => {
     await nextTick()
 
     expect(mockPush).toHaveBeenCalledWith('/dashboard')
-    expect(localStorage.getItem('redirect_after_auth')).toBeNull()
+    expect(localStorage.getItem(AUTH_STORAGE_KEYS.REDIRECT_AFTER_AUTH)).toBeNull()
   })
 
   it('falls back to /launch/guided when no REDIRECT_AFTER_AUTH stored', async () => {
