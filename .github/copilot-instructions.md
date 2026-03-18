@@ -3899,6 +3899,68 @@ async function mountWorkspace() {
 - ❌ Create a new view component without a matching `.test.ts` file in the same commit (see section 7m)
 - ❌ Write component tests for loading-state views without `vi.useFakeTimers()` to advance the loading timeout
 
+---
+
+### 7ab. `vi.runAllTimersAsync()` Fires the Test-Timeout Timer in Vitest 4.1.0 — Always Use `vi.advanceTimersByTimeAsync(N)` (MANDATORY) 🆕
+
+**🚨 CRITICAL VIOLATION — March 2026 (vitest 4.0.18 → 4.1.0 bump) 🚨**
+
+**Violation**: After bumping vitest from 4.0.18 to 4.1.0, the test at `src/views/__tests__/TokenCreator.test.ts:1087` used `await vi.runAllTimersAsync()`. With Vitest 4.1.0 + happy-dom and `vi.useFakeTimers()` called at MODULE level (line 224), `vi.runAllTimersAsync()` fires the test-timeout internal timer, causing:
+1. The test itself to report "Test timed out"
+2. Every 3rd subsequent test in the file to fail with corrupted timer state
+
+**Root Cause**: Vitest 4.1.0 changed the behavior of `vi.runAllTimersAsync()`. When `vi.useFakeTimers()` is called at module level (outside any `beforeEach`/`it`), the test-timeout mechanism is itself a fake timer. `vi.runAllTimersAsync()` advances ALL pending timers — including the test's own timeout countdown — causing the timeout to fire before the test completes.
+
+**Key difference between `beforeEach` and module-level `useFakeTimers`**:
+- `vi.useFakeTimers()` in **`beforeEach`**: Paired with `vi.useRealTimers()` in `afterEach`; each test gets fresh timer state. `vi.runAllTimersAsync()` is safe here because the timeout timer is reset per test.
+- `vi.useFakeTimers()` at **module level**: All tests in the file share the same fake timer state. The test-timeout timer accumulates across `runAllTimersAsync()` calls and fires unexpectedly.
+
+**Correct Pattern**:
+```typescript
+// ❌ WRONG — fires test-timeout when vi.useFakeTimers() is at module level
+const deploymentPromise = wrapper.vm.executeDeployment()
+await vi.runAllTimersAsync()  // Advances ALL timers, including test-timeout! → "Test timed out"
+await deploymentPromise
+
+// ✅ CORRECT — advance exactly N ms = sum of all setTimeout delays in the code path
+// For TokenCreator success path: 500 (preparing) + 1000 (signing) + 1500 (confirming) + 2000 (success display) = 5000ms
+const deploymentPromise = wrapper.vm.executeDeployment()
+await vi.advanceTimersByTimeAsync(5000)  // Only advances by N ms, does NOT fire test-timeout
+await deploymentPromise
+```
+
+**How to calculate N**:
+1. Read the code path under test and list all `setTimeout()` calls
+2. Sum their durations: e.g., `setTimeout(fn, 500) + setTimeout(fn, 1000) + setTimeout(fn, 1500) + setTimeout(fn, 2000) = 5000`
+3. Use that sum as the argument to `vi.advanceTimersByTimeAsync(N)`
+
+**Where this fix was applied**:
+- `src/views/__tests__/TokenCreator.test.ts:1087` — replaced `vi.runAllTimersAsync()` with `vi.advanceTimersByTimeAsync(5000)`
+
+**Files where `vi.runAllTimersAsync()` is SAFE** (use `beforeEach`/`afterEach` pattern):
+- `src/services/__tests__/DeploymentStatusService.test.ts` — uses `vi.useFakeTimers()` in `beforeEach`, `vi.useRealTimers()` in `afterEach` → safe
+- `src/stores/__tests__/whitelistPolicy.test.ts` — same pattern → safe
+- `src/components/__tests__/EmailAuthModal.test.ts` — `useFakeTimers()` inside each `it` block → safe
+
+**Pre-Commit Check** (MANDATORY when a file uses `vi.useFakeTimers()` at module level):
+```bash
+# Check if useFakeTimers() is at module level (outside describe/it/beforeEach)
+grep -n "useFakeTimers" src/path/to/your.test.ts | head -5
+# If line number is very low (< 30) and not inside a function → module level!
+# → Replace all vi.runAllTimersAsync() in that file with vi.advanceTimersByTimeAsync(N)
+
+# Calculate N:
+grep -n "setTimeout" src/path/to/the/implementation.ts
+# Sum the durations of all setTimeouts in the code path under test
+```
+
+**Never Again**:
+- ❌ Use `vi.runAllTimersAsync()` in any test file where `vi.useFakeTimers()` is called at module level
+- ❌ Assume `vi.runAllTimersAsync()` is safe without checking where `useFakeTimers()` is called
+- ❌ Debug "Test timed out" failures without first checking if the file uses module-level fake timers
+- ✅ Always use `vi.advanceTimersByTimeAsync(N)` when `useFakeTimers()` is at module level
+- ✅ When adding new tests to a file with module-level fake timers, use `advanceTimersByTimeAsync(N)` not `runAllTimersAsync()`
+
 ## Additional Notes
 
 - The application uses Vue Router for navigation
