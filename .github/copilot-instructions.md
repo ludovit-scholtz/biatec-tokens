@@ -3899,6 +3899,91 @@ async function mountWorkspace() {
 - ❌ Create a new view component without a matching `.test.ts` file in the same commit (see section 7m)
 - ❌ Write component tests for loading-state views without `vi.useFakeTimers()` to advance the loading timeout
 
+### 7ab. Vitest Peer Package Alignment and runAllTimersAsync Safety (MANDATORY) 🆕
+
+**🚨 CRITICAL PAST VIOLATION - March 2026 (PR #686 / PR #716) 🚨**
+
+**Violation** (three separate issues):
+1. **Peer version mismatch**: Dependabot bumped `vitest` from `4.0.18` to `4.1.0` but left `@vitest/coverage-v8` and `@vitest/ui` at `^4.0.18`. npm resolved the mismatch by installing duplicate copies of `@vitest/pretty-format` and `@vitest/utils` in the `node_modules` tree.
+2. **Duplicate modules break timer detection**: The duplicated `@vitest/utils` module caused `getSafeTimers()` to return the fake-timer implementation even in tests that did NOT call `vi.useFakeTimers()`.
+3. **`runAllTimersAsync()` fires the test-timeout sentinel**: In `TokenCreator.test.ts`, `vi.useFakeTimers()` is called at **module level**. This turned Vitest's own internal test-timeout `setTimeout` into a fake timer. Calling `vi.runAllTimersAsync()` then fired that sentinel immediately, causing "Test timed out in 5000ms" on every affected test and corrupting subsequent tests' timer state.
+
+**Two-part fix (MANDATORY)**:
+1. **Always align peer packages**: When bumping `vitest`, bump `@vitest/coverage-v8` and `@vitest/ui` to the **exact same** version in one atomic commit.
+2. **Never use `vi.runAllTimersAsync()` when `vi.useFakeTimers()` is at module level**: The test-framework's own internal `setTimeout` for the test timeout becomes a fake timer, and `runAllTimersAsync()` fires it, immediately failing the test.
+
+**Correct Pattern**:
+```typescript
+// ❌ WRONG - fires internal test-timeout timer, causes "Test timed out" + corrupts subsequent tests
+await vi.runAllTimersAsync()
+
+// ✅ CORRECT - advance by the sum of all setTimeout delays used in the code path under test
+await vi.advanceTimersByTimeAsync(5000)
+// For TokenCreator success path: 500 + 1000 + 1500 + 2000 = 5000ms
+
+// ✅ CORRECT - also works for shorter paths
+await vi.advanceTimersByTimeAsync(2000)  // if code only uses one 2000ms setTimeout
+```
+
+**package.json rule (MANDATORY)**:
+```json
+{
+  "devDependencies": {
+    "vitest":              "^4.1.0",
+    "@vitest/coverage-v8": "^4.1.0",   // MUST match vitest version
+    "@vitest/ui":          "^4.1.0"    // MUST match vitest version
+  }
+}
+```
+
+**When Dependabot bumps vitest, ALWAYS**:
+1. Open `package.json` and update `@vitest/coverage-v8` and `@vitest/ui` to the SAME version
+2. Run `npm install` to regenerate the lockfile
+3. Search for `vi.runAllTimersAsync()` across ALL test files and replace with `vi.advanceTimersByTimeAsync(N)` where N = the sum of timeouts in the code path under test
+4. Run `npm test` to confirm zero failures
+5. Commit all three changes in one atomic commit
+
+**How to calculate N for advanceTimersByTimeAsync**:
+```bash
+# Find all setTimeout calls in the component file under test
+grep -n "setTimeout" src/views/ComponentName.vue
+# Sum the millisecond values for the code path you're testing
+# Example (TokenCreator.vue success path): 500 + 1000 + 1500 + 2000 = 5000ms
+```
+
+**Symptoms of version mismatch** (diagnose before treating):
+- `getSafeTimers` returns fake timers in tests that didn't call `vi.useFakeTimers()`
+- Tests timeout unexpectedly in the third of every group
+- `npm ls @vitest/pretty-format` shows multiple versions in the tree
+- `npm ls @vitest/utils` shows multiple versions in the tree
+
+**Pre-Commit Check**:
+```bash
+# Verify all @vitest/* packages are at the same version:
+node -e "
+const pkg = JSON.parse(require('fs').readFileSync('package.json','utf8'));
+const deps = {...(pkg.dependencies||{}), ...(pkg.devDependencies||{})};
+const vitest = deps['vitest'];
+const cov = deps['@vitest/coverage-v8'];
+const ui = deps['@vitest/ui'];
+if (vitest !== cov || vitest !== ui) {
+  console.error('VERSION MISMATCH: vitest=' + vitest + ', coverage-v8=' + cov + ', ui=' + ui);
+  process.exit(1);
+}
+console.log('OK: all @vitest packages at', vitest);
+"
+
+# Also verify no runAllTimersAsync calls remain in test files:
+grep -rn "runAllTimersAsync" src/ --include="*.test.ts" --include="*.spec.ts"
+# Must return zero results
+```
+
+**Never Again**:
+- ❌ Accept a Dependabot vitest bump PR without also bumping `@vitest/coverage-v8` and `@vitest/ui`
+- ❌ Use `vi.runAllTimersAsync()` when `vi.useFakeTimers()` is called at module level
+- ❌ Ship a dependency update PR with only an "Initial plan" commit — the fix must be in the same PR
+- ❌ Merge vitest bump before running `npm test` locally and confirming zero failures
+
 ## Additional Notes
 
 - The application uses Vue Router for navigation
