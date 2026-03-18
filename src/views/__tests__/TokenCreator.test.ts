@@ -1096,6 +1096,97 @@ describe("TokenCreator", () => {
       expect(wrapper!.vm.wizardStartTime).toBeNull();
     }, 10000);
 
+    // ─── Timer stage sequencing ───────────────────────────────────────────────
+    // These tests verify that executeDeployment transitions through its four
+    // staged setTimeout delays (500 + 1000 + 1500 + 2000 ms = 5000 ms total)
+    // in the correct order.  They also document WHY we use
+    // vi.advanceTimersByTimeAsync(N) instead of vi.runAllTimersAsync():
+    //   In Vitest 4.1.0 + happy-dom, vi.useFakeTimers() called at MODULE level
+    //   (line 224 of this file) makes the test-runner's internal timeout a fake
+    //   timer too.  vi.runAllTimersAsync() fires that internal timeout, causing
+    //   the calling test to report "Test timed out" and corrupting subsequent
+    //   tests' timer state.  Using vi.advanceTimersByTimeAsync(N) advances only
+    //   exactly N milliseconds, leaving the internal timeout untouched.
+    // ─────────────────────────────────────────────────────────────────────────
+
+    it("should transition to 'signing' stage after the 500 ms preparing delay", async () => {
+      vi.mocked(tokenStore.createToken).mockResolvedValue(undefined);
+      vi.mocked(router.push).mockImplementation(() => {});
+
+      const deploymentPromise = wrapper!.vm.executeDeployment();
+
+      // Before any time passes the step should still be at 'preparing'
+      expect(wrapper!.vm.deploymentStep).toBe("preparing");
+
+      // Advance past the 500 ms preparing delay only
+      await vi.advanceTimersByTimeAsync(500);
+      await nextTick();
+
+      // createToken hasn't resolved the mocked promise yet so we're in 'signing'
+      expect(wrapper!.vm.deploymentStep).toBe("signing");
+
+      // Clean up: advance the rest and await so fake-timers are in a clean state
+      await vi.advanceTimersByTimeAsync(4500);
+      await deploymentPromise;
+    }, 10000);
+
+    it("should transition through preparing → signing → submitting → confirming → success in order", async () => {
+      vi.mocked(tokenStore.createToken).mockResolvedValue(undefined);
+      vi.mocked(router.push).mockImplementation(() => {});
+
+      const deploymentPromise = wrapper!.vm.executeDeployment();
+
+      // Stage 1: preparing (0 ms elapsed)
+      expect(wrapper!.vm.deploymentStep).toBe("preparing");
+      expect(wrapper!.vm.isCreating).toBe(true);
+
+      // Stage 2: signing (500 ms elapsed)
+      await vi.advanceTimersByTimeAsync(500);
+      await nextTick();
+      expect(wrapper!.vm.deploymentStep).toBe("signing");
+
+      // createToken resolves synchronously; after the 1000 ms signing delay
+      // the code calls tokenStore.createToken() then sets step='submitting'
+      await vi.advanceTimersByTimeAsync(1000);
+      await nextTick();
+      // 'submitting' is the step while createToken() is in-flight (mock resolves immediately)
+      // The next line may already be 'confirming' because the mock resolves in the same tick
+      expect(["submitting", "confirming"].includes(wrapper!.vm.deploymentStep)).toBe(true);
+
+      // Stage 4: confirming (after createToken resolves + 1500 ms confirming delay)
+      await vi.advanceTimersByTimeAsync(1500);
+      await nextTick();
+      // At this point we may be in 'confirming' or the 2000 ms success delay
+      expect(["confirming", "complete"].includes(wrapper!.vm.deploymentStep) || wrapper!.vm.deploymentStatus === "success").toBe(true);
+
+      // Advance past success display delay — deployment must now be complete
+      await vi.advanceTimersByTimeAsync(2000);
+      await deploymentPromise;
+
+      expect(wrapper!.vm.deploymentStatus).toBe("success");
+      expect(wrapper!.vm.isCreating).toBe(false);
+    }, 10000);
+
+    it("should not resolve before all 5000 ms of staged delays have elapsed", async () => {
+      vi.mocked(tokenStore.createToken).mockResolvedValue(undefined);
+      vi.mocked(router.push).mockImplementation(() => {});
+
+      const deploymentPromise = wrapper!.vm.executeDeployment();
+
+      // Advance only 4999 ms — the final 2000 ms success-display delay has NOT finished
+      await vi.advanceTimersByTimeAsync(4999);
+      await nextTick();
+
+      // The promise has not resolved yet, so isCreating should still be true
+      expect(wrapper!.vm.isCreating).toBe(true);
+
+      // Advance the remaining 1 ms to complete all delays
+      await vi.advanceTimersByTimeAsync(1);
+      await deploymentPromise;
+
+      expect(wrapper!.vm.deploymentStatus).toBe("success");
+    }, 10000);
+
     it("should handle form submission", async () => {
       // Set required form data for valid submission
       wrapper!.vm.tokenForm.name = "Test Token";

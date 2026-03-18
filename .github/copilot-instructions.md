@@ -2089,8 +2089,94 @@ if (loadingVisible) {
 - ❌ Use `isVisible({ timeout: 500 })` to "catch" a brief element and then do attribute reads without timeouts
 - ❌ Assume a positive `isVisible()` result means the element stays in DOM for subsequent calls
 
+---
 
+### 7ab. `vi.runAllTimersAsync()` Fires the Test-Timeout Fake Timer When `vi.useFakeTimers()` Is Called at Module Level (MANDATORY) 🆕
 
+**🚨 CRITICAL PAST VIOLATION - March 2026 (PR #716 / PR #708 — Vitest 4.1.0 upgrade) 🚨**
+
+**Violation**: A test file called `vi.useFakeTimers()` at MODULE LEVEL (outside any `beforeEach`), then a deployment test called `await vi.runAllTimersAsync()` to advance through all staged `setTimeout` delays. In Vitest 4.1.0 + happy-dom, this fired the test-runner's own internal timeout timer, causing the calling test to report `"Test timed out"` and corrupting the fake-timer state of the **next** three tests in the file (cascade of 5 total failures).
+
+**Root Cause**:
+- `vi.useFakeTimers()` at module level installs fake timers for the ENTIRE test file scope
+- In Vitest 4.1.0, the internal per-test timeout is implemented as a `setTimeout` — which gets replaced by the fake timer
+- `vi.runAllTimersAsync()` fires **all** pending fake timers, including that internal timeout
+- The test-runner then interprets the expired timeout as a test failure, and subsequent tests inherit corrupted timer state
+
+**Correct Pattern** (MANDATORY whenever `vi.useFakeTimers()` is at module level):
+
+```typescript
+// ❌ WRONG — fires test-timeout fake timer in Vitest 4.1.0, corrupts 4+ subsequent tests
+const deploymentPromise = wrapper.vm.executeDeployment()
+await vi.runAllTimersAsync()   // BAD: also fires the test-runner internal timeout
+await deploymentPromise
+
+// ✅ CORRECT — advance only the known milliseconds, leave the internal timeout untouched
+// N = exact sum of all setTimeout delays in the code path under test
+// For TokenCreator.vue executeDeployment success path: 500 + 1000 + 1500 + 2000 = 5000ms
+const deploymentPromise = wrapper.vm.executeDeployment()
+await vi.advanceTimersByTimeAsync(5000)   // 500+1000+1500+2000ms — exact, no test-timeout risk
+await deploymentPromise
+```
+
+**Calculating N** (the `advanceTimersByTimeAsync` argument):
+1. Search the source for every `setTimeout(resolve, N)` on the code path being tested
+2. Sum all the values
+3. Add any other fake-timer-dependent delays (e.g., debounce, polling intervals)
+4. Use that exact sum — do NOT round up or add a buffer (that risks overshooting future timers)
+
+**Example for `TokenCreator.vue` `executeDeployment` success path**:
+```
+Stage 1 "preparing":  setTimeout(…, 500)   →  500 ms
+Stage 2 "signing":    setTimeout(…, 1000)  → 1000 ms
+Stage 3 "confirming": setTimeout(…, 1500)  → 1500 ms
+Stage 4 "success":    setTimeout(…, 2000)  → 2000 ms
+                                    TOTAL  = 5000 ms  ← use vi.advanceTimersByTimeAsync(5000)
+```
+
+**Stage-sequencing tests** (MANDATORY when adding fake-timer tests for multi-stage flows):
+```typescript
+// ✅ Verify each stage is entered at the right elapsed time
+it('transitions through deployment stages in order', async () => {
+  const promise = wrapper.vm.executeDeployment()
+  expect(wrapper.vm.deploymentStep).toBe('preparing')
+  await vi.advanceTimersByTimeAsync(500)   // past 500ms preparing delay
+  await nextTick()
+  expect(wrapper.vm.deploymentStep).toBe('signing')
+  await vi.advanceTimersByTimeAsync(4500)  // advance the rest
+  await promise
+  expect(wrapper.vm.deploymentStatus).toBe('success')
+}, 10000)
+```
+
+**Peer package alignment rule** (MANDATORY on every `vitest` upgrade):
+```
+When bumping "vitest" in package.json, ALWAYS update these to the SAME version:
+  "@vitest/coverage-v8": "^X.Y.Z"
+  "@vitest/ui":          "^X.Y.Z"
+A version mismatch causes npm to install duplicate sub-trees of @vitest/pretty-format
+and @vitest/utils, which makes getSafeTimers() return the fake-timer implementation even
+outside of fake-timer scope, triggering silent "Test timed out" failures.
+```
+
+**Stacked-PR quality gate** (MANDATORY before marking any stacked PR ready):
+```bash
+# Before pushing, diff your branch against the parent to find ANY unique drift:
+git fetch origin <parent-branch>
+git diff FETCH_HEAD HEAD -- <files-you-changed>
+# If the diff shows content that is NOT in the parent (e.g. missing package version bump),
+# port it BEFORE report_progress. A stacked PR should be a strict superset of the parent.
+```
+
+**Never Again**:
+- ❌ Use `vi.runAllTimersAsync()` when `vi.useFakeTimers()` is called at MODULE level
+- ❌ Upgrade `vitest` without bumping `@vitest/coverage-v8` and `@vitest/ui` to the same version
+- ❌ Mark a stacked PR complete without diffing against the parent branch and confirming no unique content was omitted
+- ❌ Submit a multi-stage async test without verifying each stage transitions at the correct elapsed time
+- ✅ Always use `vi.advanceTimersByTimeAsync(N)` where N = sum of all setTimeout delays
+- ✅ Add stage-sequencing tests alongside each `executeDeployment`-style flow test
+
+---
 
 ### PR Quality Checklist (MUST ALL BE ✅ BEFORE SUBMISSION)
 
