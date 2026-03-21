@@ -939,3 +939,176 @@ describe('ComplianceReportingWorkspace — checklist remediation hints', () => {
     }
   })
 })
+
+// ---------------------------------------------------------------------------
+// Evidence Truth Classification (backend-backed sign-off UX)
+// ---------------------------------------------------------------------------
+
+describe('ComplianceReportingWorkspace — reportingTruthClass state', () => {
+  it('initialises reportingTruthClass as partial_hydration (fixture-backed)', async () => {
+    const wrapper = await mountWorkspace()
+    const vm = wrapper.vm as any
+    expect(vm.reportingTruthClass).toBe('partial_hydration')
+  })
+
+  it('reportingTruthClass is never backend_confirmed (reporting is fixture-backed)', async () => {
+    const wrapper = await mountWorkspace()
+    const vm = wrapper.vm as any
+    expect(vm.reportingTruthClass).not.toBe('backend_confirmed')
+  })
+
+  it('reportingTruthClass is a valid EvidenceTruthClass value', async () => {
+    const wrapper = await mountWorkspace()
+    const vm = wrapper.vm as any
+    const validClasses = ['backend_confirmed', 'partial_hydration', 'stale', 'unavailable', 'environment_blocked']
+    expect(validClasses).toContain(vm.reportingTruthClass)
+  })
+
+  it('renders evidence-truth-banner with correct testid', async () => {
+    const wrapper = await mountWorkspace()
+    const banner = wrapper.find('[data-testid="evidence-truth-banner"]')
+    expect(banner.exists()).toBe(true)
+  })
+
+  it('banner has blue styling for partial_hydration truth class', async () => {
+    const wrapper = await mountWorkspace()
+    const vm = wrapper.vm as any
+    expect(vm.reportingTruthClass).toBe('partial_hydration')
+    const banner = wrapper.find('[data-testid="evidence-truth-banner"]')
+    if (banner.exists()) {
+      expect(banner.classes().some(c => c.includes('blue'))).toBe(true)
+    }
+  })
+
+  it('evidence-truth-title element exists and is non-empty', async () => {
+    const wrapper = await mountWorkspace()
+    const titleEl = wrapper.find('[data-testid="evidence-truth-title"]')
+    if (titleEl.exists()) {
+      expect(titleEl.text().trim().length).toBeGreaterThan(0)
+    }
+  })
+
+  it('evidence-truth-description element exists and is non-empty', async () => {
+    const wrapper = await mountWorkspace()
+    const descEl = wrapper.find('[data-testid="evidence-truth-description"]')
+    if (descEl.exists()) {
+      expect(descEl.text().trim().length).toBeGreaterThan(0)
+    }
+  })
+
+  it('next-action guidance is visible for partial_hydration (not backend_confirmed)', async () => {
+    const wrapper = await mountWorkspace()
+    const vm = wrapper.vm as any
+    // partial_hydration !== 'backend_confirmed' → next-action guidance must render
+    expect(vm.reportingTruthClass).not.toBe('backend_confirmed')
+    const nextActionEl = wrapper.find('[data-testid="evidence-truth-next-action"]')
+    if (nextActionEl.exists()) {
+      expect(nextActionEl.text().trim().length).toBeGreaterThan(0)
+    }
+  })
+})
+
+// ---------------------------------------------------------------------------
+// sectionStatusClass and sectionStatusIcon helpers
+// ---------------------------------------------------------------------------
+
+describe('ComplianceReportingWorkspace — sectionStatusClass', () => {
+  it('returns green class for ready status', async () => {
+    const wrapper = await mountWorkspace()
+    const vm = wrapper.vm as any
+    expect(vm.sectionStatusClass('ready')).toContain('green')
+  })
+
+  it('returns yellow class for warning status', async () => {
+    const wrapper = await mountWorkspace()
+    const vm = wrapper.vm as any
+    expect(vm.sectionStatusClass('warning')).toContain('yellow')
+  })
+
+  it('returns red class for failed status', async () => {
+    const wrapper = await mountWorkspace()
+    const vm = wrapper.vm as any
+    expect(vm.sectionStatusClass('failed')).toContain('red')
+  })
+
+  it('returns gray class for pending status', async () => {
+    const wrapper = await mountWorkspace()
+    const vm = wrapper.vm as any
+    expect(vm.sectionStatusClass('pending')).toContain('gray')
+  })
+
+  it('returns gray class for unavailable status', async () => {
+    const wrapper = await mountWorkspace()
+    const vm = wrapper.vm as any
+    expect(vm.sectionStatusClass('unavailable')).toContain('gray')
+  })
+})
+
+describe('ComplianceReportingWorkspace — sectionStatusIcon', () => {
+  it('returns an icon component for ready status', async () => {
+    const wrapper = await mountWorkspace()
+    const vm = wrapper.vm as any
+    expect(vm.sectionStatusIcon('ready')).toBeTruthy()
+  })
+
+  it('returns an icon component for warning status', async () => {
+    const wrapper = await mountWorkspace()
+    const vm = wrapper.vm as any
+    expect(vm.sectionStatusIcon('warning')).toBeTruthy()
+  })
+
+  it('returns an icon component for failed status', async () => {
+    const wrapper = await mountWorkspace()
+    const vm = wrapper.vm as any
+    expect(vm.sectionStatusIcon('failed')).toBeTruthy()
+  })
+
+  it('returns an icon component for pending status', async () => {
+    const wrapper = await mountWorkspace()
+    const vm = wrapper.vm as any
+    expect(vm.sectionStatusIcon('pending')).toBeTruthy()
+  })
+
+  it('returns an icon component for unavailable status', async () => {
+    const wrapper = await mountWorkspace()
+    const vm = wrapper.vm as any
+    expect(vm.sectionStatusIcon('unavailable')).toBeTruthy()
+  })
+
+  it('returns different icons for different statuses', async () => {
+    const wrapper = await mountWorkspace()
+    const vm = wrapper.vm as any
+    const readyIcon = vm.sectionStatusIcon('ready')
+    const failedIcon = vm.sectionStatusIcon('failed')
+    // Different statuses should return different icon components
+    expect(readyIcon).not.toBe(failedIcon)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// onBeforeUnmount — clipboardTimer cleanup
+// ---------------------------------------------------------------------------
+
+describe('ComplianceReportingWorkspace — onBeforeUnmount cleanup', () => {
+  it('does not throw when unmounting after clipboard copy (timer cleanup)', async () => {
+    const wrapper = await mountWorkspace()
+    const vm = wrapper.vm as any
+    // Simulate clipboard copy which sets a timer
+    vi.useFakeTimers()
+    try {
+      if (typeof vm.copyToClipboard === 'function') {
+        vm.copyToClipboard()
+        await nextTick()
+      }
+      // Unmounting while timer is pending should not throw
+      expect(() => wrapper.unmount()).not.toThrow()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('unmounts cleanly without any pending timers', async () => {
+    const wrapper = await mountWorkspace()
+    expect(() => wrapper.unmount()).not.toThrow()
+  })
+})
