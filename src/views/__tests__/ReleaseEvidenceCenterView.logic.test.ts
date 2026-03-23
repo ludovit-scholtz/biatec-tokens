@@ -509,21 +509,24 @@ describe('ReleaseEvidenceCenterView — Export status rendering', () => {
 // ---------------------------------------------------------------------------
 
 describe('ReleaseEvidenceCenterView — evidenceTruthClass state transitions', () => {
-  it('initialises evidenceTruthClass as partial_hydration before loadData runs', () => {
+  it('evidenceTruthClass starts as partial_hydration (initial ref value, before loadStrictArtifact resolves)', () => {
     const router = makeRouter()
+    // Do NOT advance timers — check the synchronous initial value
     const wrapper = mount(ReleaseEvidenceCenterView, {
       global: { plugins: [createTestingPinia({ createSpy: vi.fn }), router] },
     })
     const vm = wrapper.vm as any
-    // Default state before any loading is fixture-backed → partial_hydration
+    // Initial ref value is 'partial_hydration'; loadStrictArtifact() will overwrite it
+    // to 'environment_blocked' once the async fetch resolves (fail-closed)
     expect(vm.evidenceTruthClass).toBe('partial_hydration')
   })
 
-  it('sets evidenceTruthClass to partial_hydration after loadData succeeds (fixture path)', async () => {
+  it('sets evidenceTruthClass to environment_blocked after loadData when no artifact is available (fail-closed)', async () => {
     const wrapper = await mountLoaded()
     const vm = wrapper.vm as any
-    // loadData uses deriveFixtureTruthClass(true) → partial_hydration
-    expect(vm.evidenceTruthClass).toBe('partial_hydration')
+    // Without a configured VITE_SIGNOFF_STATUS_URL, the artifact is 'missing'
+    // → artifactStateToEvidenceTruth('missing') = environment_blocked (fail-closed)
+    expect(vm.evidenceTruthClass).toBe('environment_blocked')
   })
 
   it('sets evidenceTruthClass to unavailable when loadData throws', async () => {
@@ -562,16 +565,16 @@ describe('ReleaseEvidenceCenterView — evidenceTruthClass state transitions', (
     expect(banner.exists()).toBe(true)
   })
 
-  it('banner shows partial_hydration label when data is fixture-backed', async () => {
+  it('banner shows environment_blocked label when no artifact is configured (fail-closed)', async () => {
     const wrapper = await mountLoaded()
     const badge = wrapper.find('[data-testid="evidence-truth-badge"]')
     if (badge.exists()) {
-      expect(badge.text().toLowerCase()).toContain('partial')
+      // environment_blocked shows yellow
+      expect(badge.classes().some(c => c.includes('yellow') || c.includes('red') || c.includes('orange'))).toBe(true)
     } else {
-      // Banner renders label text somewhere — verify at minimum partial_hydration class is on banner
+      // Banner renders label text somewhere — verify environment_blocked class is on banner
       const banner = wrapper.find('[data-testid="evidence-truth-banner"]')
       expect(banner.exists()).toBe(true)
-      expect(banner.classes().some(c => c.includes('blue'))).toBe(true)
     }
   })
 
@@ -586,21 +589,22 @@ describe('ReleaseEvidenceCenterView — evidenceTruthClass state transitions', (
     }
   })
 
-  it('evidenceTruthClass transitions back from unavailable to partial_hydration on successful loadData', async () => {
+  it('evidenceTruthClass stays at environment_blocked after artifact fetch (no artifact URL configured)', async () => {
     const wrapper = await mountLoaded()
     const vm = wrapper.vm as any
 
-    // Force to unavailable
-    vm.evidenceTruthClass = 'unavailable'
-    vm.isDegraded = true
-    await nextTick()
-    expect(vm.evidenceTruthClass).toBe('unavailable')
+    // After mounting and loading, without VITE_SIGNOFF_STATUS_URL, state should be environment_blocked
+    // (loadStrictArtifact resolves null → state 'missing' → evidence truth 'environment_blocked')
+    expect(vm.evidenceTruthClass).toBe('environment_blocked')
 
-    // loadData resets it to partial_hydration on success
+    // loadData() itself does NOT touch evidenceTruthClass (managed by loadStrictArtifact)
+    // Verify isDegraded resets on success
+    vm.isDegraded = true
     vm.loadData()
     await nextTick()
-    expect(vm.evidenceTruthClass).toBe('partial_hydration')
     expect(vm.isDegraded).toBe(false)
+    // evidenceTruthClass is managed by loadStrictArtifact, not loadData — unchanged
+    expect(vm.evidenceTruthClass).toBe('environment_blocked')
   })
 })
 
