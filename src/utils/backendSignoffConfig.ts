@@ -51,6 +51,21 @@ export interface BackendSignoffConfig {
 // ---------------------------------------------------------------------------
 
 /**
+ * Returns the current process environment in a TypeScript 6–compatible way.
+ *
+ * `process` is a Node.js global available natively in Node (E2E/Playwright) and
+ * polyfilled via `window.process` in the browser (see main.ts). TypeScript 6 no
+ * longer injects Node.js globals automatically, so we use `globalThis` to avoid
+ * a TS2591 "Cannot find name 'process'" error in browser-targeted tsconfig files.
+ */
+function _defaultEnv(): Record<string, string | undefined> {
+  // globalThis is available in all environments (browser, Node, workers).
+  const g = globalThis as Record<string, unknown>
+  const proc = g['process'] as { env?: Record<string, string | undefined> } | undefined
+  return proc?.env ?? {}
+}
+
+/**
  * Returns true when strict backend sign-off mode is active.
  *
  * Strict mode is enabled by setting `BIATEC_STRICT_BACKEND=true` in the test
@@ -62,7 +77,7 @@ export interface BackendSignoffConfig {
  *
  * @param env - Environment variables map (defaults to process.env for production use)
  */
-export function isStrictBackendMode(env: Record<string, string | undefined> = process.env): boolean {
+export function isStrictBackendMode(env: Record<string, string | undefined> = _defaultEnv()): boolean {
   return env.BIATEC_STRICT_BACKEND === 'true'
 }
 
@@ -72,7 +87,7 @@ export function isStrictBackendMode(env: Record<string, string | undefined> = pr
  *
  * @param env - Environment variables map (defaults to process.env for production use)
  */
-export function getBackendBaseUrl(env: Record<string, string | undefined> = process.env): string {
+export function getBackendBaseUrl(env: Record<string, string | undefined> = _defaultEnv()): string {
   return env.API_BASE_URL ?? 'http://localhost:3000'
 }
 
@@ -81,7 +96,7 @@ export function getBackendBaseUrl(env: Record<string, string | undefined> = proc
  *
  * @param env - Environment variables map (defaults to process.env for production use)
  */
-export function getSignoffTestEmail(env: Record<string, string | undefined> = process.env): string {
+export function getSignoffTestEmail(env: Record<string, string | undefined> = _defaultEnv()): string {
   return env.TEST_USER_EMAIL ?? 'e2e-test@biatec.io'
 }
 
@@ -99,7 +114,7 @@ export function getSignoffTestEmail(env: Record<string, string | undefined> = pr
  * @param env - Environment variables map (defaults to process.env for production use)
  */
 export function isSignoffFullyConfigured(
-  env: Record<string, string | undefined> = process.env,
+  env: Record<string, string | undefined> = _defaultEnv(),
 ): boolean {
   if (!isStrictBackendMode(env)) return false
   const rawUrl = getBackendBaseUrl(env)
@@ -120,7 +135,7 @@ export function isSignoffFullyConfigured(
  * @param env - Environment variables map (defaults to process.env for production use)
  */
 export function describeBackendSignoffConfig(
-  env: Record<string, string | undefined> = process.env,
+  env: Record<string, string | undefined> = _defaultEnv(),
 ): BackendSignoffConfig {
   const strictMode = isStrictBackendMode(env)
   const apiBaseUrl = getBackendBaseUrl(env)
@@ -161,7 +176,7 @@ export function describeBackendSignoffConfig(
  * @param env - Environment variables map (defaults to process.env for production use)
  */
 export function getSignoffSkipReason(
-  env: Record<string, string | undefined> = process.env,
+  env: Record<string, string | undefined> = _defaultEnv(),
 ): string | undefined {
   if (isStrictBackendMode(env)) return undefined
   return (
@@ -203,7 +218,7 @@ export function getSignoffSkipReason(
  * @param env - Environment variables map (defaults to process.env for production use)
  */
 export function requireStrictBackend(
-  env: Record<string, string | undefined> = process.env,
+  env: Record<string, string | undefined> = _defaultEnv(),
 ): string | undefined {
   if (!isStrictBackendMode(env)) {
     return (

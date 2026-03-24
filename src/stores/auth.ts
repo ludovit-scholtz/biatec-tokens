@@ -3,6 +3,7 @@ import { ref, computed } from "vue";
 import { generateAlgorandAccount } from "arc76";
 import algosdk from "algosdk";
 import { makeArc14AuthHeader, makeArc14TxWithSuggestedParams } from "arc14";
+import { Buffer } from "buffer";
 import { accountProvisioningService } from "../services/AccountProvisioningService";
 import { auditTrailService } from "../services/AuditTrailService";
 import type { AccountProvisioningStatus } from "../types/accountProvisioning";
