@@ -4152,6 +4152,68 @@ The PR addressed ONLY AC #5 (documentation) while calling the full issue resolve
 
 ---
 
+### 7ae. TypeScript 6+ Removes Automatic Node.js Globals — Always Use Explicit Imports or `globalThis` (MANDATORY) 🆕
+
+**🚨 CRITICAL PAST VIOLATION - March 24, 2026 (PR #740 / #742) 🚨**
+
+**Violation**: Dependabot bumped TypeScript from 5.9.3 to 6.0.2. The build failed immediately with `TS2591: Cannot find name 'Buffer'` in `src/composables/useTokenMetadata.ts` and `src/stores/auth.ts`, and `TS2591: Cannot find name 'process'` in `src/utils/backendSignoffConfig.ts`. All 3 errors were introduced because TypeScript 6 removed automatic injection of Node.js globals (`Buffer`, `process`, etc.) into browser-targeted `tsconfig` files.
+
+**Root Cause**: TypeScript 5.x included `@types/node` globals automatically via `lib` inference. TypeScript 6 requires them to be either:
+1. Explicitly imported from the npm package (`import { Buffer } from "buffer"`)
+2. Accessed via `globalThis` with a type-safe cast when they may be polyfilled at runtime
+
+**Why this matters for Biatec Tokens**: The frontend is browser-targeted. `Buffer` is polyfilled via the `buffer` npm package (declared in `main.ts` as `window.Buffer = Buffer`). `process` is polyfilled via `window.process = process` in `main.ts`. TypeScript 6 no longer "sees" these as globals unless they are imported explicitly.
+
+**Correct Fix Pattern**:
+
+```typescript
+// ❌ WRONG — works in TS 5, breaks in TS 6 (TS2591)
+const encoded = Buffer.from(data).toString('base64')
+export function getEnv(env = process.env): string { ... }
+
+// ✅ CORRECT — explicit import (preferred for Buffer, algosdk, crypto)
+import { Buffer } from "buffer"
+const encoded = Buffer.from(data).toString('base64')
+
+// ✅ CORRECT — globalThis cast (preferred for process.env in browser utility files)
+function _defaultEnv(): Record<string, string | undefined> {
+  const g = globalThis as Record<string, unknown>
+  const proc = g['process'] as { env?: Record<string, string | undefined> } | undefined
+  return proc?.env ?? {}
+}
+export function getEnv(env = _defaultEnv()): string { ... }
+```
+
+**Files fixed in this PR**:
+- `src/composables/useTokenMetadata.ts` → `import { Buffer } from "buffer"`
+- `src/stores/auth.ts` → `import { Buffer } from "buffer"`
+- `src/utils/backendSignoffConfig.ts` → `_defaultEnv()` helper using `globalThis`
+
+**Pre-Upgrade Checklist for ANY TypeScript major version bump**:
+```bash
+# 1. Run build immediately after bumping typescript:
+node_modules/.bin/vue-tsc -b 2>&1 | grep "error TS" | head -20
+# ANY error TS2591 → explicit import or globalThis needed
+
+# 2. Find ALL usages of Node globals in browser-targeted files:
+grep -rn "Buffer\.\|process\.env\|process\.argv" src/ --include="*.ts" --include="*.vue" | grep -v "import { Buffer"
+# Every result that isn't already imported must be fixed
+
+# 3. Check if @types/node is in devDependencies (may re-enable globals):
+grep "@types/node" package.json
+# If present AND in "types" in tsconfig, globals are enabled — no fix needed
+# If absent, explicit import/globalThis is required
+```
+
+**Prevention**: When reviewing any TypeScript major version Dependabot PR, always run `node_modules/.bin/vue-tsc -b` locally FIRST. A clean type-check is the gating condition before running tests.
+
+**Never Again**:
+- ❌ Merge a TypeScript major version bump without running `vue-tsc -b` locally
+- ❌ Use bare `Buffer` or `process` in browser-targeted `.ts` files without verifying `@types/node` is declared
+- ❌ Assume TypeScript 5 compatibility implies TypeScript 6 compatibility for Node.js globals
+
+---
+
 ## Additional Notes
 
 - The application uses Vue Router for navigation
