@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
-import { createRouter, createMemoryHistory } from 'vue-router';
 import { createPinia, setActivePinia } from 'pinia';
 import Sidebar from '../Sidebar.vue';
 import { useTokenStore } from '../../../stores/tokens';
@@ -41,6 +40,9 @@ vi.mock('@heroicons/vue/24/outline', () => ({
   CalendarDaysIcon: {
     template: '<svg class="h-5 w-5"></svg>',
   },
+  BellAlertIcon: {
+    template: '<svg class="h-5 w-5"></svg>',
+  },
   CurrencyDollarIcon: {
     template: '<svg class="h-5 w-5"></svg>',
   },
@@ -57,33 +59,9 @@ const RouterLinkStub = {
 };
 
 describe('Sidebar Component', () => {
-  let router: any;
   let pinia: any;
 
   beforeEach(() => {
-    // Create router
-    router = createRouter({
-      history: createMemoryHistory(),
-      routes: [
-        { path: '/create', name: 'create' },
-        { path: '/dashboard', name: 'dashboard' },
-        { path: '/token-standards', name: 'token-standards' },
-        { path: '/enterprise-guide', name: 'enterprise-guide' },
-        { path: '/launch/workspace', name: 'GuidedLaunchWorkspace' },
-        { path: '/launch/guided', name: 'GuidedTokenLaunch' },
-        { path: '/enterprise/onboarding', name: 'EnterpriseOnboarding' },
-        { path: '/compliance-monitoring', name: 'ComplianceMonitoring' },
-        { path: '/compliance/whitelists', name: 'WhitelistManagement' },
-        { path: '/compliance/risk-report', name: 'EnterpriseRiskReportBuilder' },
-        { path: '/compliance/reporting', name: 'ComplianceReportingWorkspace' },
-        { path: '/compliance/onboarding', name: 'InvestorComplianceOnboarding' },
-        { path: '/compliance/operations', name: 'ComplianceOperationsCockpit' },
-        { path: '/compliance/evidence', name: 'ComplianceEvidencePack' },
-        { path: '/compliance/release', name: 'ReleaseEvidenceCenter' },
-        { path: '/compliance/reporting-center', name: 'ReportingCommandCenter' },
-      ],
-    });
-
     // Create pinia
     pinia = createPinia();
     setActivePinia(pinia);
@@ -93,7 +71,7 @@ describe('Sidebar Component', () => {
     it('should render the sidebar container', () => {
       const wrapper = mount(Sidebar, {
         global: {
-          plugins: [router, pinia],
+          plugins: [pinia],
           components: {
             'router-link': RouterLinkStub,
             Badge,
@@ -111,7 +89,7 @@ describe('Sidebar Component', () => {
     it('should render navigation sections', () => {
       const wrapper = mount(Sidebar, {
         global: {
-          plugins: [router, pinia],
+          plugins: [pinia],
           components: {
             'router-link': RouterLinkStub,
             Badge,
@@ -130,7 +108,7 @@ describe('Sidebar Component', () => {
     it('should render quick action links', () => {
       const wrapper = mount(Sidebar, {
         global: {
-          plugins: [router, pinia],
+          plugins: [pinia],
           components: {
             'router-link': RouterLinkStub,
             Badge,
@@ -139,7 +117,7 @@ describe('Sidebar Component', () => {
       });
 
       const links = wrapper.findAll('a');
-      expect(links).toHaveLength(16); // Includes Release Evidence, Sign-off Readiness, Investor Onboarding, Compliance Reporting, Compliance Monitoring, Whitelist Management, Risk Report, Approval Queue, Operations Cockpit, Reporting Center
+      expect(links).toHaveLength(17); // Includes Release Evidence, Sign-off Readiness, Investor Onboarding, Compliance Reporting, Compliance Monitoring, Whitelist Management, Risk Report, Approval Queue, Operations Cockpit, Notification Center, Reporting Center
 
       // Check link texts and routes
       expect(links[0].text()).toContain('Guided Token Launch');
@@ -181,20 +159,23 @@ describe('Sidebar Component', () => {
       expect(links[12].text()).toContain('Operations Cockpit');
       expect(links[12].attributes('to')).toBe('/compliance/operations');
 
-      expect(links[13].text()).toContain('Compliance Monitoring');
-      expect(links[13].attributes('to')).toBe('/compliance-monitoring');
-      
-      expect(links[14].text()).toContain('Whitelist Management');
-      expect(links[14].attributes('to')).toBe('/compliance/whitelists');
+      expect(links[13].text()).toContain('Notification Center');
+      expect(links[13].attributes('to')).toBe('/compliance/notifications');
 
-      expect(links[15].text()).toContain('Reporting Center');
-      expect(links[15].attributes('to')).toBe('/compliance/reporting-center');
+      expect(links[14].text()).toContain('Compliance Monitoring');
+      expect(links[14].attributes('to')).toBe('/compliance-monitoring');
+      
+      expect(links[15].text()).toContain('Whitelist Management');
+      expect(links[15].attributes('to')).toBe('/compliance/whitelists');
+
+      expect(links[16].text()).toContain('Reporting Center');
+      expect(links[16].attributes('to')).toBe('/compliance/reporting-center');
     });
 
     it('should render icons for quick actions', () => {
       const wrapper = mount(Sidebar, {
         global: {
-          plugins: [router, pinia],
+          plugins: [pinia],
           components: {
             'router-link': RouterLinkStub,
             Badge,
@@ -203,8 +184,8 @@ describe('Sidebar Component', () => {
       });
 
       const svgs = wrapper.findAll('svg');
-      // 16 links each with an SVG icon
-      expect(svgs).toHaveLength(16);
+      // 17 links each with an SVG icon
+      expect(svgs).toHaveLength(17);
     });
   });
 
@@ -220,7 +201,7 @@ describe('Sidebar Component', () => {
 
       const wrapper = mount(Sidebar, {
         global: {
-          plugins: [router, pinia],
+          plugins: [pinia],
           components: {
             'router-link': RouterLinkStub,
             Badge,
@@ -252,7 +233,7 @@ describe('Sidebar Component', () => {
 
       const wrapper = mount(Sidebar, {
         global: {
-          plugins: [router, pinia],
+          plugins: [pinia],
           components: {
             'router-link': RouterLinkStub,
             Badge,
@@ -273,7 +254,7 @@ describe('Sidebar Component', () => {
 
       const wrapper = mount(Sidebar, {
         global: {
-          plugins: [router, pinia],
+          plugins: [pinia],
           components: {
             'router-link': RouterLinkStub,
             Badge,
@@ -292,7 +273,7 @@ describe('Sidebar Component', () => {
     it('should display empty state when no activity', () => {
       const wrapper = mount(Sidebar, {
         global: {
-          plugins: [router, pinia],
+          plugins: [pinia],
           components: {
             'router-link': RouterLinkStub,
             Badge,
@@ -308,7 +289,7 @@ describe('Sidebar Component', () => {
     it('should have Recent Activity section header', () => {
       const wrapper = mount(Sidebar, {
         global: {
-          plugins: [router, pinia],
+          plugins: [pinia],
           components: {
             'router-link': RouterLinkStub,
             Badge,
@@ -323,7 +304,7 @@ describe('Sidebar Component', () => {
     it('empty state has role="status" and aria-live="polite" for screen readers (WCAG SC 4.1.3)', () => {
       const wrapper = mount(Sidebar, {
         global: {
-          plugins: [router, pinia],
+          plugins: [pinia],
           components: {
             'router-link': RouterLinkStub,
             Badge,
@@ -341,7 +322,7 @@ describe('Sidebar Component', () => {
     it('should be hidden on mobile and tablet', () => {
       const wrapper = mount(Sidebar, {
         global: {
-          plugins: [router, pinia],
+          plugins: [pinia],
           components: {
             'router-link': RouterLinkStub,
             Badge,
@@ -357,7 +338,7 @@ describe('Sidebar Component', () => {
     it('should have proper positioning and sizing', () => {
       const wrapper = mount(Sidebar, {
         global: {
-          plugins: [router, pinia],
+          plugins: [pinia],
           components: {
             'router-link': RouterLinkStub,
             Badge,
@@ -377,7 +358,7 @@ describe('Sidebar Component', () => {
     it('should have proper background and border styling', () => {
       const wrapper = mount(Sidebar, {
         global: {
-          plugins: [router, pinia],
+          plugins: [pinia],
           components: {
             'router-link': RouterLinkStub,
             Badge,
@@ -396,7 +377,7 @@ describe('Sidebar Component', () => {
     it('should have proper spacing and layout', () => {
       const wrapper = mount(Sidebar, {
         global: {
-          plugins: [router, pinia],
+          plugins: [pinia],
           components: {
             'router-link': RouterLinkStub,
             Badge,
@@ -412,7 +393,7 @@ describe('Sidebar Component', () => {
     it('sidebar nav has aria-label for landmark disambiguation (WCAG SC 2.4.3)', () => {
       const wrapper = mount(Sidebar, {
         global: {
-          plugins: [router, pinia],
+          plugins: [pinia],
           components: {
             'router-link': RouterLinkStub,
             Badge,
@@ -434,7 +415,7 @@ describe('Sidebar Component', () => {
     it('all quick action links have focus-visible ring classes (WCAG SC 2.4.7)', () => {
       const wrapper = mount(Sidebar, {
         global: {
-          plugins: [router, pinia],
+          plugins: [pinia],
           components: {
             'router-link': RouterLinkStub,
             Badge,
@@ -460,7 +441,7 @@ describe('Sidebar Component', () => {
 
       const wrapper = mount(Sidebar, {
         global: {
-          plugins: [router, pinia],
+          plugins: [pinia],
           components: {
             'router-link': RouterLinkStub,
             Badge,
@@ -477,7 +458,7 @@ describe('Sidebar Component', () => {
     it('aside has supplemental aria-label (WCAG SC 1.3.6 landmark disambiguation)', () => {
       const wrapper = mount(Sidebar, {
         global: {
-          plugins: [router, pinia],
+          plugins: [pinia],
           components: {
             'router-link': RouterLinkStub,
             Badge,
@@ -492,7 +473,7 @@ describe('Sidebar Component', () => {
     it('nav has aria-label "Sidebar navigation" for accessible name (WCAG SC 1.3.1)', () => {
       const wrapper = mount(Sidebar, {
         global: {
-          plugins: [router, pinia],
+          plugins: [pinia],
           components: {
             'router-link': RouterLinkStub,
             Badge,
@@ -512,7 +493,7 @@ describe('Sidebar Component', () => {
     it('whitelist management link uses SVG icon (not icon font) for accessibility (WCAG SC 1.1.1)', () => {
       const wrapper = mount(Sidebar, {
         global: {
-          plugins: [router, pinia],
+          plugins: [pinia],
           components: {
             'router-link': RouterLinkStub,
             Badge,
@@ -532,7 +513,7 @@ describe('Sidebar Component', () => {
     it('section headings use higher-contrast gray-600 (not gray-500) for WCAG AA compliance', () => {
       const wrapper = mount(Sidebar, {
         global: {
-          plugins: [router, pinia],
+          plugins: [pinia],
           components: {
             'router-link': RouterLinkStub,
             Badge,

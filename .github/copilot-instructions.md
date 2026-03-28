@@ -4220,6 +4220,286 @@ await loginWithCredentials(page)  // all call-sites replaced
 - ❌ Write "migration complete" in a PR description without running the grep verification checklist
 - ❌ Use `withAuth()` directly in new spec files — always use `loginWithCredentials()` for Tier 1
 
+### 7af. Mock Data Must Exercise Both Branches of Every Template `v-if` (MANDATORY) 🆕
+
+**🚨 CRITICAL PAST VIOLATION - March 27, 2026 (PR #746) 🚨**
+
+**Violation**: `ComplianceNotificationCenter.vue` had `v-if="event.nextAction"` at line 285, but `MOCK_EVENTS_MIXED` contained 5 events ALL with `nextAction` set to a non-null string. The false branch (no next-action paragraph rendered) was never exercised, leaving view branch coverage at 98.8% instead of 100%. Tests that claimed to verify "events without nextAction" passed vacuously — they filtered for `nextAction === null` events and found 0, so the assertion `expect(0).toBe(0)` was trivially true without exercising any template code.
+
+**Root Cause**:
+1. **Type mismatch**: `ComplianceEvent.nextAction` was typed as `string` (not nullable) even though the template checked for truthiness — the type system prevented null values in mock data
+2. **Vacuous test assertions**: Tests filtered mock data for `nextAction === null` and asserted count matched, but with 0 null entries the loop body never executed
+3. **Arrow character collision**: Tests used `item.text().includes('→')` to detect nextAction presence, but "View details →" in drill-down links also contains "→", causing false positives when events without nextAction DO have drill-down links
+
+**Correct Approach — MANDATORY for every new view with `v-if` on optional fields**:
+
+```bash
+# 1. For every v-if="prop" in the template, verify mock data has BOTH truthy AND falsy values:
+grep -n 'v-if="event\.\|v-if="entry\.' src/views/MyView.vue
+# For each result: check mock data has entries where the property is null/undefined/empty AND non-null
+
+# 2. Verify type allows null if template checks for it:
+grep "nextAction:" src/utils/myUtility.ts | head -3
+# If template has v-if="event.nextAction", type MUST be: nextAction: string | null
+
+# 3. Verify tests are NOT vacuously true:
+# Look for patterns like: items.filter(condition) → expect(items.length).toBe(N)
+# If N could be 0, the test proves nothing. Ensure N > 0 for meaningful coverage.
+```
+
+**Detection Pattern for Vacuous Tests**:
+```typescript
+// ❌ VACUOUS — if MOCK_DATA has 0 items matching the filter, this always passes
+const itemsWithout = allItems.filter(item => !item.text().includes('→'))
+expect(itemsWithout.length).toBe(MOCK_DATA.filter(e => e.nextAction === null).length)
+// If filter returns 0: expect(0).toBe(0) — trivially true, no branch exercised
+
+// ✅ NON-VACUOUS — ensure mock data has items matching BOTH branches
+// First: verify mock data has null-nextAction items
+expect(MOCK_DATA.filter(e => e.nextAction === null).length).toBeGreaterThan(0)
+// Then: use element-based detection (not text-based "→" which collides with drill-down links)
+const hasIndigoParagraph = (item) =>
+  item.findAll('p').filter(p => p.classes().includes('text-indigo-300')).length > 0
+const itemsWithout = allItems.filter(item => !hasIndigoParagraph(item))
+expect(itemsWithout.length).toBe(MOCK_DATA.filter(e => e.nextAction === null).length)
+```
+
+**Text-Based Detection Pitfall** (applies to any "→" or icon-based detection):
+```typescript
+// ❌ WRONG — "→" appears in BOTH nextAction prefix AND "View details →" drill-down link
+const itemsWithNextAction = allItems.filter(item => item.text().includes('→'))
+// An event with nextAction: null but drillDownPath: '/some/path' would match (false positive)
+
+// ✅ CORRECT — detect the specific CSS class of the nextAction paragraph element
+const hasIndigoParagraph = (item) =>
+  item.findAll('p').filter(p => p.classes().includes('text-indigo-300')).length > 0
+```
+
+**Pre-Commit Checklist for Views with v-if on Optional Fields**:
+- [ ] Type allows null/undefined for every field used in `v-if` (e.g., `nextAction: string | null`)
+- [ ] Mock data has entries exercising BOTH truthy and falsy values for every `v-if` field
+- [ ] Tests verify `filter(...).length > 0` before iterating (no vacuous assertions)
+- [ ] Element detection uses CSS class or data-testid, not text content that may collide with other elements
+- [ ] Coverage shows 100% branches (or documents why a branch is unreachable)
+
+**Never Again**:
+- ❌ Type a field as `string` when the template uses `v-if` on it — use `string | null`
+- ❌ Write tests that filter mock data and assert count without ensuring the count is non-zero
+- ❌ Use text content (`includes('→')`) to detect specific elements when other elements share the same character
+- ❌ Accept 98.8% branch coverage without investigating which line is uncovered
+
+### 7ag. All Test Assertions on Deterministic Mock Data Must Use Exact Values (MANDATORY) 🆕
+
+**🚨 CRITICAL PAST VIOLATION - March 27, 2026 (PR #746 continuation) 🚨**
+
+**Violation**: Copilot submitted tests across 7 review cycles with 30+ imprecise assertions (`toBeGreaterThan(0)`, `toBeGreaterThanOrEqual(1)`, `toBeLessThan(N)`) on deterministic mock data where the exact expected values were computable. Product owner rejected the work each cycle because these weak assertions mask regression bugs — a test asserting `toBeGreaterThan(0)` passes whether the count is 1 or 100, hiding logic errors.
+
+**What Went Wrong**:
+- MOCK_EVENTS_MIXED has 7 events with fully deterministic properties (severity, category, readState, timestamp, nextAction, isLaunchBlocking)
+- MOCK_TIMELINE_ENTRIES has 4 entries in 2 date groups (Today + Yesterday)
+- Tests used `expect(groups.length).toBeGreaterThan(0)` instead of `expect(groups.length).toBe(2)` (2 groups: Today + Yesterday)
+- Tests used `expect(badges.length).toBeGreaterThan(0)` instead of `expect(badges.length).toBe(7)` (one badge per event)
+- Tests used `expect(items.length).toBeLessThan(MOCK_EVENTS_MIXED.length)` instead of `expect(items.length).toBe(1)` (exactly 1 blocked event)
+- The imprecise assertions survived 6 product owner review cycles before being identified
+
+**Root Cause**:
+- Developer wrote assertions based on "something should exist" rather than "exactly N items should exist"
+- No pre-commit audit step to find and replace imprecise assertions on deterministic data
+- `toBeGreaterThan(0)` is a copy-paste habit from non-deterministic contexts (live APIs, randomized data) that does not belong in tests with known mock data
+
+**Correct Approach — MANDATORY for all tests using deterministic mock data**:
+
+```typescript
+// ❌ WRONG — imprecise, masks regression bugs
+expect(groups.length).toBeGreaterThan(0)          // could be 1, 2, 100
+expect(entries.length).toBeGreaterThan(0)          // could be 1, 2, 100
+expect(badges.length).toBeGreaterThan(0)           // could be 1, 2, 100
+expect(alerts.length).toBeGreaterThanOrEqual(1)    // could be 1, 2, 100
+expect(items.length).toBeLessThan(TOTAL)           // could be 1 or TOTAL-1
+
+// ✅ CORRECT — exact values computed from deterministic mock data
+expect(groups.length).toBe(2)                      // Today + Yesterday = 2 groups
+expect(entries.length).toBe(4)                     // 4 timeline entries
+expect(badges.length).toBe(7)                      // 7 events = 7 badges
+expect(alerts.length).toBe(2)                      // 2 isLaunchBlocking events
+expect(items.length).toBe(1)                       // exactly 1 blocked event
+
+// ✅ EXCEPTION — ordering comparisons are legitimately imprecise:
+expect(severityRank('blocked')).toBeLessThan(severityRank('action_needed'))  // relative order
+expect(prevTimestamp).toBeGreaterThanOrEqual(currTimestamp)                  // sort verification
+expect(text.length).toBeGreaterThan(0)                                       // non-deterministic content
+```
+
+**Pre-Commit Audit** (MANDATORY before committing any test file):
+```bash
+# Find imprecise assertions in test files that use deterministic mock data:
+grep -n "toBeGreaterThan(0)\|toBeGreaterThanOrEqual(1)\|toBeLessThan(" src/**/__tests__/*.test.ts
+# For each result: determine if the expected value is computable from mock data
+# If yes: replace with exact toBe(N) with a comment explaining the count
+# If no (ordering/sorting test): leave as is
+```
+
+**When `toBeGreaterThan(0)` IS acceptable**:
+- Text content length (`expect(text.length).toBeGreaterThan(0)`) — non-deterministic
+- Sort ordering verification (`expect(prevTs).toBeGreaterThanOrEqual(currTs)`) — relative comparison
+- Tests against live APIs or randomized data — unpredictable counts
+
+**When `toBeGreaterThan(0)` is NEVER acceptable**:
+- Timeline group counts (computed from deterministic timestamps)
+- Event badge counts (one per mock event)
+- Filter result counts (computed from mock event properties)
+- Queue summary values (computed from mock event severity/readState)
+- Timeline entry counts (from MOCK_TIMELINE_ENTRIES array length)
+
+**Never Again**:
+- ❌ Use `toBeGreaterThan(0)` on counts derived from known mock data arrays
+- ❌ Use `toBeGreaterThanOrEqual(1)` when the exact count is computable
+- ❌ Use `toBeLessThan(TOTAL)` when the exact filtered count is known
+- ❌ Skip the pre-commit grep audit for imprecise assertions
+
+### 7ah. Test Assertions Must Never Be Wrapped in Conditional Guards (MANDATORY) 🆕
+
+**🚨 CRITICAL PAST VIOLATION - March 27, 2026 (PR #746) 🚨**
+
+**Violation**: Copilot submitted tests with assertions inside `if (array.length > 0)` guards that silently skipped the assertion when the array was empty. These conditional guards create **vacuous tests** — the test passes regardless of whether the assertion block is entered. This pattern survived 8 product owner review cycles before being caught.
+
+**What Went Wrong**:
+- `if (blockedEvents.length > 0) { expect(firstItem.text()).toContain(blockedEvents[0].title) }` — if `blockedEvents` was empty due to a wrong property name (`e.launchBlocking` instead of `e.isLaunchBlocking`), the assertion was silently skipped
+- `if (links.length > 0 && eventsWithPath.length > 0) { expect(firstLink.attributes('href')).toBe(eventsWithPath[0].drillDownPath) }` — if no drill-down links rendered due to a bug, the href check was silently skipped
+- `if (actionNeeded.length >= 2) { expect(timestamps).toBeOrdered() }` — if filter returned fewer than 2 items, ordering check was silently skipped
+
+**Correct Approach — MANDATORY for all test assertions**:
+```typescript
+// ❌ WRONG — conditional guard silently skips assertion
+const blockedEvents = MOCK_DATA.filter(e => e.severity === 'blocked')
+if (blockedEvents.length > 0) {
+  expect(firstItem.text()).toContain(blockedEvents[0].title)  // NEVER RUNS if filter returns []
+}
+
+// ✅ CORRECT — assert the count first (unconditionally), then assert content
+const blockedEvents = MOCK_DATA.filter(e => e.severity === 'blocked')
+expect(blockedEvents.length).toBe(1)  // Proves the filter works
+expect(firstItem.text()).toContain('Sanctions screening escalation opened')  // Exact expected value
+```
+
+**Pre-Commit Check** (MANDATORY before committing any test file):
+```bash
+# Find conditional guards around assertions in test files:
+grep -n "if (" src/**/__tests__/*.test.ts | grep -v "// sort\|// ordering"
+# Any result inside a test body that wraps expect() calls is WRONG.
+# Exception: sort-verification loops (if rankA === rankB) are acceptable per section 7ag.
+```
+
+**Never Again**:
+- ❌ Wrap `expect()` calls inside `if (array.length > 0)` guards
+- ❌ Use `if (condition) { expect(...) }` patterns in deterministic tests
+- ❌ Trust a test that passes without verifying the assertion block was entered
+- ✅ Always assert the count/precondition unconditionally FIRST with an exact value
+- ✅ Then assert content with exact deterministic values (not computed from mock data at runtime)
+
+### 7ai. Sticky Navbar Intercepting Pointer Events — Use Keyboard Activation (MANDATORY) 🆕
+
+**🚨 CRITICAL PAST VIOLATION - March 27, 2026 (PR #746) 🚨**
+
+**Violation**: The "refresh button reloads data" E2E test failed on ALL 3 CI retries because the sticky Navbar (`sticky top-0 z-50`, `h-20` = 80px) intercepted pointer events on the refresh button. The fix attempt using `scrollIntoViewIfNeeded()` + `window.scrollBy(0, 100)` was insufficient — the button remained within the navbar's 80px overlap zone after scrolling.
+
+**Root Cause**: `scrollIntoViewIfNeeded()` scrolls the element to the edge of the viewport where the sticky navbar sits. `scrollBy(0, 100)` provides only 100px of clearance, which is barely enough for the 80px navbar and fails in CI due to viewport size differences and scroll timing.
+
+**Correct Approach — MANDATORY for buttons near sticky headers**:
+```typescript
+// ❌ WRONG — scrollBy(100) doesn't reliably clear the 80px sticky navbar in CI
+await refreshBtn.scrollIntoViewIfNeeded()
+await page.evaluate(() => window.scrollBy(0, 100))
+await refreshBtn.click({ timeout: 5000 })
+
+// ❌ ALSO WRONG — force:true masks the real UX overlap issue
+await refreshBtn.click({ force: true })
+
+// ✅ CORRECT — keyboard activation bypasses pointer hit-testing legitimately
+// This is a real accessibility interaction (keyboard users activate buttons this way)
+await refreshBtn.focus()
+await page.keyboard.press('Enter')
+```
+
+**Why keyboard activation is the correct fix**:
+- `element.focus()` + `keyboard.press('Enter')` triggers the click handler without requiring the element to be unobstructed by overlapping elements
+- It tests a real accessibility pathway (keyboard navigation)
+- It doesn't mask UX issues like `force: true` does
+- It's deterministic — no dependency on scroll positioning or viewport size
+
+**When to use this pattern**:
+- Any button near the top of page content where the sticky navbar may overlap
+- Any element that receives "element from subtree intercepts pointer events" errors
+- The error message will always mention `<header>…</header> subtree intercepts pointer events`
+
+**Never Again**:
+- ❌ Use `scrollBy(0, N)` to clear a sticky header — unreliable across viewport sizes
+- ❌ Use `force: true` to bypass pointer interception — masks real overlap issues
+- ✅ Use `focus()` + `keyboard.press('Enter')` for buttons near sticky headers
+
+### 7aj. E2E Assertion Quality Must Match Unit/Integration Assertion Quality From the First Commit (MANDATORY) 🆕
+
+**🚨 CRITICAL PAST VIOLATION - March 27, 2026 (PR #746 — 8+ review cycles) 🚨**
+
+**Violation**: Copilot delivered a Compliance Notification Center feature with 100/100/100/100% utility and view coverage, exact assertions in unit tests, exact assertions in integration tests — but the E2E layer shipped with 7+ imprecise assertions (`toBeGreaterThan(0)`, `toBeLessThan(N)`) on deterministic mock data. This contradiction required 8+ product owner review cycles to resolve, wasting significant engineering time on the exact same quality gaps that were already fixed in unit/integration layers.
+
+**What Went Wrong Across 8+ Cycles**:
+1. **Cycle 1-2**: E2E tests used imprecise assertions while unit/integration used exact values — nobody audited E2E at the same rigor
+2. **Cycle 3**: Conditional guards (`if (array.length > 0) { expect(...) }`) silently passed in logic tests — discovered only after PO rejection
+3. **Cycle 4**: Mock data had zero null-nextAction events — v-if false branch was never exercised (vacuous tests passed)
+4. **Cycle 5-6**: E2E refresh button failed due to sticky navbar pointer interception — tried `scrollBy`, `force:true` before finding keyboard activation
+5. **Cycle 7**: E2E `waitForTimeout(500)` replaced with semantic waits — arbitrary timing should have been caught in cycle 1
+6. **Cycle 8**: E2E still had 3 imprecise assertions missed in previous cycle's audit
+
+**Root Cause Meta-Pattern**: E2E tests are written LAST and receive the LEAST assertion-quality scrutiny. Developers assume "if unit tests are exact, E2E can be approximate" — but this is wrong because:
+- E2E tests verify the SAME deterministic mock data rendered in the browser
+- Imprecise E2E assertions mask real regressions just as badly as imprecise unit assertions
+- Each E2E quality gap requires a full CI cycle to fix (15+ minutes per iteration)
+- PO reviews ALL test layers with equal rigor — weak E2E blocks merge even if unit/integration is perfect
+
+**Correct Approach — MANDATORY quality parity across all test layers**:
+
+```bash
+# After writing E2E tests, run the SAME audit checks as unit/integration:
+
+# 1. Check for imprecise assertions on deterministic data (section 7ag):
+grep -n "toBeGreaterThan(0)\|toBeGreaterThanOrEqual(1)\|toBeLessThan(" e2e/my-feature.spec.ts
+# Must return 0 results. If data is deterministic, use toBe(N).
+
+# 2. Check for conditional guards around assertions (section 7ah):
+grep -n "if (" e2e/my-feature.spec.ts | grep -v "// skip\|test.skip\|process.env"
+# Any conditional wrapping expect() calls is WRONG.
+
+# 3. Check for arbitrary waits (section 7i):
+grep -n "waitForTimeout" e2e/my-feature.spec.ts
+# Replace with semantic waits: toHaveCount(), toBeAttached(), toBeVisible().
+
+# 4. Check for withAuth instead of loginWithCredentials (section 7ae):
+grep -n "withAuth" e2e/my-feature.spec.ts
+# Must use loginWithCredentials() (Tier 1 standard).
+
+# 5. Verify mock data exercises all template v-if branches (section 7af):
+# For each v-if="event.prop" in the template, verify mock data has both truthy and falsy values.
+```
+
+**Pre-Commit E2E Quality Checklist** (MANDATORY — run BEFORE first E2E commit):
+- [ ] Zero imprecise assertions on deterministic data (all counts use exact `toBe(N)`)
+- [ ] Zero conditional guards around assertions
+- [ ] Zero arbitrary `waitForTimeout()` calls (use semantic waits)
+- [ ] Uses `loginWithCredentials()` not `withAuth()` for auth setup
+- [ ] Mock data exercises both branches of every template `v-if`
+- [ ] Keyboard activation for buttons near sticky headers (section 7ai)
+- [ ] All `textContent()` / `click()` calls have explicit `{ timeout }` in test.setTimeout tests
+- [ ] Word-boundary `\b` on `Pera` in wallet-pattern assertions (section 7e)
+
+**Why This Pattern Repeats**: Developers treat E2E as "smoke tests" where approximate assertions are acceptable. In a product with deterministic mock data (no live API, no randomization), E2E assertions MUST be as precise as unit assertions because the rendered output is fully predictable. The 8-cycle fix history for PR #746 proves this conclusively.
+
+**Never Again**:
+- ❌ Ship E2E tests with weaker assertion quality than unit/integration tests
+- ❌ Assume "E2E is just smoke testing" — it must be as rigorous as unit tests when data is deterministic
+- ❌ Fix assertion quality in unit tests without auditing E2E for the same pattern
+- ❌ Add new E2E tests without running the pre-commit quality checklist above
+
 ---
 
 ## Additional Notes
