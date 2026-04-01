@@ -44,10 +44,9 @@ test.describe('Compliance Notification Center — operator journeys', () => {
     const eventList = page.getByTestId('notification-center-event-list')
     await expect(eventList).toBeAttached({ timeout: 30000 })
 
-    // MOCK_EVENTS_MIXED has exactly 7 events
+    // MOCK_EVENTS_MIXED has exactly 7 events — toHaveCount is web-first (retries until stable)
     const items = page.getByTestId('notification-center-event-item')
-    const count = await items.count()
-    expect(count).toBe(7)
+    await expect(items).toHaveCount(7, { timeout: 5000 })
 
     // First severity badge should indicate the most urgent status
     const firstBadge = page.getByTestId('notification-center-severity-badge').first()
@@ -67,9 +66,8 @@ test.describe('Compliance Notification Center — operator journeys', () => {
     const eventList = page.getByTestId('notification-center-event-list')
     await expect(eventList).toBeAttached({ timeout: 30000 })
 
-    // Get initial count — MOCK_EVENTS_MIXED has exactly 7 events
-    const initialCount = await page.getByTestId('notification-center-event-item').count()
-    expect(initialCount).toBe(7)
+    // Get initial count — MOCK_EVENTS_MIXED has exactly 7 events — toHaveCount retries until stable
+    await expect(page.getByTestId('notification-center-event-item')).toHaveCount(7, { timeout: 5000 })
 
     // Filter by blocked severity
     const severityFilter = page.getByTestId('notification-center-filter-severity')
@@ -125,11 +123,10 @@ test.describe('Compliance Notification Center — operator journeys', () => {
     const summary = page.getByTestId('notification-center-queue-summary')
     await expect(summary).toBeAttached({ timeout: 30000 })
 
-    // Verify key queue metrics — MOCK_EVENTS_MIXED has 7 total events
+    // Verify key queue metrics — MOCK_EVENTS_MIXED has 7 total events — toHaveText retries until stable
     const total = page.getByTestId('notification-center-queue-total')
     await expect(total).toBeAttached({ timeout: 5000 })
-    const totalText = await total.locator('dd').first().textContent({ timeout: 5000 })
-    expect(Number(totalText?.trim())).toBe(7)
+    await expect(total.locator('dd').first()).toHaveText('7', { timeout: 5000 })
 
     const blocked = page.getByTestId('notification-center-queue-blocked')
     await expect(blocked).toBeAttached({ timeout: 5000 })
@@ -280,9 +277,8 @@ test.describe('Compliance Notification Center — operator journeys', () => {
 
     const blocked = page.getByTestId('notification-center-queue-blocked')
     await expect(blocked).toBeAttached({ timeout: 30000 })
-    // MOCK_EVENTS_MIXED has exactly 1 blocked event (evt-010)
-    const blockedText = await blocked.locator('dd').first().textContent({ timeout: 5000 })
-    expect(Number(blockedText?.trim())).toBe(1)
+    // MOCK_EVENTS_MIXED has exactly 1 blocked event (evt-010) — toHaveText retries until stable
+    await expect(blocked.locator('dd').first()).toHaveText('1', { timeout: 5000 })
   })
 
   test('queue unread card shows exact count from mock data', async ({ page }) => {
@@ -291,9 +287,8 @@ test.describe('Compliance Notification Center — operator journeys', () => {
 
     const unread = page.getByTestId('notification-center-queue-unread')
     await expect(unread).toBeAttached({ timeout: 30000 })
-    // MOCK_EVENTS_MIXED has exactly 3 unread events (evt-010, evt-011, evt-012)
-    const unreadText = await unread.locator('dd').first().textContent({ timeout: 5000 })
-    expect(Number(unreadText?.trim())).toBe(3)
+    // MOCK_EVENTS_MIXED has exactly 3 unread events (evt-010, evt-011, evt-012) — toHaveText retries
+    await expect(unread.locator('dd').first()).toHaveText('3', { timeout: 5000 })
   })
 
   // ===========================================================================
@@ -305,10 +300,9 @@ test.describe('Compliance Notification Center — operator journeys', () => {
 
     await expect(page.getByTestId('notification-center-event-list')).toBeAttached({ timeout: 30000 })
 
-    // MOCK_EVENTS_MIXED has exactly 2 launch-blocking events (evt-010, evt-013)
+    // MOCK_EVENTS_MIXED has exactly 2 launch-blocking events (evt-010, evt-013) — toHaveCount retries
     const launchBlocking = page.getByTestId('notification-center-launch-blocking')
-    const count = await launchBlocking.count()
-    expect(count).toBe(2)
+    await expect(launchBlocking).toHaveCount(2, { timeout: 5000 })
 
     // First launch-blocking badge text
     const text = await launchBlocking.first().textContent({ timeout: 5000 })
@@ -338,10 +332,9 @@ test.describe('Compliance Notification Center — operator journeys', () => {
 
     await expect(page.getByTestId('notification-center-event-list')).toBeAttached({ timeout: 30000 })
 
-    // 7 events → 7 severity badges
+    // 7 events → 7 severity badges — toHaveCount is web-first (retries until count stabilises)
     const badges = page.getByTestId('notification-center-severity-badge')
-    const badgeCount = await badges.count()
-    expect(badgeCount).toBe(7)
+    await expect(badges).toHaveCount(7, { timeout: 5000 })
   })
 
   // ===========================================================================
