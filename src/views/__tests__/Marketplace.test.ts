@@ -135,4 +135,65 @@ describe('Marketplace View', () => {
     const filters = wrapper.find('[data-testid="marketplace-filters"]')
     expect(filters.exists()).toBe(true)
   })
+
+  // handleTokenSelect coverage (lines 167-170)
+  it('handleTokenSelect sets selectedToken and opens detail drawer', async () => {
+    const { wrapper } = await mountMarketplace()
+    const vm = wrapper.vm as any
+    const mockToken = {
+      id: 'tk-001',
+      name: 'Test Token',
+      ticker: 'TEST',
+      network: 'Algorand Mainnet',
+      standard: 'ARC3',
+      complianceBadge: 'MICA Compliant',
+      assetClass: 'Security Token',
+      price: 1.0,
+      priceChange24h: 0,
+      marketCap: 1000000,
+      volume24h: 50000,
+      holders: 100,
+      description: 'A test token',
+      issuer: 'Test Issuer',
+      issuanceDate: '2025-01-01',
+      totalSupply: 1000000,
+    }
+    vm.handleTokenSelect(mockToken)
+    await nextTick()
+    expect(vm.selectedToken).toStrictEqual(mockToken)
+    expect(vm.showDetailDrawer).toBe(true)
+  })
+
+  // closeDetailDrawer coverage (lines 172-178)
+  it('closeDetailDrawer hides the drawer immediately', async () => {
+    const { wrapper } = await mountMarketplace()
+    const vm = wrapper.vm as any
+    // First open the drawer
+    vm.showDetailDrawer = true
+    vm.selectedToken = { id: 'tk-001', name: 'Test Token' }
+    await nextTick()
+    expect(vm.showDetailDrawer).toBe(true)
+    // Close the drawer
+    vm.closeDetailDrawer()
+    await nextTick()
+    expect(vm.showDetailDrawer).toBe(false)
+  })
+
+  it('closeDetailDrawer clears selectedToken after animation delay', async () => {
+    vi.useFakeTimers()
+    const { wrapper } = await mountMarketplace()
+    const vm = wrapper.vm as any
+    vm.showDetailDrawer = true
+    vm.selectedToken = { id: 'tk-002', name: 'Token B' }
+    await nextTick()
+    vm.closeDetailDrawer()
+    await nextTick()
+    // selectedToken still set immediately (animation delay in progress)
+    expect(vm.selectedToken).not.toBeNull()
+    // After 300ms delay, selectedToken should be cleared
+    vi.advanceTimersByTime(300)
+    await nextTick()
+    expect(vm.selectedToken).toBeNull()
+    vi.useRealTimers()
+  })
 })

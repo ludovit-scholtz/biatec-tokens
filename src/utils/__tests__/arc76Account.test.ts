@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, afterEach } from 'vitest'
 import { generateAlgorandAccount } from '../arc76Account'
 
 describe('arc76Account', () => {
@@ -37,5 +37,33 @@ describe('arc76Account', () => {
     const account = await generateAlgorandAccount('test', 'test@test.com', 0)
     // Algorand addresses are 58 characters
     expect(account.addr.toString().length).toBe(58)
+  })
+
+  // getCryptoProvider error branch (line 8 in arc76Account.ts)
+  describe('getCryptoProvider — unavailable crypto error branch', () => {
+    afterEach(() => {
+      // crypto is restored inline in the test
+    })
+
+    it('throws when crypto.subtle is not available', async () => {
+      // Temporarily mock crypto.subtle as undefined to trigger the error branch
+      const originalCrypto = globalThis.crypto
+      Object.defineProperty(globalThis, 'crypto', {
+        value: { subtle: undefined },
+        writable: true,
+        configurable: true,
+      })
+
+      await expect(
+        generateAlgorandAccount('password', 'test@test.com', 0),
+      ).rejects.toThrow('Web Crypto API is unavailable')
+
+      // Restore original crypto
+      Object.defineProperty(globalThis, 'crypto', {
+        value: originalCrypto,
+        writable: true,
+        configurable: true,
+      })
+    })
   })
 })

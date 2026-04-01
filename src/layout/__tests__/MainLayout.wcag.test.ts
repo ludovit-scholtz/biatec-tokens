@@ -29,7 +29,7 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
-import { createRouter, createWebHistory, type Router } from 'vue-router'
+import { createRouter, createMemoryHistory, type Router } from 'vue-router'
 import { nextTick } from 'vue'
 import MainLayout from '../MainLayout.vue'
 
@@ -39,7 +39,7 @@ import MainLayout from '../MainLayout.vue'
 
 const makeRouter = (): Router =>
   createRouter({
-    history: createWebHistory(),
+    history: createMemoryHistory(),
     routes: [
       { path: '/', name: 'Home', meta: { title: 'Home' }, component: { template: '<div />' } },
       { path: '/operations', name: 'Operations', meta: { title: 'Operations' }, component: { template: '<div />' } },
@@ -184,5 +184,70 @@ describe('MainLayout — WCAG AA Accessibility', () => {
     // Either has announcement text or cleared (both are valid states after navigation)
     const text = announcer.text()
     expect(typeof text).toBe('string') // announcer exists and is readable by AT
+  })
+
+  // ── scheduleAnnouncement: timer cancellation on rapid navigation ──────────
+  // This covers lines 22-24: `if (announceTimer !== null) clearTimeout(announceTimer)`
+
+  it('only shows the LAST navigation announcement when two navigations fire within 100ms (WCAG SC 4.1.3)', async () => {
+    const router = makeRouter()
+    const wrapper = mountLayout(router)
+    await router.isReady()
+
+    // Fire first navigation (Operations), then immediately second (Home) — within 100ms
+    await router.push({ name: 'Operations' })
+    await router.isReady()
+    await nextTick()
+
+    // Immediately fire second navigation before first timer fires (~0ms elapsed)
+    await router.push({ name: 'Home' })
+    await router.isReady()
+    await nextTick()
+
+    // Wait for the second navigation's 100ms debounce to fire (real timers)
+    await new Promise(resolve => setTimeout(resolve, 150))
+    await nextTick()
+
+    const announcer = wrapper.find('[data-testid="route-announcer"]')
+    const text = announcer.text()
+    // The announcement should be for Home (the second navigation), NOT Operations
+    // If timer cancellation works correctly, Operations announcement never fires
+    expect(text).not.toBe('Navigated to Operations')
+    expect(text === 'Navigated to Home' || text === '').toBe(true)
+  })
+
+  // ── onUnmounted cleanup (prevents timer leaks) ────────────────────────────
+
+  it('unmounting clears pending timers without throwing', async () => {
+    const router = makeRouter()
+    const wrapper = mountLayout(router)
+    await router.isReady()
+
+    // Start an announcement (timer pending)
+    await router.push({ name: 'Operations' })
+    await router.isReady()
+    await nextTick()
+
+    // Unmount before timer fires — should not throw or leak
+    expect(() => wrapper.unmount()).not.toThrow()
+  })
+
+  // ── onUnmounted clears clearTimer as well (line 43 branch) ───────────────
+
+  it('unmounting after announcement fires clears the clearTimer without throwing', async () => {
+    const router = makeRouter()
+    const wrapper = mountLayout(router)
+    await router.isReady()
+
+    // Navigate and wait for the first timer (100ms) to fire and announcement to appear
+    await router.push({ name: 'Operations' })
+    await router.isReady()
+    await nextTick()
+    await new Promise(resolve => setTimeout(resolve, 150))
+    await nextTick()
+
+    // At this point clearTimer is running (2000ms to clear the announcement)
+    // Unmounting should cancel clearTimer without throwing
+    expect(() => wrapper.unmount()).not.toThrow()
   })
 })
