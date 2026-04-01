@@ -1029,4 +1029,99 @@ describe('complianceNotificationCenter', () => {
       expect(nullEvents.length).toBe(2)
     })
   })
+
+  // =========================================================================
+  // Date-robustness proof: exact boundary conditions for classifyFreshness
+  //
+  // These tests prove that the E2E dynamic-computation pattern mirrors the
+  // production utility thresholds exactly.  If the thresholds change, these
+  // tests fail first — giving developers a clear signal to update both the
+  // utility AND the E2E assertion logic together.
+  // =========================================================================
+  describe('classifyFreshness — exact threshold boundaries (date-robustness proof)', () => {
+    const DAY_MS = 24 * 60 * 60 * 1000 // must match complianceNotificationCenter.ts DAY_MS
+
+    it('returns aging for age one minute below the 3-day stale threshold', () => {
+      const justUnder3Days = new Date(NOW.getTime() - (3 * DAY_MS - 60_000))
+      expect(classifyFreshness(justUnder3Days.toISOString(), NOW)).toBe('aging')
+    })
+
+    it('returns stale for age at exactly the 3-day threshold', () => {
+      const exactly3Days = new Date(NOW.getTime() - 3 * DAY_MS)
+      expect(classifyFreshness(exactly3Days.toISOString(), NOW)).toBe('stale')
+    })
+
+    it('returns stale for age one minute below the 7-day critical threshold', () => {
+      const justUnder7Days = new Date(NOW.getTime() - (7 * DAY_MS - 60_000))
+      expect(classifyFreshness(justUnder7Days.toISOString(), NOW)).toBe('stale')
+    })
+
+    it('returns critical for age at exactly the 7-day threshold', () => {
+      const exactly7Days = new Date(NOW.getTime() - 7 * DAY_MS)
+      expect(classifyFreshness(exactly7Days.toISOString(), NOW)).toBe('critical')
+    })
+
+    it('stale threshold is exactly 3 * 24 * 60 * 60 * 1000 ms (matches E2E THREE_DAYS_MS)', () => {
+      const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000
+      const atThreshold = new Date(NOW.getTime() - THREE_DAYS_MS)
+      const justBelow = new Date(NOW.getTime() - (THREE_DAYS_MS - 1))
+      expect(classifyFreshness(atThreshold.toISOString(), NOW)).toBe('stale')
+      expect(classifyFreshness(justBelow.toISOString(), NOW)).toBe('aging')
+    })
+
+    it('critical threshold is exactly 7 * 24 * 60 * 60 * 1000 ms (matches E2E SEVEN_DAYS_MS)', () => {
+      const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000
+      const atThreshold = new Date(NOW.getTime() - SEVEN_DAYS_MS)
+      const justBelow = new Date(NOW.getTime() - (SEVEN_DAYS_MS - 1))
+      expect(classifyFreshness(atThreshold.toISOString(), NOW)).toBe('critical')
+      expect(classifyFreshness(justBelow.toISOString(), NOW)).toBe('stale')
+    })
+  })
+
+  // =========================================================================
+  // Date-robustness proof: E2E dynamic-count formula ↔ utility alignment
+  //
+  // These tests prove that the formula used in E2E tests to compute expected
+  // stale/critical counts produces the same result as the production utility
+  // functions (deriveQueueSummary and filterEvents).  They use Date.now() so
+  // they are correct on any date CI runs.
+  // =========================================================================
+  describe('E2E dynamic threshold formula alignment (date-robustness proof)', () => {
+    it('THREE_DAYS_MS formula produces same staleCount as deriveQueueSummary', () => {
+      // Formula used in e2e/compliance-notification-center.spec.ts 'queue stale card' test
+      const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000
+      const nowMs = Date.now()
+      const e2eDynamicCount = MOCK_EVENTS_MIXED.filter(
+        (e) => nowMs - new Date(e.timestamp).getTime() >= THREE_DAYS_MS,
+      ).length
+
+      // Production utility result — should be identical
+      const summary = deriveQueueSummary(MOCK_EVENTS_MIXED, new Date(nowMs))
+      expect(e2eDynamicCount).toBe(summary.staleCount)
+    })
+
+    it('SEVEN_DAYS_MS formula produces same count as filterEvents(critical) freshness filter', () => {
+      // Formula used in e2e/compliance-notification-center.spec.ts 'filters events by freshness' test
+      const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000
+      const nowMs = Date.now()
+      const e2eDynamicCount = MOCK_EVENTS_MIXED.filter(
+        (e) => nowMs - new Date(e.timestamp).getTime() >= SEVEN_DAYS_MS,
+      ).length
+
+      // Production utility result — should be identical
+      const criticalFilter: NotificationFilters = { ...DEFAULT_FILTERS, freshness: 'critical' }
+      const criticalEvents = filterEvents(MOCK_EVENTS_MIXED, criticalFilter, new Date(nowMs))
+      expect(e2eDynamicCount).toBe(criticalEvents.length)
+    })
+
+    it('MOCK_EVENTS_MIXED has at least one event that is always critical (evt-013, March 20)', () => {
+      // evt-013 timestamp is 2026-03-20T10:00:00.000Z — always > 7 days old after April 2026
+      const evt013 = MOCK_EVENTS_MIXED.find((e) => e.id === 'evt-013')
+      expect(evt013).toBeTruthy()
+      const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000
+      const ageMs = Date.now() - new Date(evt013!.timestamp).getTime()
+      expect(ageMs).toBeGreaterThan(SEVEN_DAYS_MS)
+      expect(classifyFreshness(evt013!.timestamp)).toBe('critical')
+    })
+  })
 })
