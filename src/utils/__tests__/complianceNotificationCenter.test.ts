@@ -1260,3 +1260,80 @@ describe('E2E dynamic threshold formula alignment (date-robustness proof)', () =
     expect(summary.staleCount).toBe(1)
   })
 })
+
+// =============================================================================
+// Builder function integration with filterEvents and sortEventsByPriority
+// These tests prove the builder functions work correctly with the full pipeline
+// at any run date, preventing regressions when freshness thresholds change.
+// =============================================================================
+describe('buildMockEventsMixed — filterEvents and sorting integration', () => {
+  it('filterEvents with freshness=critical returns exactly 1 event at any run date', () => {
+    const anchor = new Date()
+    const events = buildMockEventsMixed(anchor)
+    const filters: NotificationFilters = { ...DEFAULT_FILTERS, freshness: 'critical' }
+    const filtered = filterEvents(events, filters, anchor)
+    expect(filtered.length).toBe(1)
+    expect(filtered[0].id).toBe('evt-013')
+  })
+
+  it('filterEvents with freshness=fresh returns exactly 2 events at any run date', () => {
+    // fresh = ageMs < HOUR_MS (3,600,000 ms = 60 min)
+    // evt-010: 15 min ago → fresh
+    // evt-011: 40 min ago → fresh
+    // evt-012: 90 min ago → recent (>= 60 min threshold)
+    // All other events are aging, stale, or critical
+    const anchor = new Date()
+    const events = buildMockEventsMixed(anchor)
+    const filters: NotificationFilters = { ...DEFAULT_FILTERS, freshness: 'fresh' }
+    const filtered = filterEvents(events, filters, anchor)
+    expect(filtered.length).toBe(2)
+    expect(filtered.map(e => e.id).sort()).toEqual(['evt-010', 'evt-011'].sort())
+  })
+
+  it('sortEventsByPriority places blocked events first with buildMockEventsMixed()', () => {
+    const anchor = new Date()
+    const events = buildMockEventsMixed(anchor)
+    const sorted = sortEventsByPriority(events)
+    // blocked severity has the lowest rank (highest priority)
+    expect(sorted[0].severity).toBe('blocked')
+  })
+
+  it('filterEvents with severity=blocked returns exactly 1 event at any run date', () => {
+    const anchor = new Date()
+    const events = buildMockEventsMixed(anchor)
+    const filters: NotificationFilters = { ...DEFAULT_FILTERS, severity: 'blocked' }
+    const filtered = filterEvents(events, filters, anchor)
+    expect(filtered.length).toBe(1)
+    expect(filtered[0].id).toBe('evt-010')
+  })
+
+  it('filterEvents with category=sanctions_escalation returns exactly 1 event at any run date', () => {
+    const anchor = new Date()
+    const events = buildMockEventsMixed(anchor)
+    const filters: NotificationFilters = { ...DEFAULT_FILTERS, category: 'sanctions_escalation' }
+    const filtered = filterEvents(events, filters, anchor)
+    expect(filtered.length).toBe(1)
+    expect(filtered[0].id).toBe('evt-010')
+  })
+
+  it('filterEvents with readState=unread returns exactly 3 events at any run date', () => {
+    const anchor = new Date()
+    const events = buildMockEventsMixed(anchor)
+    const filters: NotificationFilters = { ...DEFAULT_FILTERS, readState: 'unread' }
+    const filtered = filterEvents(events, filters, anchor)
+    expect(filtered.length).toBe(3)
+    // Unread events: evt-010, evt-011, evt-012
+    expect(filtered.map(e => e.id).sort()).toEqual(['evt-010', 'evt-011', 'evt-012'].sort())
+  })
+
+  it('deriveNotificationCenterState with builder produces correct category counts at any run date', () => {
+    const anchor = new Date()
+    const events = buildMockEventsMixed(anchor)
+    const refreshedAt = anchor.toISOString()
+    const state = deriveNotificationCenterState(events, refreshedAt, anchor)
+    expect(state.events.length).toBe(7)
+    // Exactly 1 sanctions escalation event
+    const sanctions = state.events.filter(e => e.category === 'sanctions_escalation')
+    expect(sanctions.length).toBe(1)
+  })
+})
