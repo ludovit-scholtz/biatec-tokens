@@ -1337,3 +1337,130 @@ describe('buildMockEventsMixed — filterEvents and sorting integration', () => 
     expect(sanctions.length).toBe(1)
   })
 })
+
+// ===========================================================================
+// Additional integration — freshness distribution and queue metrics from builder
+// ===========================================================================
+describe('buildMockEventsMixed — freshness distribution and queue metrics', () => {
+  // Event offsets in buildMockEventsMixed:
+  //   evt-010: 15 min  → fresh    (< 1h)
+  //   evt-011: 40 min  → fresh    (< 1h)
+  //   evt-012: 90 min  → recent   (>= 1h, < 24h)
+  //   evt-014: 3 h     → recent   (>= 1h, < 24h)
+  //   evt-015: 3.5 h   → recent   (>= 1h, < 24h)
+  //   evt-016: 4 h     → recent   (>= 1h, < 24h)
+  //   evt-013: 173 h   → critical (>= 7d threshold)
+  // No events fall in the aging (24h–72h) or stale (72h–168h) buckets.
+
+  it('filterEvents with freshness=fresh returns exactly 2 events at any run date', () => {
+    // evt-010 (15 min) and evt-011 (40 min)
+    const anchor = new Date()
+    const events = buildMockEventsMixed(anchor)
+    const filters: NotificationFilters = { ...DEFAULT_FILTERS, freshness: 'fresh' }
+    const filtered = filterEvents(events, filters, anchor)
+    expect(filtered.length).toBe(2)
+    expect(filtered.map(e => e.id).sort()).toEqual(['evt-010', 'evt-011'].sort())
+  })
+
+  it('filterEvents with freshness=recent returns exactly 4 events at any run date', () => {
+    // evt-012 (90 min), evt-014 (3h), evt-015 (3.5h), evt-016 (4h)
+    const anchor = new Date()
+    const events = buildMockEventsMixed(anchor)
+    const filters: NotificationFilters = { ...DEFAULT_FILTERS, freshness: 'recent' }
+    const filtered = filterEvents(events, filters, anchor)
+    expect(filtered.length).toBe(4)
+    expect(filtered.map(e => e.id).sort()).toEqual(['evt-012', 'evt-014', 'evt-015', 'evt-016'].sort())
+  })
+
+  it('filterEvents with freshness=aging returns 0 events (no events in 24h–72h range)', () => {
+    const anchor = new Date()
+    const events = buildMockEventsMixed(anchor)
+    const filters: NotificationFilters = { ...DEFAULT_FILTERS, freshness: 'aging' }
+    const filtered = filterEvents(events, filters, anchor)
+    expect(filtered.length).toBe(0)
+  })
+
+  it('filterEvents with freshness=stale returns 0 events (no events in 72h–168h range)', () => {
+    const anchor = new Date()
+    const events = buildMockEventsMixed(anchor)
+    const filters: NotificationFilters = { ...DEFAULT_FILTERS, freshness: 'stale' }
+    const filtered = filterEvents(events, filters, anchor)
+    expect(filtered.length).toBe(0)
+  })
+
+  it('freshness distribution across buckets sums to exactly 7 at any run date', () => {
+    const anchor = new Date()
+    const events = buildMockEventsMixed(anchor)
+    const buckets: FreshnessBucket[] = ['fresh', 'recent', 'aging', 'stale', 'critical']
+    const counts = buckets.map(b => {
+      const filters: NotificationFilters = { ...DEFAULT_FILTERS, freshness: b }
+      return filterEvents(events, filters, anchor).length
+    })
+    // fresh=2, recent=4, aging=0, stale=0, critical=1
+    expect(counts).toEqual([2, 4, 0, 0, 1])
+    expect(counts.reduce((a, b) => a + b, 0)).toBe(7)
+  })
+
+  it('buildMockEventsMixed has exactly 2 events with severity=action_needed', () => {
+    const events = buildMockEventsMixed()
+    const actionNeeded = events.filter(e => e.severity === 'action_needed')
+    expect(actionNeeded.length).toBe(2)
+    expect(actionNeeded.map(e => e.id).sort()).toEqual(['evt-011', 'evt-013'].sort())
+  })
+
+  it('buildMockEventsMixed has exactly 1 event with severity=waiting_on_provider', () => {
+    const events = buildMockEventsMixed()
+    const waiting = events.filter(e => e.severity === 'waiting_on_provider')
+    expect(waiting.length).toBe(1)
+    expect(waiting[0].id).toBe('evt-012')
+  })
+
+  it('buildMockEventsMixed has exactly 2 events with severity=informational', () => {
+    const events = buildMockEventsMixed()
+    const informational = events.filter(e => e.severity === 'informational')
+    expect(informational.length).toBe(2)
+    expect(informational.map(e => e.id).sort()).toEqual(['evt-015', 'evt-016'].sort())
+  })
+
+  it('deriveQueueSummary.actionNeeded is exactly 2 from builder at any run date', () => {
+    const anchor = new Date()
+    const summary = deriveQueueSummary(buildMockEventsMixed(anchor), anchor)
+    expect(summary.actionNeeded).toBe(2)
+  })
+
+  it('deriveQueueSummary.waitingOnProvider is exactly 1 from builder at any run date', () => {
+    const anchor = new Date()
+    const summary = deriveQueueSummary(buildMockEventsMixed(anchor), anchor)
+    expect(summary.waitingOnProvider).toBe(1)
+  })
+
+  it('deriveQueueSummary.blocked is exactly 1 from builder at any run date', () => {
+    const anchor = new Date()
+    const summary = deriveQueueSummary(buildMockEventsMixed(anchor), anchor)
+    expect(summary.blocked).toBe(1)
+  })
+
+  it('deriveQueueSummary.unread is exactly 3 from builder at any run date', () => {
+    const anchor = new Date()
+    const summary = deriveQueueSummary(buildMockEventsMixed(anchor), anchor)
+    expect(summary.unread).toBe(3)
+  })
+
+  it('buildMockTimelineEntries tl-001 is always exactly 10 min ago', () => {
+    const customAnchor = new Date('2030-01-15T10:00:00.000Z')
+    const entries = buildMockTimelineEntries(customAnchor)
+    const tl001 = entries.find(e => e.id === 'tl-001')!
+    expect(tl001).toBeDefined()
+    const ageMs = customAnchor.getTime() - new Date(tl001.timestamp).getTime()
+    expect(ageMs).toBe(10 * 60 * 1000) // 10 minutes in ms
+  })
+
+  it('buildMockTimelineEntries tl-004 is always exactly 23 h ago (Yesterday group)', () => {
+    const customAnchor = new Date('2030-01-15T10:00:00.000Z')
+    const entries = buildMockTimelineEntries(customAnchor)
+    const tl004 = entries.find(e => e.id === 'tl-004')!
+    expect(tl004).toBeDefined()
+    const ageMs = customAnchor.getTime() - new Date(tl004.timestamp).getTime()
+    expect(ageMs).toBe(23 * 60 * 60 * 1000) // 23 hours in ms
+  })
+})

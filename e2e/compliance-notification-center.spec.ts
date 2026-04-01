@@ -103,14 +103,13 @@ test.describe('Compliance Notification Center — operator journeys', () => {
     await expect(timeline).toBeAttached({ timeout: 30000 })
 
     // buildMockTimelineEntries() produces 4 entries across 2 relative-date groups (Today + Yesterday)
+    // toHaveCount is web-first: retries until the count stabilises, replacing snapshot count()
     const groups = page.getByTestId('notification-center-timeline-group')
-    const groupCount = await groups.count()
-    expect(groupCount).toBe(2)
+    await expect(groups).toHaveCount(2, { timeout: 10000 })
 
-    // Exactly 4 timeline entries
+    // Exactly 4 timeline entries — toHaveCount retries until count stabilises
     const entries = page.getByTestId('notification-center-timeline-entry')
-    const entryCount = await entries.count()
-    expect(entryCount).toBe(4)
+    await expect(entries).toHaveCount(4, { timeout: 10000 })
   })
 
   // ===========================================================================
@@ -177,9 +176,9 @@ test.describe('Compliance Notification Center — operator journeys', () => {
 
     // Count drill-down links — 5 events have non-null drillDownPath
     // (evt-010→operations, evt-011→onboarding, evt-013→release, evt-014→onboarding, evt-015→onboarding)
+    // toHaveCount is web-first: retries until the count stabilises, replacing snapshot count()
     const allDrillDowns = page.getByTestId('notification-center-drill-down')
-    const drillDownCount = await allDrillDowns.count()
-    expect(drillDownCount).toBe(5)
+    await expect(allDrillDowns).toHaveCount(5, { timeout: 10000 })
   })
 
   // ===========================================================================
@@ -363,9 +362,9 @@ test.describe('Compliance Notification Center — operator journeys', () => {
 
     const actionNeeded = page.getByTestId('notification-center-queue-action-needed')
     await expect(actionNeeded).toBeAttached({ timeout: 30000 })
-    // MOCK_EVENTS_MIXED has exactly 2 action_needed events (evt-011, evt-014)
-    const text = await actionNeeded.locator('dd').first().textContent({ timeout: 5000 })
-    expect(Number(text?.trim())).toBe(2)
+    // buildMockEventsMixed() has exactly 2 action_needed events (evt-011, evt-013)
+    // toHaveText is web-first (polling) — more reliable than snapshot textContent().toBe()
+    await expect(actionNeeded.locator('dd').first()).toHaveText('2', { timeout: 10000 })
   })
 
   // ===========================================================================
@@ -377,9 +376,9 @@ test.describe('Compliance Notification Center — operator journeys', () => {
 
     const waiting = page.getByTestId('notification-center-queue-waiting')
     await expect(waiting).toBeAttached({ timeout: 30000 })
-    // MOCK_EVENTS_MIXED has exactly 1 waiting_on_provider event (evt-012)
-    const text = await waiting.locator('dd').first().textContent({ timeout: 5000 })
-    expect(Number(text?.trim())).toBe(1)
+    // buildMockEventsMixed() has exactly 1 waiting_on_provider event (evt-012)
+    // toHaveText is web-first (polling) — more reliable than snapshot textContent().toBe()
+    await expect(waiting.locator('dd').first()).toHaveText('1', { timeout: 10000 })
   })
 
   // ===========================================================================
