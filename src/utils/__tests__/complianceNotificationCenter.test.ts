@@ -1287,7 +1287,7 @@ describe('buildMockEventsMixed — filterEvents and sorting integration', () => 
     const filters: NotificationFilters = { ...DEFAULT_FILTERS, freshness: 'fresh' }
     const filtered = filterEvents(events, filters, anchor)
     expect(filtered.length).toBe(2)
-    expect(filtered.map(e => e.id).sort()).toEqual(['evt-010', 'evt-011'].sort())
+    expect(filtered.map(e => e.id).sort()).toEqual(['evt-010', 'evt-011'])
   })
 
   it('sortEventsByPriority places blocked events first with buildMockEventsMixed()', () => {
@@ -1323,7 +1323,7 @@ describe('buildMockEventsMixed — filterEvents and sorting integration', () => 
     const filtered = filterEvents(events, filters, anchor)
     expect(filtered.length).toBe(3)
     // Unread events: evt-010, evt-011, evt-012
-    expect(filtered.map(e => e.id).sort()).toEqual(['evt-010', 'evt-011', 'evt-012'].sort())
+    expect(filtered.map(e => e.id).sort()).toEqual(['evt-010', 'evt-011', 'evt-012'])
   })
 
   it('deriveNotificationCenterState with builder produces correct category counts at any run date', () => {
@@ -1359,7 +1359,7 @@ describe('buildMockEventsMixed — freshness distribution and queue metrics', ()
     const filters: NotificationFilters = { ...DEFAULT_FILTERS, freshness: 'fresh' }
     const filtered = filterEvents(events, filters, anchor)
     expect(filtered.length).toBe(2)
-    expect(filtered.map(e => e.id).sort()).toEqual(['evt-010', 'evt-011'].sort())
+    expect(filtered.map(e => e.id).sort()).toEqual(['evt-010', 'evt-011'])
   })
 
   it('filterEvents with freshness=recent returns exactly 4 events at any run date', () => {
@@ -1369,7 +1369,7 @@ describe('buildMockEventsMixed — freshness distribution and queue metrics', ()
     const filters: NotificationFilters = { ...DEFAULT_FILTERS, freshness: 'recent' }
     const filtered = filterEvents(events, filters, anchor)
     expect(filtered.length).toBe(4)
-    expect(filtered.map(e => e.id).sort()).toEqual(['evt-012', 'evt-014', 'evt-015', 'evt-016'].sort())
+    expect(filtered.map(e => e.id).sort()).toEqual(['evt-012', 'evt-014', 'evt-015', 'evt-016'])
   })
 
   it('filterEvents with freshness=aging returns 0 events (no events in 24h–72h range)', () => {
@@ -1405,7 +1405,7 @@ describe('buildMockEventsMixed — freshness distribution and queue metrics', ()
     const events = buildMockEventsMixed()
     const actionNeeded = events.filter(e => e.severity === 'action_needed')
     expect(actionNeeded.length).toBe(2)
-    expect(actionNeeded.map(e => e.id).sort()).toEqual(['evt-011', 'evt-013'].sort())
+    expect(actionNeeded.map(e => e.id).sort()).toEqual(['evt-011', 'evt-013'])
   })
 
   it('buildMockEventsMixed has exactly 1 event with severity=waiting_on_provider', () => {
@@ -1419,7 +1419,7 @@ describe('buildMockEventsMixed — freshness distribution and queue metrics', ()
     const events = buildMockEventsMixed()
     const informational = events.filter(e => e.severity === 'informational')
     expect(informational.length).toBe(2)
-    expect(informational.map(e => e.id).sort()).toEqual(['evt-015', 'evt-016'].sort())
+    expect(informational.map(e => e.id).sort()).toEqual(['evt-015', 'evt-016'])
   })
 
   it('deriveQueueSummary.actionNeeded is exactly 2 from builder at any run date', () => {
