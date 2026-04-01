@@ -306,6 +306,17 @@ describe('loadLiveOperatorWorkQueue', () => {
     expect(() => new Date(result.fetchedAt)).not.toThrow()
     expect(new Date(result.fetchedAt).getTime()).toBeGreaterThan(0)
   })
+
+  it('returns mock degraded when API client factory returns null', async () => {
+    const mod = await import('../../lib/api/complianceCaseManagement') as Record<string, unknown>
+    const mockCreateClient = mod.createComplianceCaseClient as ReturnType<typeof vi.fn>
+    mockCreateClient.mockReturnValueOnce(null)
+
+    const result = await loadLiveOperatorWorkQueue('valid-token')
+    expect(result.source).toBe('mock')
+    expect(result.isDegraded).toBe(true)
+    expect(result.degradedReason).toContain('API client')
+  })
 })
 
 // ---------------------------------------------------------------------------
@@ -373,6 +384,19 @@ describe('loadLiveCaseDrillDown', () => {
     expect(result.source).toBe('mock')
     expect(result.isDegraded).toBe(true)
     expect(result.degradedReason).toContain('timeout')
+  })
+
+  it('returns mock degraded when API client factory returns null', async () => {
+    const mod = await import('../../lib/api/complianceCaseManagement') as Record<string, unknown>
+    const mockCreateClient = mod.createComplianceCaseClient as ReturnType<typeof vi.fn>
+    mockCreateClient.mockReturnValueOnce(null)
+
+    const item = makeWorkItem()
+    const result = await loadLiveCaseDrillDown('case-001', item, 'valid-token')
+    expect(result.source).toBe('mock')
+    expect(result.isDegraded).toBe(true)
+    expect(result.data).toBeNull()
+    expect(result.degradedReason).toContain('unavailable')
   })
 })
 
@@ -617,5 +641,130 @@ describe('dataSourceBadgeClass', () => {
   it('returns gray class for mock degraded', () => {
     const cls = dataSourceBadgeClass('mock', true)
     expect(cls).toContain('gray')
+  })
+})
+
+// ---------------------------------------------------------------------------
+// buildDrillDownFromNormalisedDetail — uncovered evidence-group branches
+// ---------------------------------------------------------------------------
+
+function makeEvidenceItem(
+  overrides: Partial<{
+    id: string
+    documentType: string
+    statusLabel: string
+    isDeficient: boolean
+    isExpired: boolean
+    isFreshnessFailing: boolean
+    lastVerifiedLabel: string
+    reviewedBy: string
+    reviewerNotes: string
+    documentUrl: string | null
+  }> = {},
+) {
+  return {
+    id: 'ev-001',
+    documentType: 'KYC Passport',
+    statusLabel: 'Valid',
+    isDeficient: false,
+    isExpired: false,
+    isFreshnessFailing: false,
+    lastVerifiedLabel: '1 day ago',
+    reviewedBy: 'Officer A',
+    reviewerNotes: '',
+    documentUrl: null,
+    ...overrides,
+  }
+}
+
+describe('buildDrillDownFromNormalisedDetail — evidence group stale/placeholder branches', () => {
+  it('KYC item with isExpired=true produces stale evidence status', () => {
+    const workItem = makeWorkItem()
+    const detail = makeNormalisedDetail({
+      evidenceItems: [
+        makeEvidenceItem({ id: 'ev-kyc-exp', documentType: 'KYC Passport', isExpired: true }),
+      ],
+    })
+    const state = buildDrillDownFromNormalisedDetail(workItem, detail)
+    const kycGroup = state.evidenceGroups.find((g) => g.category === 'identity_kyc')
+    expect(kycGroup).toBeTruthy()
+    expect(kycGroup!.items[0].status).toBe('stale')
+  })
+
+  it('KYC item with isDeficient=true produces stale evidence status', () => {
+    const workItem = makeWorkItem()
+    const detail = makeNormalisedDetail({
+      evidenceItems: [
+        makeEvidenceItem({ id: 'ev-kyc-def', documentType: 'Identity Card', isDeficient: true }),
+      ],
+    })
+    const state = buildDrillDownFromNormalisedDetail(workItem, detail)
+    const kycGroup = state.evidenceGroups.find((g) => g.category === 'identity_kyc')
+    expect(kycGroup!.items.length).toBe(1)
+    expect(kycGroup!.items[0].status).toBe('stale')
+  })
+
+  it('AML item with isDeficient=true produces stale evidence status', () => {
+    const workItem = makeWorkItem()
+    const detail = makeNormalisedDetail({
+      evidenceItems: [
+        makeEvidenceItem({
+          id: 'ev-aml-def',
+          documentType: 'AML Screening Report',
+          isDeficient: true,
+          reviewerNotes: 'Watchlist match found',
+        }),
+      ],
+    })
+    const state = buildDrillDownFromNormalisedDetail(workItem, detail)
+    const amlGroup = state.evidenceGroups.find((g) => g.category === 'aml_sanctions')
+    expect(amlGroup).toBeTruthy()
+    expect(amlGroup!.items.length).toBe(1)
+    expect(amlGroup!.items[0].status).toBe('stale')
+  })
+
+  it('no AML evidence items uses placeholder with amlClear=false → stale status', () => {
+    const workItem = makeWorkItem()
+    const detail = makeNormalisedDetail({
+      evidenceItems: [],
+      summary: {
+        id: 'case-001',
+        referenceNumber: 'BT-2026-001',
+        entityName: 'Thorngate Capital',
+        entityType: 'Corporate',
+        status: 'UNDER_REVIEW',
+        riskLevel: 'MEDIUM',
+        kycApproved: true,
+        amlClear: false,
+        isHighRisk: false,
+      },
+    })
+    const state = buildDrillDownFromNormalisedDetail(workItem, detail)
+    const amlGroup = state.evidenceGroups.find((g) => g.category === 'aml_sanctions')
+    expect(amlGroup).toBeTruthy()
+    expect(amlGroup!.items.length).toBe(1)
+    expect(amlGroup!.items[0].id).toContain('aml-placeholder')
+    // amlClear=false → placeholder status is 'stale' (not cleared)
+    expect(amlGroup!.items[0].status).toBe('stale')
+  })
+})
+
+// ---------------------------------------------------------------------------
+// submitLiveEscalation — client factory returns null branch
+// ---------------------------------------------------------------------------
+
+describe('submitLiveEscalation — client unavailable branch', () => {
+  it('returns success=false when API client factory returns null', async () => {
+    const mod = await import('../../lib/api/complianceCaseManagement') as Record<string, unknown>
+    const mockCreateClient = mod.createComplianceCaseClient as ReturnType<typeof vi.fn>
+    mockCreateClient.mockReturnValueOnce(null)
+
+    const result = await submitLiveEscalation(
+      { caseId: 'case-001', reason: 'aml_flag', note: '', destination: 'Senior Reviewer' },
+      'valid-bearer-token',
+    )
+    expect(result.success).toBe(false)
+    expect(result.source).toBe('mock')
+    expect(result.errorMessage).toContain('unavailable')
   })
 })
