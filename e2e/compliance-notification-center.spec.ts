@@ -397,10 +397,11 @@ test.describe('Compliance Notification Center — operator journeys', () => {
     await page.waitForLoadState('load', { timeout: 10000 })
 
     const stale = page.getByTestId('notification-center-queue-stale')
-    await expect(stale).toBeAttached({ timeout: 30000 })
-    // MOCK_EVENTS_MIXED has exactly 1 critical-freshness event (evt-013)
-    const text = await stale.locator('dd').first().textContent({ timeout: 5000 })
-    expect(Number(text?.trim())).toBe(1)
+    // Wait for the stale card to appear AND show the expected value.
+    // Using toHaveText (web-first, polling) is more robust than a one-shot
+    // textContent() read — it retries until the text resolves to '1' or times out.
+    // buildMockEventsMixed() always produces exactly 1 critical-freshness event (evt-013).
+    await expect(stale.locator('dd').first()).toHaveText('1', { timeout: 30000 })
   })
 
   // ===========================================================================

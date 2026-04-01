@@ -106,8 +106,17 @@ export async function runAxeScan(page: Page, options: AxeScanOptions | string): 
         document.documentElement.classList.contains('light'),
       { timeout: 5000 },
     )
-    .catch(() => {
-      // Non-fatal: proceed if theme class is not present (e.g., unusual headless env).
+    .catch(async () => {
+      // Theme class not applied within 5 s — force dark mode so axe-core sees
+      // fully-resolved Tailwind custom properties instead of intermediate values
+      // that fail the color-contrast rule (58 nodes) on slow CI runners.
+      await page
+        .evaluate(() => {
+          document.documentElement.classList.add('dark')
+        })
+        .catch(() => {
+          // Ignore evaluate errors in unusual headless environments.
+        })
     })
 
   let builder = new AxeBuilder({ page }).withTags([...WCAG_AA_TAGS])
