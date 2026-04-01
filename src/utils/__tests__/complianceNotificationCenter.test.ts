@@ -1194,7 +1194,7 @@ describe('buildMockTimelineEntries', () => {
     expect(yesterday.entries.length).toBe(1)
   })
 
-  it('tl-004 always falls in Yesterday group (23 h offset)', () => {
+  it('tl-004 always falls in Yesterday group (calendar-day offset, always noon on previous day)', () => {
     const anchor = new Date()
     const entries = buildMockTimelineEntries(anchor)
     const groups = groupTimelineByDate(entries, anchor)
@@ -1455,12 +1455,15 @@ describe('buildMockEventsMixed — freshness distribution and queue metrics', ()
     expect(ageMs).toBe(10 * 60 * 1000) // 10 minutes in ms
   })
 
-  it('buildMockTimelineEntries tl-004 is always exactly 23 h ago (Yesterday group)', () => {
+  it('buildMockTimelineEntries tl-004 is always on the previous calendar day (Yesterday group)', () => {
     const customAnchor = new Date('2030-01-15T10:00:00.000Z')
     const entries = buildMockTimelineEntries(customAnchor)
     const tl004 = entries.find(e => e.id === 'tl-004')!
     expect(tl004).toBeDefined()
-    const ageMs = customAnchor.getTime() - new Date(tl004.timestamp).getTime()
-    expect(ageMs).toBe(23 * 60 * 60 * 1000) // 23 hours in ms
+    // tl-004 uses noon on the previous calendar day — verify it groups as "Yesterday"
+    const groups = groupTimelineByDate(entries, customAnchor)
+    const yesterday = groups.find(g => g.dateLabel === 'Yesterday')
+    expect(yesterday).toBeDefined()
+    expect(yesterday!.entries.some(e => e.id === 'tl-004')).toBe(true)
   })
 })

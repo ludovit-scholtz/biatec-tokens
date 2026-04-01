@@ -676,10 +676,17 @@ export function buildMockEventsMixed(anchor: Date = new Date()): ComplianceEvent
  *
  * Groups:
  *   Today    (3 entries): tl-001 (10 min), tl-002 (30 min), tl-003 (5 hours)
- *   Yesterday (1 entry): tl-004 (23 hours)
+ *   Yesterday (1 entry): tl-004 (noon on previous calendar day)
+ *
+ * tl-004 uses a calendar-day-based offset (noon on previous calendar date)
+ * rather than a fixed-hour offset to guarantee it always falls on "Yesterday"
+ * regardless of what time of day the function is called. A 23-hour offset
+ * can land on the same calendar day when called late at night (e.g. 23:00 → 00:00).
  */
 export function buildMockTimelineEntries(anchor: Date = new Date()): TimelineEntry[] {
   const t = anchor.getTime()
+  // noon on previous calendar day — always classifies as "Yesterday" regardless of anchor time
+  const yesterdayNoon = new Date(anchor.getFullYear(), anchor.getMonth(), anchor.getDate() - 1, 12, 0, 0, 0)
   return [
     {
       id: 'tl-001',
@@ -716,7 +723,7 @@ export function buildMockTimelineEntries(anchor: Date = new Date()): TimelineEnt
     },
     {
       id: 'tl-004',
-      timestamp: new Date(t - 23 * HOUR_MS).toISOString(),
+      timestamp: yesterdayNoon.toISOString(),
       actor: 'System',
       actorType: 'automation',
       transition: 'Evidence package scheduled',
