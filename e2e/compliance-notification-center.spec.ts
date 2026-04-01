@@ -396,12 +396,17 @@ test.describe('Compliance Notification Center — operator journeys', () => {
     await page.goto('/compliance/notifications', { timeout: 15000 })
     await page.waitForLoadState('load', { timeout: 10000 })
 
+    // Wait for the event list to confirm loadEvents() has completed and isLoading=false.
+    // The event list is inside v-else (only rendered after isLoading=false), so its
+    // attachment guarantees centerState.queueSummary is fully populated.
+    await expect(page.getByTestId('notification-center-event-list')).toBeAttached({ timeout: 30000 })
+
     const stale = page.getByTestId('notification-center-queue-stale')
-    // Wait for the stale card to appear AND show the expected value.
-    // Using toHaveText (web-first, polling) is more robust than a one-shot
-    // textContent() read — it retries until the text resolves to '1' or times out.
-    // buildMockEventsMixed() always produces exactly 1 critical-freshness event (evt-013).
-    await expect(stale.locator('dd').first()).toHaveText('1', { timeout: 30000 })
+    // Use toHaveText (web-first, polling) as belt-and-suspenders on top of the
+    // event-list gate — retries until the dd resolves to '1' or times out.
+    // buildMockEventsMixed() always produces exactly 1 critical-freshness event (evt-013,
+    // anchored at 173 h ago ≥ 7-day threshold).
+    await expect(stale.locator('dd').first()).toHaveText('1', { timeout: 10000 })
   })
 
   // ===========================================================================
