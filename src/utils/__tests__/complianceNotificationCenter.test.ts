@@ -157,6 +157,49 @@ describe('complianceNotificationCenter', () => {
       const future = new Date(NOW.getTime() + 60_000).toISOString()
       expect(classifyFreshness(future, NOW)).toBe('fresh')
     })
+
+    // ── Exact boundary tests (date-robustness proof) ──────────────────────
+    // These verify the ±1ms behaviour at every threshold so any change to the
+    // HOUR_MS / DAY_MS constants immediately breaks a test.
+    it('returns fresh for timestamp exactly 1 ms before the 1-hour boundary', () => {
+      const ts = new Date(NOW.getTime() - (3_600_000 - 1)).toISOString()
+      expect(classifyFreshness(ts, NOW)).toBe('fresh')
+    })
+
+    it('returns recent for timestamp exactly at the 1-hour boundary', () => {
+      const ts = new Date(NOW.getTime() - 3_600_000).toISOString()
+      expect(classifyFreshness(ts, NOW)).toBe('recent')
+    })
+
+    it('returns recent for timestamp exactly 1 ms before the 1-day boundary', () => {
+      const ts = new Date(NOW.getTime() - (86_400_000 - 1)).toISOString()
+      expect(classifyFreshness(ts, NOW)).toBe('recent')
+    })
+
+    it('returns aging for timestamp exactly at the 1-day boundary', () => {
+      const ts = new Date(NOW.getTime() - 86_400_000).toISOString()
+      expect(classifyFreshness(ts, NOW)).toBe('aging')
+    })
+
+    it('returns aging for timestamp exactly 1 ms before the 3-day boundary', () => {
+      const ts = new Date(NOW.getTime() - (3 * 86_400_000 - 1)).toISOString()
+      expect(classifyFreshness(ts, NOW)).toBe('aging')
+    })
+
+    it('returns stale for timestamp exactly at the 3-day boundary', () => {
+      const ts = new Date(NOW.getTime() - 3 * 86_400_000).toISOString()
+      expect(classifyFreshness(ts, NOW)).toBe('stale')
+    })
+
+    it('returns stale for timestamp exactly 1 ms before the 7-day boundary', () => {
+      const ts = new Date(NOW.getTime() - (7 * 86_400_000 - 1)).toISOString()
+      expect(classifyFreshness(ts, NOW)).toBe('stale')
+    })
+
+    it('returns critical for timestamp exactly at the 7-day boundary', () => {
+      const ts = new Date(NOW.getTime() - 7 * 86_400_000).toISOString()
+      expect(classifyFreshness(ts, NOW)).toBe('critical')
+    })
   })
 
   // =========================================================================
@@ -1166,5 +1209,54 @@ describe('buildMockTimelineEntries', () => {
     const ageMs = customAnchor.getTime() - new Date(tl001.timestamp).getTime()
     // tl-001 is 10 min in ms
     expect(ageMs).toBe(10 * 60 * 1000)
+  })
+})
+
+// =============================================================================
+// E2E formula contract tests — prove the dynamic thresholds used in E2E
+// assertions match the production utility output (date-robustness proof)
+// =============================================================================
+describe('E2E dynamic threshold formula alignment (date-robustness proof)', () => {
+  // The E2E "stale count" assertion uses Date.now() to determine how many
+  // MOCK_EVENTS_MIXED events fall into the stale+critical bucket.
+  // The production threshold is: ageMs >= 3 * 24 * 60 * 60 * 1000 → stale or critical.
+  // This test proves that formula matches classifyFreshness().
+  it('a timestamp exactly 3 * 24 * 60 * 60 * 1000 ms ago classifies as stale', () => {
+    const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000
+    const anchor = new Date()
+    const ts = new Date(anchor.getTime() - THREE_DAYS_MS).toISOString()
+    const result = classifyFreshness(ts, anchor)
+    expect(result).toBe('stale')
+    // Confirm the formula is correct: stale OR critical both contribute to staleCount
+    expect(['stale', 'critical']).toContain(result)
+  })
+
+  // The E2E "critical filter count" assertion uses Date.now() with a 7-day threshold.
+  // The production threshold is: ageMs >= 7 * 24 * 60 * 60 * 1000 → critical.
+  it('a timestamp exactly 7 * 24 * 60 * 60 * 1000 ms ago classifies as critical', () => {
+    const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000
+    const anchor = new Date()
+    const ts = new Date(anchor.getTime() - SEVEN_DAYS_MS).toISOString()
+    const result = classifyFreshness(ts, anchor)
+    expect(result).toBe('critical')
+  })
+
+  // evt-013 at 173h is always critical regardless of when the test runs.
+  // This proves the E2E toHaveCount(1) for critical filter is always correct.
+  it('evt-013 (173 h offset) always produces critical freshness — E2E critical filter counts exactly 1', () => {
+    const anchor = new Date()
+    const events = buildMockEventsMixed(anchor)
+    const criticalEvents = events.filter(e => classifyFreshness(e.timestamp, anchor) === 'critical')
+    expect(criticalEvents.length).toBe(1)
+    expect(criticalEvents[0].id).toBe('evt-013')
+  })
+
+  // The staleCount in QueueSummary counts stale+critical. With buildMockEventsMixed(),
+  // only evt-013 qualifies at any point in time.
+  it('deriveQueueSummary staleCount is always 1 with buildMockEventsMixed() regardless of run date', () => {
+    const anchor = new Date()
+    const events = buildMockEventsMixed(anchor)
+    const summary = deriveQueueSummary(events, anchor)
+    expect(summary.staleCount).toBe(1)
   })
 })
