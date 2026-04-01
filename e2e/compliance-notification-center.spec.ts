@@ -454,17 +454,42 @@ test.describe('Compliance Notification Center — operator journeys', () => {
 
     await expect(page.getByTestId('notification-center-event-list')).toBeAttached({ timeout: 30000 })
 
-    // Filter by critical freshness — MOCK_EVENTS_MIXED has exactly 1 critical-freshness event (evt-013: timestamp 2026-03-20)
+    // Compute expected critical-freshness count dynamically from MOCK_EVENTS_MIXED timestamps.
+    // classifyFreshness() returns 'critical' when age >= 7 days (SEVEN_DAYS_MS).
+    // evt-013 (2026-03-20) is always critical. The March 27 events enter the critical bucket
+    // after April 3 — hardcoding 1 would break CI on that date. Using Date.now() keeps
+    // the assertion exact and correct regardless of when CI runs.
+    // NOTE: If the classifyFreshness() 7-day boundary changes in the utility, update SEVEN_DAYS_MS here.
+    const MOCK_TIMESTAMPS_FRESHNESS = [
+      '2026-03-27T14:45:00.000Z', // evt-010
+      '2026-03-27T14:20:00.000Z', // evt-011
+      '2026-03-27T13:30:00.000Z', // evt-012
+      '2026-03-20T10:00:00.000Z', // evt-013 — oldest, always critical
+      '2026-03-27T12:00:00.000Z', // evt-014
+      '2026-03-27T11:30:00.000Z', // evt-015
+      '2026-03-27T11:00:00.000Z', // evt-016
+    ]
+    const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000 // mirrors classifyFreshness() critical threshold
+    const nowMs = Date.now()
+    const expectedCriticalCount = MOCK_TIMESTAMPS_FRESHNESS.filter(
+      (ts) => nowMs - new Date(ts).getTime() >= SEVEN_DAYS_MS,
+    ).length
+
     const freshnessFilter = page.getByTestId('notification-center-filter-freshness')
     await freshnessFilter.selectOption('critical', { timeout: 5000 })
 
-    // Semantic wait: exactly 1 event with critical freshness
-    await expect(page.getByTestId('notification-center-event-item')).toHaveCount(1, { timeout: 5000 })
+    // Semantic wait: dynamic count of critical-freshness events
+    await expect(page.getByTestId('notification-center-event-item')).toHaveCount(
+      expectedCriticalCount,
+      { timeout: 5000 },
+    )
 
-    // Verify it's the expected event (evt-013: Release evidence freshness expired)
-    const item = page.getByTestId('notification-center-event-item').first()
-    const text = await item.textContent({ timeout: 5000 })
-    expect(text).toContain('Release evidence freshness expired')
+    // evt-013 ('Release evidence freshness expired') is always critical — verify it is in the list
+    // regardless of its position (sort order changes as more events age into the critical bucket)
+    const evt013 = page
+      .getByTestId('notification-center-event-item')
+      .filter({ hasText: 'Release evidence freshness expired' })
+    await expect(evt013).toHaveCount(1, { timeout: 2000 })
   })
 
   // ===========================================================================
