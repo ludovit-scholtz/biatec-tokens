@@ -47,24 +47,27 @@ describe('TokenComplianceChecklist', () => {
     expect(buttons.length).toBeGreaterThan(0)
   })
 
-  it('toggles item on click', async () => {
+  it('toggles item on click — completion percentage increases', async () => {
     const wrapper = mountChecklist()
-    const itemBtn = wrapper.findAll('button').find(b => b.classes().some(c => c.includes('border-gray-500') || c.includes('biatec-accent')))
-    if (itemBtn) {
-      await itemBtn.trigger('click')
-      // After toggle, the text should reflect the change
-      expect(wrapper.exists()).toBe(true)
+    const pctBefore = wrapper.find('p.text-sm.text-gray-400').text()
+    const toggleBtns = wrapper.findAll('button').filter(b => b.attributes('class')?.includes('border-2'))
+    if (toggleBtns.length) {
+      await toggleBtns[0].trigger('click')
+      await wrapper.vm.$nextTick()
+      // After toggle, percentage should have changed or checkmark icon should appear
+      const hasPiCheck = wrapper.find('i.pi-check').exists()
+      const pctAfter = wrapper.find('p.text-sm.text-gray-400').text()
+      expect(hasPiCheck || pctAfter !== pctBefore).toBe(true)
     }
   })
 
-  it('shows Reset button when showResetButton is true and items completed', async () => {
+  it('shows Reset button when showResetButton is true and an item is completed', async () => {
     const wrapper = mountChecklist({ showResetButton: true })
-    // Toggle an item to trigger hasAnyCompleted
-    const toggleBtn = wrapper.findAll('button').find(b => b.attributes('class')?.includes('border-'))
-    if (toggleBtn) {
-      await toggleBtn.trigger('click')
-      // Reset button should appear
-      expect(wrapper.exists()).toBe(true)
+    const toggleBtns = wrapper.findAll('button').filter(b => b.attributes('class')?.includes('border-2'))
+    if (toggleBtns.length) {
+      await toggleBtns[0].trigger('click')
+      await wrapper.vm.$nextTick()
+      expect(wrapper.text()).toContain('Reset')
     }
   })
 

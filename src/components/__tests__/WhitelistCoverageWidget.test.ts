@@ -97,22 +97,40 @@ describe('WhitelistCoverageWidget', () => {
 
   it('returns green iconColor when coverage >= 90', async () => {
     const wrapper = await mountWidget({ ...mockMetrics, coveragePercentage: 95 })
-    expect(wrapper.exists()).toBe(true)
+    const stub = wrapper.findComponent({ name: 'MicaSummaryWidget' })
+    expect(stub.props('iconColor')).toBe('green')
   })
 
   it('returns yellow iconColor when coverage >= 70 and < 90', async () => {
     const wrapper = await mountWidget({ ...mockMetrics, coveragePercentage: 75 })
-    expect(wrapper.exists()).toBe(true)
+    const stub = wrapper.findComponent({ name: 'MicaSummaryWidget' })
+    expect(stub.props('iconColor')).toBe('yellow')
   })
 
   it('returns orange iconColor when coverage < 70', async () => {
     const wrapper = await mountWidget({ ...mockMetrics, coveragePercentage: 60 })
-    expect(wrapper.exists()).toBe(true)
+    const stub = wrapper.findComponent({ name: 'MicaSummaryWidget' })
+    expect(stub.props('iconColor')).toBe('orange')
   })
 
-  it('emits view-details when widget emits', async () => {
+  it('returns blue iconColor when no metrics', async () => {
+    setActivePinia(createPinia())
+    vi.mocked(complianceService.getWhitelistCoverageMetrics).mockResolvedValue(mockMetrics as any)
+    const WhitelistCoverageWidget = (await import('../WhitelistCoverageWidget.vue')).default
+    // Mount before metrics load to observe initial blue state
+    const wrapper = mount(WhitelistCoverageWidget, {
+      props: { tokenId: 'tok-1', network: 'algorand-mainnet' },
+    })
+    // Immediately after mount (before async resolution), metrics is null → blue
+    const stub = wrapper.findComponent({ name: 'MicaSummaryWidget' })
+    expect(stub.props('iconColor')).toBe('blue')
+  })
+
+  it('emits view-details when MicaSummaryWidget emits view-details', async () => {
     const wrapper = await mountWidget()
-    expect(wrapper.exists()).toBe(true)
+    const stub = wrapper.findComponent({ name: 'MicaSummaryWidget' })
+    await stub.vm.$emit('view-details')
+    expect(wrapper.emitted('view-details')).toBeTruthy()
   })
 
   it('skips API call when tokenId is empty', async () => {

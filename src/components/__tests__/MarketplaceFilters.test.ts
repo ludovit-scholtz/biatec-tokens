@@ -91,25 +91,23 @@ describe('MarketplaceFilters', () => {
 
   it('emits reset when Reset All clicked', async () => {
     const wrapper = mountFilters({ ...defaultFilters, network: 'VOI' })
-    const allBtns = wrapper.findAll('button')
-    const resetBtn = allBtns.find(b => b.text().includes('Reset All'))
-    if (resetBtn) {
-      await resetBtn.trigger('click')
-      expect(wrapper.emitted('reset')).toBeTruthy()
-    } else {
-      expect(wrapper.text()).toContain('Reset All')
-    }
+    const resetBtn = wrapper.findAll('button').find(b => b.text().includes('Reset All'))
+    expect(resetBtn?.exists()).toBe(true)
+    await resetBtn!.trigger('click')
+    expect(wrapper.emitted('reset')).toBeTruthy()
   })
 
-  it('resets all filters to default on Reset All click', async () => {
+  it('resets all filters to default on Reset All click (internal state resets)', async () => {
     const wrapper = mountFilters({ ...defaultFilters, network: 'VOI', search: 'foo' })
-    const allBtns = wrapper.findAll('button')
-    const resetBtn = allBtns.find(b => b.text().includes('Reset All'))
-    if (resetBtn) {
-      await resetBtn.trigger('click')
-      // handleReset only emits 'reset', internal state is reset
-      expect(wrapper.emitted('reset')).toBeTruthy()
-    }
+    const resetBtn = wrapper.findAll('button').find(b => b.text().includes('Reset All'))
+    expect(resetBtn?.exists()).toBe(true)
+    await resetBtn!.trigger('click')
+    // handleReset clears internal state and emits 'reset'
+    expect(wrapper.emitted('reset')).toBeTruthy()
+    // The Reset All button should disappear after state is reset
+    await wrapper.vm.$nextTick()
+    const resetBtnAfter = wrapper.findAll('button').find(b => b.text().includes('Reset All'))
+    expect(resetBtnAfter).toBeUndefined()
   })
 
   it('shows active filter badge for network when not All', () => {
@@ -130,10 +128,17 @@ describe('MarketplaceFilters', () => {
   it('clears network filter when its × button is clicked', async () => {
     const wrapper = mountFilters({ ...defaultFilters, network: 'VOI' })
     const closeBtn = wrapper.findAll('button').find(b => b.attributes('aria-label') === 'Clear network filter')
+    // Note: if the template doesn't have aria-label on the × button, this finds by position
     if (closeBtn) {
       await closeBtn.trigger('click')
       const emitted = wrapper.emitted('update:filters') as any[][]
+      expect(emitted).toBeTruthy()
       expect(emitted[emitted.length - 1][0].network).toBe('All')
+    } else {
+      // Fallback: find any button inside the active badge that's not Reset All
+      const allBtns = wrapper.findAll('button')
+      const badgeCloseBtn = allBtns.find(b => !b.text().includes('Reset All') && b.text().trim() === '')
+      expect(badgeCloseBtn?.exists()).toBe(true)
     }
   })
 
