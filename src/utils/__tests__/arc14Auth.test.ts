@@ -37,12 +37,13 @@ describe('arc14Auth', () => {
     afterEach(() => {
       vi.unstubAllGlobals()
       vi.resetModules()
+      vi.doUnmock('buffer')
     })
 
-    it('makeArc14AuthHeader still works when Buffer is undefined (uses btoa fallback)', async () => {
-      // Temporarily remove the Buffer global so the else-branch (btoa loop) runs
-      vi.stubGlobal('Buffer', undefined)
-      // Re-import the module so it uses the current (no-Buffer) environment
+    it('makeArc14AuthHeader still works when Buffer import is undefined (uses btoa fallback)', async () => {
+      // Mock the "buffer" module so the destructured Buffer is undefined
+      // (vi.stubGlobal does NOT affect module-level imports — must mock the module itself)
+      vi.doMock('buffer', () => ({ Buffer: undefined }))
       vi.resetModules()
       const { makeArc14AuthHeader: makeHeaderFresh } = await import('../arc14Auth')
       const bytes = new Uint8Array([72, 101, 108, 108, 111]) // "Hello"
@@ -53,16 +54,16 @@ describe('arc14Auth', () => {
     })
 
     it('btoa fallback produces the same base64 as Buffer.from().toString()', async () => {
-      vi.stubGlobal('Buffer', undefined)
-      vi.resetModules()
-      const { makeArc14AuthHeader: makeHeaderFresh } = await import('../arc14Auth')
-      const bytes = new Uint8Array([1, 2, 3, 4, 5])
-      const headerFallback = makeHeaderFresh(bytes)
-      // Restore Buffer and compare
-      vi.unstubAllGlobals()
-      vi.resetModules()
+      // First get the normal (Buffer-available) result
       const { makeArc14AuthHeader: makeHeaderNormal } = await import('../arc14Auth')
+      const bytes = new Uint8Array([1, 2, 3, 4, 5])
       const headerNormal = makeHeaderNormal(bytes)
+
+      // Now mock Buffer away and get the fallback result
+      vi.doMock('buffer', () => ({ Buffer: undefined }))
+      vi.resetModules()
+      const { makeArc14AuthHeader: makeHeaderFallback } = await import('../arc14Auth')
+      const headerFallback = makeHeaderFallback(bytes)
       expect(headerFallback).toBe(headerNormal)
     })
   })

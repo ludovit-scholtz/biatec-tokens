@@ -181,16 +181,31 @@ describe('WalletCompatibilityMatrix', () => {
   });
 
   describe('Not Supported branch coverage', () => {
-    it('should show Not Supported text in modal for unsupported standard', async () => {
-      const { getWalletSupport, WALLET_COMPATIBILITY } = await import('../../../types/walletCompatibility');
+    it('should show Not Supported for unsupported standard (Exodus + ARC3)', async () => {
+      const { WALLET_COMPATIBILITY, getWalletSupport } = await import('../../../types/walletCompatibility');
       const exodusWallet = WALLET_COMPATIBILITY['exodus'];
       expect(exodusWallet).toBeDefined();
       const support = getWalletSupport('exodus', 'ARC3');
       expect(support).not.toBeNull();
-      expect(support).not.toBeUndefined();
-      // Verify the branch logic directly
-      const text = support!.supported ? 'Supported' : 'Not Supported';
-      expect(text).toBe('Not Supported');
+      expect(support!.supported).toBe(false);
+
+      // Verify showDetails sets selectedSupport to the not-supported value
+      const vm = wrapper.vm as any;
+      vm.showDetails(exodusWallet, 'ARC3');
+      await wrapper.vm.$nextTick();
+      expect(vm.selectedSupport).not.toBeNull();
+      expect(vm.selectedSupport!.supported).toBe(false);
+    });
+
+    it('should show specialNotes when present (Pera + ARC3)', async () => {
+      const { WALLET_COMPATIBILITY } = await import('../../../types/walletCompatibility');
+      const peraWallet = WALLET_COMPATIBILITY['pera'];
+      expect(peraWallet).toBeDefined();
+      const vm = wrapper.vm as any;
+      vm.showDetails(peraWallet, 'ARC3');
+      await wrapper.vm.$nextTick();
+      expect(vm.selectedSupport).not.toBeNull();
+      expect(vm.selectedSupport!.behaviors?.specialNotes).toMatch(/Pera has excellent ARC-3 support/);
     });
   });
 
@@ -203,8 +218,7 @@ describe('WalletCompatibilityMatrix', () => {
       vm.showDetails(peraWallet, 'ARC3');
       await wrapper.vm.$nextTick();
       expect(vm.selectedSupport).not.toBeNull();
-      const text = vm.selectedSupport?.supported ? 'Supported' : 'Not Supported';
-      expect(text).toBe('Supported');
+      expect(vm.selectedSupport?.supported).toBe(true);
     });
 
     it('should clear selectedSupport when closeDetails is called', async () => {
@@ -227,8 +241,7 @@ describe('WalletCompatibilityMatrix', () => {
       vm.showDetails(exodusWallet, 'ARC3');
       await wrapper.vm.$nextTick();
       expect(vm.selectedSupport).not.toBeNull();
-      const text = vm.selectedSupport!.supported ? 'Supported' : 'Not Supported';
-      expect(text).toBe('Not Supported');
+      expect(vm.selectedSupport!.supported).toBe(false);
     });
   });
 });

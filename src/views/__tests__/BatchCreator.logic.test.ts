@@ -185,9 +185,31 @@ describe('BatchCreator View — Logic', () => {
 
     it('isValidBatch is false initially when tokens list has empty token', async () => {
       const { wrapper } = await mountBatchCreator()
-      const vm = wrapper.vm as unknown as Record<string, unknown>
       // canDeploy computed should reflect minBatchSize requirement
       expect(wrapper.exists()).toBe(true)
+    })
+
+    it('calls validateBatchDeployment when all tokens are complete (line 278)', async () => {
+      const { validateBatchDeployment } = await import('../../utils/batchValidation')
+      vi.mocked(validateBatchDeployment).mockReturnValue({ valid: true, errors: [], warnings: [] })
+
+      const { wrapper } = await mountBatchCreator()
+      const vm = wrapper.vm as any
+
+      // Vue Test Utils auto-unwraps refs: vm.tokens is the array, not the Ref
+      // Directly replace array contents
+      vm.tokens = [{ standard: 'ERC20', name: 'My Token', decimals: 18, totalSupply: '1000' }]
+      await nextTick()
+
+      // Call validateBatch directly — completeTokens.length === tokens.value.length → else branch
+      await vm.validateBatch()
+      await nextTick()
+
+      // validateBatchDeployment should be called (line 278 covered)
+      expect(validateBatchDeployment).toHaveBeenCalledWith([
+        expect.objectContaining({ standard: 'ERC20', name: 'My Token' }),
+      ])
+      expect(vm.showValidation).toBe(true)
     })
   })
 
@@ -210,20 +232,48 @@ describe('BatchCreator View — Logic', () => {
       }
     })
 
-    it('shows progress dialog after successful createBatch', async () => {
+    it('success path: shows progress dialog and calls startDeployment when createBatch returns true', async () => {
       const { validateBatchDeployment } = await import('../../utils/batchValidation')
       vi.mocked(validateBatchDeployment).mockReturnValue({ valid: true, errors: [], warnings: [] })
       mockCreateBatch.mockResolvedValue(true)
+      mockStartDeployment.mockResolvedValue(undefined)
 
       const { wrapper } = await mountBatchCreator()
-      // Force valid state by adding a complete token
-      const vm = wrapper.vm as unknown as Record<string, unknown>
-      // We need to set tokens to have complete entries
-      // Since tokens is in script setup, we access via the component state
-      // The easiest way is to click deploy with a token that has standard and name
-      // But since BatchTokenEntryForm is stubbed, we can't fill it
-      // Instead verify the createBatch mock is called eventually
-      expect(mockCreateBatch).not.toHaveBeenCalled() // Not called until deploy clicked
+      const vm = wrapper.vm as any
+
+      // Vue Test Utils auto-unwraps refs: vm.tokens is the array, not the Ref
+      vm.tokens = [{ standard: 'ERC20', name: 'My Token', decimals: 18 }]
+      await nextTick()
+
+      // Call createAndDeploy directly — covers lines 297-313
+      await vm.createAndDeploy()
+      await flushPromises()
+
+      expect(mockCreateBatch).toHaveBeenCalledWith(
+        expect.objectContaining({ walletAddress: 'TESTADDR123456' }),
+      )
+      expect(mockStartDeployment).toHaveBeenCalled()
+      expect(vm.showProgressDialog).toBe(true)
+    })
+
+    it('failure path: shows validation when createBatch returns false (line 304)', async () => {
+      const { validateBatchDeployment } = await import('../../utils/batchValidation')
+      vi.mocked(validateBatchDeployment).mockReturnValue({ valid: true, errors: [], warnings: [] })
+      mockCreateBatch.mockResolvedValue(false)
+
+      const { wrapper } = await mountBatchCreator()
+      const vm = wrapper.vm as any
+
+      // Set a complete token so validateBatch passes, but createBatch fails
+      vm.tokens = [{ standard: 'ERC20', name: 'My Token', decimals: 18 }]
+      await nextTick()
+
+      await vm.createAndDeploy()
+      await flushPromises()
+
+      expect(mockCreateBatch).toHaveBeenCalled()
+      expect(mockStartDeployment).not.toHaveBeenCalled()
+      expect(vm.showProgressDialog).toBe(false)
     })
 
     it('does not call createBatch when token validation fails', async () => {
@@ -240,19 +290,15 @@ describe('BatchCreator View — Logic', () => {
   })
 
   describe('handleProgressClose / retryToken / retryAllFailed / exportAudit', () => {
-    it('goBack navigates to /create', async () => {
+    it('goBack navigates to /create via Cancel button', async () => {
       const { wrapper, router } = await mountBatchCreator()
       const buttons = wrapper.findAll('button')
-      const backBtn = buttons.find(b => b.text().match(/back|go back/i))
-      if (backBtn) {
-        await backBtn.trigger('click')
-        await flushPromises()
-        expect(router.currentRoute.value.path).toBe('/create')
-      } else {
-        // Verify goBack is reachable by checking router navigation works
-        await router.push('/create')
-        expect(router.currentRoute.value.path).toBe('/create')
-      }
+      // Button text is "Cancel" in BatchCreator template
+      const cancelBtn = buttons.find(b => b.text().match(/cancel/i))
+      expect(cancelBtn).toBeDefined()
+      await cancelBtn!.trigger('click')
+      await flushPromises()
+      expect(router.currentRoute.value.path).toBe('/create')
     })
 
     it('handleProgressClose sets showProgressDialog to false', async () => {
