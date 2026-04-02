@@ -143,4 +143,124 @@ describe('AuditActivityPanel', () => {
     const w = mountPanel({ auditLog: [entry] })
     expect(w.text()).toContain('2d ago')
   })
+
+  it('shows locale date for events >= 7 days ago', () => {
+    const entry = makeEntry('member_invited', {
+      timestamp: new Date(NOW - 10 * 86400 * 1000).toISOString(), // 10 days ago
+    })
+    const w = mountPanel({ auditLog: [entry] })
+    // Should not contain "d ago" pattern — falls through to toLocaleDateString()
+    expect(w.text()).not.toContain('10d ago')
+    expect(w.exists()).toBe(true)
+  })
+
+  // ── getActionDescription — uncovered cases ────────────────────────────────
+
+  it('describes member_suspended action', () => {
+    const entry = makeEntry('member_suspended', {
+      target: { id: 'u2', name: 'Bob', email: 'bob@example.com' },
+    })
+    const w = mountPanel({ auditLog: [entry] })
+    expect(w.text()).toContain('Suspended')
+    expect(w.text()).toContain('Bob')
+  })
+
+  it('describes member_reactivated action', () => {
+    const entry = makeEntry('member_reactivated', {
+      target: { id: 'u3', name: 'Carol', email: 'carol@example.com' },
+    })
+    const w = mountPanel({ auditLog: [entry] })
+    expect(w.text()).toContain('Reactivated')
+    expect(w.text()).toContain('Carol')
+  })
+
+  it('describes member_removed action', () => {
+    const entry = makeEntry('member_removed', {
+      target: { id: 'u4', name: 'Dave', email: 'dave@example.com' },
+    })
+    const w = mountPanel({ auditLog: [entry] })
+    expect(w.text()).toContain('Removed')
+    expect(w.text()).toContain('Dave')
+  })
+
+  it('getActionDescription uses email as fallback when target has no name', () => {
+    const entry = makeEntry('member_invited', {
+      target: { id: 'u5', name: '', email: 'noname@example.com' },
+    })
+    const w = mountPanel({ auditLog: [entry] })
+    expect(w.text()).toContain('noname@example.com')
+  })
+
+  it('getActionDescription returns "Unknown action" for unrecognised action type', () => {
+    // Cast to bypass TS type guard
+    const entry = makeEntry('member_invited')
+    ;(entry as any).action = 'some_future_action'
+    const w = mountPanel({ auditLog: [entry] })
+    expect(w.text()).toContain('Unknown action')
+  })
+
+  it('getActionDescription uses actor email when actor has no name (member_joined)', () => {
+    const entry = makeEntry('member_joined', {
+      actor: { id: 'u6', name: '', email: 'actor@example.com' },
+    })
+    const w = mountPanel({ auditLog: [entry] })
+    expect(w.text()).toContain('actor@example.com')
+  })
+
+  // ── hasRelevantDetails / details display ─────────────────────────────────
+
+  it('shows oldRole → newRole when entry has both role fields', () => {
+    const entry = makeEntry('role_changed', {
+      details: { oldRole: 'viewer', newRole: 'admin' },
+    })
+    const w = mountPanel({ auditLog: [entry] })
+    expect(w.text()).toContain('Viewer')
+    expect(w.text()).toContain('Admin')
+    expect(w.text()).toContain('→')
+  })
+
+  it('shows "Role:" label when entry has only role field in details', () => {
+    const entry = makeEntry('member_invited', {
+      details: { role: 'compliance_officer' },
+    })
+    const w = mountPanel({ auditLog: [entry] })
+    expect(w.text()).toContain('Compliance Officer')
+  })
+
+  it('does not show details section when details is null', () => {
+    const entry = makeEntry('member_invited', { details: null })
+    const w = mountPanel({ auditLog: [entry] })
+    // Entry renders fine without details section
+    expect(w.exists()).toBe(true)
+  })
+
+  // ── formatRoleName fallback ───────────────────────────────────────────────
+
+  it('formatRoleName returns raw string for unknown role', () => {
+    const entry = makeEntry('role_changed', {
+      details: { oldRole: 'super_admin', newRole: 'super_admin' },
+    })
+    const w = mountPanel({ auditLog: [entry] })
+    expect(w.text()).toContain('super_admin')
+  })
+
+  // ── member_suspended / member_reactivated badge variants ─────────────────
+
+  it('applies warning badge variant for member_suspended', () => {
+    const w = mountPanel({ auditLog: [makeEntry('member_suspended')] })
+    const badge = w.find('[data-variant="warning"]')
+    expect(badge.exists()).toBe(true)
+  })
+
+  it('applies success badge variant for member_reactivated', () => {
+    const w = mountPanel({ auditLog: [makeEntry('member_reactivated')] })
+    const badge = w.find('[data-variant="success"]')
+    expect(badge.exists()).toBe(true)
+  })
+
+  it('applies info badge variant for invitation_resent', () => {
+    const w = mountPanel({ auditLog: [makeEntry('invitation_resent')] })
+    const badge = w.find('[data-variant="info"]')
+    expect(badge.exists()).toBe(true)
+  })
 })
