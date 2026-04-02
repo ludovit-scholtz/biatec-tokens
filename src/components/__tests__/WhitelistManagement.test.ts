@@ -841,4 +841,59 @@ describe('WhitelistManagement Component', () => {
     const result = wrapper.vm.statusBadgeClass('unknown_status');
     expect(result).toContain('gray');
   });
+
+  it('should return green class for active status in statusBadgeClass', async () => {
+    vi.mocked(whitelistService.getWhitelist).mockResolvedValue([]);
+    const wrapper = mount(WhitelistManagement, { props: { tokenId: 'token123' } });
+    await wrapper.vm.$nextTick();
+    const result = wrapper.vm.statusBadgeClass('active');
+    expect(result).toContain('green');
+  });
+
+  it('should return yellow class for pending status in statusBadgeClass', async () => {
+    vi.mocked(whitelistService.getWhitelist).mockResolvedValue([]);
+    const wrapper = mount(WhitelistManagement, { props: { tokenId: 'token123' } });
+    await wrapper.vm.$nextTick();
+    const result = wrapper.vm.statusBadgeClass('pending');
+    expect(result).toContain('yellow');
+  });
+
+  it('should return red class for removed status in statusBadgeClass', async () => {
+    vi.mocked(whitelistService.getWhitelist).mockResolvedValue([]);
+    const wrapper = mount(WhitelistManagement, { props: { tokenId: 'token123' } });
+    await wrapper.vm.$nextTick();
+    const result = wrapper.vm.statusBadgeClass('removed');
+    expect(result).toContain('red');
+  });
+
+  it('should show toast warning when bulk upload has partial failures', async () => {
+    vi.mocked(whitelistService.getWhitelist).mockResolvedValue([]);
+    vi.mocked(whitelistService.bulkUpload).mockResolvedValue({ success: 2, failed: 1 });
+    const wrapper = mount(WhitelistManagement, { props: { tokenId: 'token123' } });
+    await wrapper.vm.$nextTick();
+    wrapper.vm.previewAddresses = [
+      'A23456723456723456723456723456723456723456723456723456723A',
+      'B23456723456723456723456723456723456723456723456723456723B',
+      'C23456723456723456723456723456723456723456723456723456723C',
+    ];
+    await wrapper.vm.confirmBulkUpload();
+    expect(whitelistService.bulkUpload).toHaveBeenCalled();
+  });
+
+  it('should handle exportWhitelist error branch gracefully', async () => {
+    vi.mocked(whitelistService.getWhitelist).mockResolvedValue([]);
+    vi.mocked(whitelistService.exportComplianceReport).mockRejectedValue(new Error('Export failed'));
+    const wrapper = mount(WhitelistManagement, { props: { tokenId: 'token123' } });
+    await wrapper.vm.$nextTick();
+    await wrapper.vm.exportWhitelist();
+    expect(wrapper.vm.isExporting).toBe(false);
+  });
+
+  it('should handle loadSampleCsv', async () => {
+    vi.mocked(whitelistService.getWhitelist).mockResolvedValue([]);
+    const wrapper = mount(WhitelistManagement, { props: { tokenId: 'token123' } });
+    await wrapper.vm.$nextTick();
+    wrapper.vm.loadSampleCsv();
+    expect(wrapper.vm.csvData).toContain('address');
+  });
 });

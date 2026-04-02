@@ -257,3 +257,45 @@ describe('Settings View — Logic', () => {
     })
   })
 })
+
+  describe('importSettings', () => {
+    it('importSettings with no file returns early (if !file branch)', async () => {
+      const wrapper = await mountSettings()
+      const vm = wrapper.vm as any
+      // Create a fake event with no file selected
+      const event = { target: { files: [] } } as unknown as Event
+      // Should not throw
+      expect(() => vm.importSettings(event)).not.toThrow()
+    })
+
+    it('importSettings initiates FileReader when file is provided', async () => {
+      const wrapper = await mountSettings()
+      const vm = wrapper.vm as any
+      const mockFile = new File(['{"test": true}'], 'settings.json', { type: 'application/json' })
+      const readAsTextSpy = vi.fn()
+      function MockFileReader(this: any) {
+        this.onload = null
+        this.readAsText = readAsTextSpy.mockImplementation(() => {
+          if (this.onload) {
+            this.onload({ target: { result: '{"test": true}' } })
+          }
+        })
+      }
+      vi.stubGlobal('FileReader', MockFileReader)
+      const event = { target: { files: [mockFile] } } as unknown as Event
+      vm.importSettings(event)
+      expect(readAsTextSpy).toHaveBeenCalledWith(mockFile)
+      vi.unstubAllGlobals()
+    })
+  })
+
+  describe('saveSettings with invalid JSON headers', () => {
+    it('saveSettings catches JSON.parse error for invalid headers', async () => {
+      const wrapper = await mountSettings()
+      const vm = wrapper.vm as any
+      vm.customHeaders = 'NOT VALID JSON {'
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+      expect(() => vm.saveSettings()).not.toThrow()
+      consoleSpy.mockRestore()
+    })
+  })

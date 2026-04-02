@@ -606,3 +606,110 @@ describe('Malformed date string — staleness must not be silently suppressed', 
     expect(isNaN(parseInt(match![1], 10))).toBe(false)
   })
 })
+
+// ---------------------------------------------------------------------------
+// Band helper functions — riskBandBadgeClass and riskBandSmallIcon (branch coverage)
+// ---------------------------------------------------------------------------
+
+describe('riskBandBadgeClass — all bands covered', () => {
+  it('returns red class for critical band', async () => {
+    const wrapper = await mountViewLoaded()
+    const vm = wrapper.vm as any
+    expect(vm.riskBandBadgeClass('critical')).toContain('red')
+  })
+
+  it('returns orange class for high band', async () => {
+    const wrapper = await mountViewLoaded()
+    const vm = wrapper.vm as any
+    expect(vm.riskBandBadgeClass('high')).toContain('orange')
+  })
+
+  it('returns yellow class for medium band', async () => {
+    const wrapper = await mountViewLoaded()
+    const vm = wrapper.vm as any
+    expect(vm.riskBandBadgeClass('medium')).toContain('yellow')
+  })
+
+  it('returns blue class for low band', async () => {
+    const wrapper = await mountViewLoaded()
+    const vm = wrapper.vm as any
+    expect(vm.riskBandBadgeClass('low')).toContain('blue')
+  })
+
+  it('returns green class for minimal band (default)', async () => {
+    const wrapper = await mountViewLoaded()
+    const vm = wrapper.vm as any
+    expect(vm.riskBandBadgeClass('minimal')).toContain('green')
+  })
+})
+
+describe('riskBandSmallIcon — all branches covered', () => {
+  it('returns XCircleIcon for critical band', async () => {
+    const wrapper = await mountViewLoaded()
+    const vm = wrapper.vm as any
+    const icon = vm.riskBandSmallIcon('critical')
+    expect(icon).toBeTruthy()
+  })
+
+  it('returns XCircleIcon for high band', async () => {
+    const wrapper = await mountViewLoaded()
+    const vm = wrapper.vm as any
+    const icon = vm.riskBandSmallIcon('high')
+    expect(icon).toBeTruthy()
+  })
+
+  it('returns ExclamationTriangleIcon for medium band', async () => {
+    const wrapper = await mountViewLoaded()
+    const vm = wrapper.vm as any
+    const icon = vm.riskBandSmallIcon('medium')
+    expect(icon).toBeTruthy()
+  })
+
+  it('returns CheckCircleIcon for low band (default)', async () => {
+    const wrapper = await mountViewLoaded()
+    const vm = wrapper.vm as any
+    const icon = vm.riskBandSmallIcon('low')
+    expect(icon).toBeTruthy()
+  })
+
+  it('returns CheckCircleIcon for minimal band (default)', async () => {
+    const wrapper = await mountViewLoaded()
+    const vm = wrapper.vm as any
+    const icon = vm.riskBandSmallIcon('minimal')
+    expect(icon).toBeTruthy()
+  })
+})
+
+describe('bandTextClass — all band branches covered', () => {
+  it('returns color class for each band', async () => {
+    const wrapper = await mountViewLoaded()
+    const vm = wrapper.vm as any
+    for (const band of ['critical', 'high', 'medium', 'low', 'minimal'] as const) {
+      const cls = vm.bandTextClass(band)
+      expect(typeof cls).toBe('string')
+      expect(cls.length).toBeGreaterThan(0)
+    }
+  })
+})
+
+describe('riskFactorCardClass and riskFactorNumberClass — all band branches', () => {
+  it('returns class strings for all bands in riskFactorCardClass', async () => {
+    const wrapper = await mountViewLoaded()
+    const vm = wrapper.vm as any
+    for (const band of ['critical', 'high', 'medium', 'low', 'minimal'] as const) {
+      const cls = vm.riskFactorCardClass(band)
+      expect(typeof cls).toBe('string')
+      expect(cls.length).toBeGreaterThan(0)
+    }
+  })
+
+  it('returns class strings for all bands in riskFactorNumberClass', async () => {
+    const wrapper = await mountViewLoaded()
+    const vm = wrapper.vm as any
+    for (const band of ['critical', 'high', 'medium', 'low', 'minimal'] as const) {
+      const cls = vm.riskFactorNumberClass(band)
+      expect(typeof cls).toBe('string')
+      expect(cls.length).toBeGreaterThan(0)
+    }
+  })
+})

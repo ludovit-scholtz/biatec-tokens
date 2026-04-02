@@ -1046,5 +1046,11 @@ defineExpose({
   exportJson,
   exportText,
   buildPayload,
+  riskBandBadgeClass,
+  riskBandSmallIcon,
+  bandTextClass,
+  bandIconClass,
+  riskFactorCardClass,
+  riskFactorNumberClass,
 })
 </script>
