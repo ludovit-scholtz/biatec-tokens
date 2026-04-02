@@ -169,4 +169,143 @@ describe('TeamAccessView', () => {
     // Should not throw
     expect(vm.removeLoading).toBe(false)
   })
+
+  // ── handleInviteMember ────────────────────────────────────────────────────
+
+  it('handleInviteMember closes modal on success', async () => {
+    const wrapper = mountWithAccess()
+    const vm = wrapper.vm as any
+    const { useTeamStore } = await import('../../../stores/team')
+    const store = useTeamStore()
+    store.inviteMember = vi.fn().mockResolvedValue(true)
+    vm.showInviteModal = true
+    await vm.handleInviteMember({ email: 'new@example.com', role: 'viewer' })
+    await vueNextTick()
+    expect(vm.showInviteModal).toBe(false)
+    expect(vm.inviteLoading).toBe(false)
+  })
+
+  it('handleInviteMember sets inviteError on failure', async () => {
+    const wrapper = mountWithAccess()
+    const vm = wrapper.vm as any
+    const { useTeamStore } = await import('../../../stores/team')
+    const store = useTeamStore()
+    store.error = 'Invite failed'
+    store.inviteMember = vi.fn().mockResolvedValue(false)
+    vm.showInviteModal = true
+    await vm.handleInviteMember({ email: 'new@example.com', role: 'viewer' })
+    await vueNextTick()
+    expect(vm.inviteError).toBe('Invite failed')
+    expect(vm.inviteLoading).toBe(false)
+    expect(vm.showInviteModal).toBe(true)
+  })
+
+  // ── handleUpdateRole ──────────────────────────────────────────────────────
+
+  it('handleUpdateRole closes modal on success', async () => {
+    const wrapper = mountWithAccess()
+    const vm = wrapper.vm as any
+    const { useTeamStore } = await import('../../../stores/team')
+    const store = useTeamStore()
+    store.updateMemberRole = vi.fn().mockResolvedValue(true)
+    vm.showRoleModal = true
+    vm.selectedMember = mockMember
+    await vm.handleUpdateRole('member-1', 'viewer')
+    await vueNextTick()
+    expect(vm.showRoleModal).toBe(false)
+    expect(vm.roleLoading).toBe(false)
+  })
+
+  it('handleUpdateRole sets roleError on failure', async () => {
+    const wrapper = mountWithAccess()
+    const vm = wrapper.vm as any
+    const { useTeamStore } = await import('../../../stores/team')
+    const store = useTeamStore()
+    store.error = 'Role update failed'
+    store.updateMemberRole = vi.fn().mockResolvedValue(false)
+    vm.showRoleModal = true
+    await vm.handleUpdateRole('member-1', 'viewer')
+    await vueNextTick()
+    expect(vm.roleError).toBe('Role update failed')
+    expect(vm.roleLoading).toBe(false)
+    expect(vm.showRoleModal).toBe(true)
+  })
+
+  // ── confirmRemoveMember ───────────────────────────────────────────────────
+
+  it('confirmRemoveMember closes confirmation on success', async () => {
+    const wrapper = mountWithAccess()
+    const vm = wrapper.vm as any
+    const { useTeamStore } = await import('../../../stores/team')
+    const store = useTeamStore()
+    store.removeMember = vi.fn().mockResolvedValue(true)
+    vm.memberToRemove = mockMember
+    vm.showRemoveConfirmation = true
+    await vm.confirmRemoveMember()
+    await vueNextTick()
+    expect(vm.showRemoveConfirmation).toBe(false)
+    expect(vm.removeLoading).toBe(false)
+  })
+
+  it('confirmRemoveMember sets removeError on failure', async () => {
+    const wrapper = mountWithAccess()
+    const vm = wrapper.vm as any
+    const { useTeamStore } = await import('../../../stores/team')
+    const store = useTeamStore()
+    store.error = 'Remove failed'
+    store.removeMember = vi.fn().mockResolvedValue(false)
+    vm.memberToRemove = mockMember
+    vm.showRemoveConfirmation = true
+    await vm.confirmRemoveMember()
+    await vueNextTick()
+    expect(vm.removeError).toBe('Remove failed')
+    expect(vm.removeLoading).toBe(false)
+    expect(vm.showRemoveConfirmation).toBe(true)
+  })
+
+  // ── handleResendInvitation / handleCancelInvitation ───────────────────────
+
+  it('handleResendInvitation calls teamStore.resendInvitation', async () => {
+    const wrapper = mountWithAccess()
+    const vm = wrapper.vm as any
+    const { useTeamStore } = await import('../../../stores/team')
+    const store = useTeamStore()
+    store.resendInvitation = vi.fn().mockResolvedValue(true)
+    const invitation = { id: 'inv-1', email: 'pending@example.com', role: 'viewer', status: 'pending', invitedAt: new Date() }
+    await vm.handleResendInvitation(invitation)
+    expect(store.resendInvitation).toHaveBeenCalledWith('inv-1')
+  })
+
+  it('handleCancelInvitation calls teamStore.cancelInvitation', async () => {
+    const wrapper = mountWithAccess()
+    const vm = wrapper.vm as any
+    const { useTeamStore } = await import('../../../stores/team')
+    const store = useTeamStore()
+    store.cancelInvitation = vi.fn().mockResolvedValue(true)
+    const invitation = { id: 'inv-2', email: 'cancel@example.com', role: 'viewer', status: 'pending', invitedAt: new Date() }
+    await vm.handleCancelInvitation(invitation)
+    expect(store.cancelInvitation).toHaveBeenCalledWith('inv-2')
+  })
+
+  // ── handleRefreshAudit / handleRetry ─────────────────────────────────────
+
+  it('handleRefreshAudit calls teamStore.fetchAuditLog', async () => {
+    const wrapper = mountWithAccess()
+    const vm = wrapper.vm as any
+    const { useTeamStore } = await import('../../../stores/team')
+    const store = useTeamStore()
+    store.fetchAuditLog = vi.fn().mockResolvedValue(undefined)
+    await vm.handleRefreshAudit()
+    expect(store.fetchAuditLog).toHaveBeenCalled()
+  })
+
+  it('handleRetry calls teamStore.initialize', async () => {
+    const wrapper = mountWithAccess()
+    const vm = wrapper.vm as any
+    const { useTeamStore } = await import('../../../stores/team')
+    const store = useTeamStore()
+    store.initialize = vi.fn().mockResolvedValue(undefined)
+    await vm.handleRetry()
+    expect(store.initialize).toHaveBeenCalled()
+  })
 })

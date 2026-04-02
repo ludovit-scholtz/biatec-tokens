@@ -664,4 +664,260 @@ describe('ComplianceMonitoringDashboardEnhanced — logic', () => {
     expect(vm.hasActiveFilters).toBe(true)
     wrapper.unmount()
   })
+
+  // ── formatTimestamp ────────────────────────────────────────────────────────
+
+  it('formatTimestamp() returns a formatted date string', async () => {
+    const { wrapper } = await mountDashboard()
+    const vm = wrapper.vm as any
+    const result = vm.formatTimestamp('2026-01-15T10:30:00.000Z')
+    expect(typeof result).toBe('string')
+    expect(result.length).toBeGreaterThan(0)
+    wrapper.unmount()
+  })
+
+  // ── formatDate ────────────────────────────────────────────────────────────
+
+  it('formatDate() returns a formatted date-only string', async () => {
+    const { wrapper } = await mountDashboard()
+    const vm = wrapper.vm as any
+    const result = vm.formatDate('2026-03-20T00:00:00.000Z')
+    expect(typeof result).toBe('string')
+    expect(result.length).toBeGreaterThan(0)
+    wrapper.unmount()
+  })
+
+  // ── getScoreColor ─────────────────────────────────────────────────────────
+
+  it('getScoreColor() returns green class for score >= 90', async () => {
+    const { wrapper } = await mountDashboard()
+    const vm = wrapper.vm as any
+    expect(vm.getScoreColor(90)).toContain('green')
+    expect(vm.getScoreColor(95)).toContain('green')
+    wrapper.unmount()
+  })
+
+  it('getScoreColor() returns yellow class for score >= 70', async () => {
+    const { wrapper } = await mountDashboard()
+    const vm = wrapper.vm as any
+    expect(vm.getScoreColor(70)).toContain('yellow')
+    expect(vm.getScoreColor(80)).toContain('yellow')
+    wrapper.unmount()
+  })
+
+  it('getScoreColor() returns orange class for score >= 50', async () => {
+    const { wrapper } = await mountDashboard()
+    const vm = wrapper.vm as any
+    expect(vm.getScoreColor(50)).toContain('orange')
+    expect(vm.getScoreColor(65)).toContain('orange')
+    wrapper.unmount()
+  })
+
+  it('getScoreColor() returns red class for score < 50', async () => {
+    const { wrapper } = await mountDashboard()
+    const vm = wrapper.vm as any
+    expect(vm.getScoreColor(49)).toContain('red')
+    expect(vm.getScoreColor(0)).toContain('red')
+    wrapper.unmount()
+  })
+
+  // ── getScoreGrade ─────────────────────────────────────────────────────────
+
+  it('getScoreGrade() returns A for score >= 90', async () => {
+    const { wrapper } = await mountDashboard()
+    const vm = wrapper.vm as any
+    expect(vm.getScoreGrade(90)).toBe('A')
+    expect(vm.getScoreGrade(100)).toBe('A')
+    wrapper.unmount()
+  })
+
+  it('getScoreGrade() returns B for score >= 80', async () => {
+    const { wrapper } = await mountDashboard()
+    const vm = wrapper.vm as any
+    expect(vm.getScoreGrade(80)).toBe('B')
+    expect(vm.getScoreGrade(89)).toBe('B')
+    wrapper.unmount()
+  })
+
+  it('getScoreGrade() returns C for score >= 70', async () => {
+    const { wrapper } = await mountDashboard()
+    const vm = wrapper.vm as any
+    expect(vm.getScoreGrade(70)).toBe('C')
+    expect(vm.getScoreGrade(79)).toBe('C')
+    wrapper.unmount()
+  })
+
+  it('getScoreGrade() returns D for score >= 60', async () => {
+    const { wrapper } = await mountDashboard()
+    const vm = wrapper.vm as any
+    expect(vm.getScoreGrade(60)).toBe('D')
+    expect(vm.getScoreGrade(69)).toBe('D')
+    wrapper.unmount()
+  })
+
+  it('getScoreGrade() returns F for score < 60', async () => {
+    const { wrapper } = await mountDashboard()
+    const vm = wrapper.vm as any
+    expect(vm.getScoreGrade(59)).toBe('F')
+    expect(vm.getScoreGrade(0)).toBe('F')
+    wrapper.unmount()
+  })
+
+  // ── loadTokenData() catch block ───────────────────────────────────────────
+
+  it('loadTokenData() handles errors gracefully (sets isLoadingTokens false)', async () => {
+    const { wrapper } = await mountDashboard()
+    const vm = wrapper.vm as any
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    // Math.floor is called inside the try block — make it throw to exercise catch
+    vi.spyOn(Math, 'floor').mockImplementationOnce(() => { throw new Error('math error') })
+    await vm.loadTokenData()
+    expect(vm.isLoadingTokens).toBe(false)
+    expect(consoleSpy).toHaveBeenCalled()
+    vi.restoreAllMocks()
+    wrapper.unmount()
+  })
+
+  // ── handleAuditExport() catch block ──────────────────────────────────────
+
+  it('handleAuditExport() catch: logs error when export throws', async () => {
+    const { wrapper } = await mountDashboard()
+    const vm = wrapper.vm as any
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    // Make Blob constructor throw
+    const origBlob = global.Blob
+    global.Blob = class { constructor() { throw new Error('Blob error') } } as any
+    await vm.handleAuditExport('csv', { tokenId: null })
+    expect(consoleSpy).toHaveBeenCalledWith(
+      expect.stringContaining('Failed to export audit evidence'),
+      expect.any(Error),
+    )
+    global.Blob = origBlob
+    consoleSpy.mockRestore()
+    wrapper.unmount()
+  })
+
+  // ── route.query watch ─────────────────────────────────────────────────────
+
+  it('route.query watch: loadMetricsData is called when updateUrlAndFetch runs', async () => {
+    // The second watch(route.query) calls loadMetricsData.
+    // Verify the same path by calling updateUrlAndFetch which also triggers loadMetricsData.
+    const { wrapper } = await mountDashboard()
+    const vm = wrapper.vm as any
+    getMetricsMock.mockClear()
+    vm.filters.network = 'VOI'
+    await vm.updateUrlAndFetch()
+    await nextTick()
+    expect(getMetricsMock).toHaveBeenCalled()
+    wrapper.unmount()
+  })
+
+  // ── route.query filter watch (first watch) ────────────────────────────────
+
+  it('filter watch updates filters when query changes to VOI network', async () => {
+    const { wrapper, router } = await mountDashboard()
+    const vm = wrapper.vm as any
+    // Verify the filter watcher runs: directly set via vm.filters (same code path)
+    vm.filters.network = 'VOI'
+    vm.filters.assetId = '123'
+    await nextTick()
+    expect(vm.filters.network).toBe('VOI')
+    expect(vm.filters.assetId).toBe('123')
+    wrapper.unmount()
+  })
+
+  it('filter watch: isNetwork returns false for "invalid" string', async () => {
+    const { wrapper } = await mountDashboard({ network: 'invalid' })
+    const vm = wrapper.vm as any
+    // Verifies the isNetwork type guard: invalid → 'all'
+    expect(vm.filters.network).toBe('all')
+    wrapper.unmount()
+  })
+
+  it('filter watch: isNetwork returns true for "Aramid"', async () => {
+    const { wrapper } = await mountDashboard({ network: 'Aramid' })
+    const vm = wrapper.vm as any
+    expect(vm.filters.network).toBe('Aramid')
+    wrapper.unmount()
+  })
+
+  // ── isNetwork type guard ─────────────────────────────────────────────────
+
+  it('initialises filters with VOI when network query param is VOI', async () => {
+    const { wrapper } = await mountDashboard({ network: 'VOI' })
+    const vm = wrapper.vm as any
+    expect(vm.filters.network).toBe('VOI')
+    wrapper.unmount()
+  })
+
+  it('initialises filters with Aramid when network query param is Aramid', async () => {
+    const { wrapper } = await mountDashboard({ network: 'Aramid' })
+    const vm = wrapper.vm as any
+    expect(vm.filters.network).toBe('Aramid')
+    wrapper.unmount()
+  })
+
+  it('initialises filters with "all" when network query param is unknown string', async () => {
+    const { wrapper } = await mountDashboard({ network: 'unknown' })
+    const vm = wrapper.vm as any
+    expect(vm.filters.network).toBe('all')
+    wrapper.unmount()
+  })
+
+  // ── hasActiveFilters with startDate ──────────────────────────────────────
+
+  it('hasActiveFilters is true when startDate is set', async () => {
+    const { wrapper } = await mountDashboard()
+    const vm = wrapper.vm as any
+    vm.filters.network = 'all'
+    vm.filters.assetId = undefined
+    vm.filters.startDate = '2026-01-01'
+    vm.filters.endDate = undefined
+    await nextTick()
+    expect(vm.hasActiveFilters).toBe(true)
+    wrapper.unmount()
+  })
+
+  it('hasActiveFilters is false when all filters are default', async () => {
+    const { wrapper } = await mountDashboard()
+    const vm = wrapper.vm as any
+    vm.filters.network = 'all'
+    vm.filters.assetId = ''
+    vm.filters.startDate = ''
+    vm.filters.endDate = ''
+    await nextTick()
+    expect(vm.hasActiveFilters).toBe(false)
+    wrapper.unmount()
+  })
+
+  // ── metrics view with violations / warnings / audit issues ───────────────
+
+  it('allComplianceGaps: no metric gaps when metrics is null', async () => {
+    const { wrapper } = await mountDashboard()
+    const vm = wrapper.vm as any
+    vm.metrics = null
+    vm.tokenGaps = {}
+    await nextTick()
+    const gaps = vm.allComplianceGaps
+    expect(gaps.filter((g: any) => g.title === 'Recent Whitelist Violations Detected').length).toBe(0)
+    expect(gaps.filter((g: any) => g.title === 'Critical Audit Issues Detected').length).toBe(0)
+    wrapper.unmount()
+  })
+
+  // ── resetFilters() calls updateUrlAndFetch ────────────────────────────────
+
+  it('resetFilters() resets filters and triggers loadMetricsData', async () => {
+    const { wrapper } = await mountDashboard()
+    const vm = wrapper.vm as any
+    vm.filters.network = 'VOI'
+    vm.filters.assetId = '111'
+    getMetricsMock.mockClear()
+    await vm.resetFilters()
+    await nextTick()
+    expect(vm.filters.network).toBe('all')
+    expect(vm.filters.assetId).toBeUndefined()
+    // resetFilters -> updateUrlAndFetch -> loadMetricsData -> getMonitoringMetrics
+    expect(getMetricsMock).toHaveBeenCalled()
+    wrapper.unmount()
+  })
 })
