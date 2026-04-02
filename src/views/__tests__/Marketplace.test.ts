@@ -196,4 +196,28 @@ describe('Marketplace View', () => {
     expect(vm.selectedToken).toBeNull()
     vi.useRealTimers()
   })
+
+  // handleFilterUpdate coverage (line 160)
+  it('handleFilterUpdate calls updateFilters on the store', async () => {
+    const { wrapper } = await mountMarketplace()
+    const vm = wrapper.vm as any
+    const newFilters = { network: 'Algorand Mainnet', complianceBadge: 'MICA Compliant', assetClass: 'All', search: '' }
+    vm.handleFilterUpdate(newFilters)
+    await nextTick()
+    // The store's updateFilters should have been called with the new filters
+    const { useMarketplaceStore } = await import('../../stores/marketplace')
+    const store = useMarketplaceStore()
+    expect(store.updateFilters).toHaveBeenCalledWith(newFilters)
+  })
+
+  // handleReset coverage (line 164)
+  it('handleReset calls resetFilters on the store', async () => {
+    const { wrapper } = await mountMarketplace()
+    const vm = wrapper.vm as any
+    vm.handleReset()
+    await nextTick()
+    const { useMarketplaceStore } = await import('../../stores/marketplace')
+    const store = useMarketplaceStore()
+    expect(store.resetFilters).toHaveBeenCalled()
+  })
 })
