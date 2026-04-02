@@ -163,4 +163,145 @@ describe('ReviewSubmitStep', () => {
     await wrapper.vm.$nextTick()
     expect(wrapper.emitted('submit')).toBeFalsy()
   })
+
+  // ── Template v-if: organizationProfile section ─────────────────────────────
+  it('shows organizationProfile section when formData.organizationProfile provided', () => {
+    const formData = {
+      ...makeFormData(),
+      organizationProfile: {
+        organizationName: 'Biatec AG',
+        organizationType: 'corporation',
+        jurisdiction: 'CH',
+        contactEmail: 'test@biatec.io',
+      },
+    } as any
+    const wrapper = mountStep(makeReadinessScore(), formData)
+    expect(wrapper.text()).toContain('Biatec AG')
+    expect(wrapper.text()).toContain('Organization Profile')
+  })
+
+  // ── Template v-if: tokenIntent section ────────────────────────────────────
+  it('shows tokenIntent section when formData.tokenIntent provided', () => {
+    const formData = {
+      ...makeFormData(),
+      tokenIntent: {
+        tokenPurpose: 'Security token for real estate fund',
+        utilityType: 'security',
+      },
+    } as any
+    const wrapper = mountStep(makeReadinessScore(), formData)
+    expect(wrapper.text()).toContain('Token Intent')
+    expect(wrapper.text()).toContain('Security token for real estate fund')
+  })
+
+  // ── Template v-if: selectedTemplate section ────────────────────────────────
+  it('shows selectedTemplate section when formData.selectedTemplate provided', () => {
+    const formData = {
+      ...makeFormData(),
+      selectedTemplate: { name: 'ARC200 Security Token', standard: 'ARC200', network: 'algorand_mainnet' },
+    } as any
+    const wrapper = mountStep(makeReadinessScore(), formData)
+    expect(wrapper.text()).toContain('ARC200 Security Token')
+    expect(wrapper.text()).toContain('Selected Template')
+  })
+
+  // ── Whitelist Policy: isEnabled=true with allowedJurisdictions ────────────
+  it('shows allowed jurisdictions when whitelist enabled with allowedJurisdictions', () => {
+    const formData = {
+      ...makeFormData(),
+      whitelistPolicy: {
+        isEnabled: true,
+        allowedJurisdictions: [{ code: 'CH', name: 'Switzerland' }],
+        restrictedJurisdictions: [],
+        investorCategories: [],
+        requiresWhitelist: true,
+      },
+    } as any
+    const wrapper = mountStep(makeReadinessScore(), formData)
+    expect(wrapper.text()).toContain('Allowed countries')
+    expect(wrapper.text()).toContain('Switzerland')
+  })
+
+  // ── Whitelist Policy: isEnabled=true with restrictedJurisdictions (line 86-90) ──
+  it('shows restricted jurisdictions when whitelist enabled with restrictedJurisdictions', () => {
+    const formData = {
+      ...makeFormData(),
+      whitelistPolicy: {
+        isEnabled: true,
+        allowedJurisdictions: [],
+        restrictedJurisdictions: [{ code: 'US', name: 'United States' }],
+        investorCategories: [],
+        requiresWhitelist: true,
+      },
+    } as any
+    const wrapper = mountStep(makeReadinessScore(), formData)
+    expect(wrapper.text()).toContain('Blocked countries')
+    expect(wrapper.text()).toContain('United States')
+  })
+
+  // ── Whitelist Policy: isEnabled=true with investorCategories (lines 93-100) ──
+  it('shows investor categories when whitelist enabled with investorCategories', () => {
+    const formData = {
+      ...makeFormData(),
+      whitelistPolicy: {
+        isEnabled: true,
+        allowedJurisdictions: [],
+        restrictedJurisdictions: [],
+        investorCategories: ['accredited_investor'],
+        requiresWhitelist: true,
+      },
+    } as any
+    const wrapper = mountStep(makeReadinessScore(), formData)
+    expect(wrapper.text()).toContain('Investor categories')
+    expect(wrapper.text()).toContain('accredited investor')
+  })
+
+  // ── Whitelist Policy: isEnabled=true but no jurisdictions or categories ────
+  it('shows fallback message when whitelist enabled but no specific rules defined', () => {
+    const formData = {
+      ...makeFormData(),
+      whitelistPolicy: {
+        isEnabled: true,
+        allowedJurisdictions: [],
+        restrictedJurisdictions: [],
+        investorCategories: [],
+        requiresWhitelist: true,
+      },
+    } as any
+    const wrapper = mountStep(makeReadinessScore(), formData)
+    expect(wrapper.text()).toMatch(/no specific rules|Restrictions enabled/i)
+  })
+
+  // ── Whitelist Policy: isEnabled=false shows freely transferable (v-else) ──
+  it('shows freely transferable message when whitelist is not enabled', () => {
+    const formData = {
+      ...makeFormData(),
+      whitelistPolicy: {
+        isEnabled: false,
+        allowedJurisdictions: [],
+        restrictedJurisdictions: [],
+        investorCategories: [],
+        requiresWhitelist: false,
+      },
+    } as any
+    const wrapper = mountStep(makeReadinessScore(), formData)
+    expect(wrapper.text()).toMatch(/freely transferable|No transfer restrictions/i)
+  })
+
+  // ── isSubmitting prop ─────────────────────────────────────────────────────
+  it('passes isSubmitting=true prop without crashing', () => {
+    const wrapper = mount(ReviewSubmitStep, {
+      props: { readinessScore: makeReadinessScore(), formData: makeFormData() as any, isSubmitting: true },
+      global: {
+        plugins: [createPinia()],
+        stubs: {
+          Card: CardStub,
+          Badge: BadgeStub,
+          Button: ButtonStub,
+          TransactionPreviewPanel: TransactionPreviewPanelStub,
+        },
+      },
+    })
+    expect(wrapper.exists()).toBe(true)
+  })
 })

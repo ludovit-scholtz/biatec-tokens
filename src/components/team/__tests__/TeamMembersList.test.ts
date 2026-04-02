@@ -179,4 +179,154 @@ describe("TeamMembersList", () => {
     await wrapper.find("button").trigger("click");
     expect(wrapper.emitted("retry")).toBeDefined();
   });
+
+  // ----- canManageTeam: invitation action buttons (lines 192-208) -----
+  it("shows Resend/Cancel buttons in invitations section when canManageTeam is true", () => {
+    const wrapper = mount(TeamMembersList, {
+      props: {
+        members: [makeMember()],
+        pendingInvitations: [makeInvitation()],
+        canManageTeam: true,
+      },
+    });
+    expect(wrapper.text()).toContain("Resend");
+    expect(wrapper.text()).toContain("Cancel");
+  });
+
+  it("does not show Resend/Cancel buttons when canManageTeam is false", () => {
+    const wrapper = mount(TeamMembersList, {
+      props: {
+        members: [makeMember()],
+        pendingInvitations: [makeInvitation()],
+        canManageTeam: false,
+      },
+    });
+    expect(wrapper.text()).not.toContain("Resend");
+  });
+
+  it("emits resend-invitation when Resend button is clicked", async () => {
+    const inv = makeInvitation();
+    const wrapper = mount(TeamMembersList, {
+      props: { members: [makeMember()], pendingInvitations: [inv], canManageTeam: true },
+    });
+    const resendBtn = wrapper.findAll("button").find((b) => b.text().includes("Resend"));
+    expect(resendBtn).toBeDefined();
+    await resendBtn!.trigger("click");
+    expect(wrapper.emitted("resend-invitation")).toBeDefined();
+  });
+
+  it("emits cancel-invitation when Cancel button is clicked", async () => {
+    const inv = makeInvitation();
+    const wrapper = mount(TeamMembersList, {
+      props: { members: [makeMember()], pendingInvitations: [inv], canManageTeam: true },
+    });
+    const cancelBtn = wrapper.findAll("button").find((b) => b.text().trim() === "Cancel");
+    expect(cancelBtn).toBeDefined();
+    await cancelBtn!.trigger("click");
+    expect(wrapper.emitted("cancel-invitation")).toBeDefined();
+  });
+
+  // ----- getInitials: single-word name branch -----
+  it("shows first 2 chars as initials for single-word name", () => {
+    const wrapper = mount(TeamMembersList, {
+      props: { members: [makeMember({ name: "Alice" })], pendingInvitations: [] },
+    });
+    expect(wrapper.text()).toContain("Al");
+  });
+
+  // ----- formatRelativeTime: all time branches -----
+  it("shows joined date in 'days ago' format for recent members", () => {
+    const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString();
+    const wrapper = mount(TeamMembersList, {
+      props: { members: [makeMember({ lastActive: twoDaysAgo })], pendingInvitations: [] },
+    });
+    expect(wrapper.text()).toContain("days ago");
+  });
+
+  it("shows 'hours ago' for member active hours ago", () => {
+    const fiveHoursAgo = new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString();
+    const wrapper = mount(TeamMembersList, {
+      props: { members: [makeMember({ lastActive: fiveHoursAgo })], pendingInvitations: [] },
+    });
+    expect(wrapper.text()).toContain("hours ago");
+  });
+
+  it("shows 'minutes ago' for member active 10 minutes ago", () => {
+    const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+    const wrapper = mount(TeamMembersList, {
+      props: { members: [makeMember({ lastActive: tenMinutesAgo })], pendingInvitations: [] },
+    });
+    expect(wrapper.text()).toContain("minutes ago");
+  });
+
+  it("shows 'just now' for member active < 1 minute ago", () => {
+    const justNow = new Date(Date.now() - 30 * 1000).toISOString();
+    const wrapper = mount(TeamMembersList, {
+      props: { members: [makeMember({ lastActive: justNow })], pendingInvitations: [] },
+    });
+    expect(wrapper.text()).toContain("just now");
+  });
+
+  it("shows locale date for member active >30 days ago (line 273 fallback)", () => {
+    const fortyDaysAgo = new Date(Date.now() - 40 * 24 * 60 * 60 * 1000).toISOString();
+    const wrapper = mount(TeamMembersList, {
+      props: { members: [makeMember({ lastActive: fortyDaysAgo })], pendingInvitations: [] },
+    });
+    // Should show a locale date string (not "ago") in the Active section
+    const text = wrapper.text();
+    expect(text).toContain("alice@biatec.io");
+    expect(text).not.toMatch(/40 days ago/i);
+  });
+
+  it("shows singular 'minute ago' for 1 minute", () => {
+    const oneMinuteAgo = new Date(Date.now() - 65 * 1000).toISOString();
+    const wrapper = mount(TeamMembersList, {
+      props: { members: [makeMember({ lastActive: oneMinuteAgo })], pendingInvitations: [] },
+    });
+    expect(wrapper.text()).toContain("minute ago");
+    expect(wrapper.text()).not.toContain("minutes ago");
+  });
+
+  it("shows singular 'hour ago' for exactly 1 hour", () => {
+    const oneHourAgo = new Date(Date.now() - 65 * 60 * 1000).toISOString();
+    const wrapper = mount(TeamMembersList, {
+      props: { members: [makeMember({ lastActive: oneHourAgo })], pendingInvitations: [] },
+    });
+    expect(wrapper.text()).toContain("hour ago");
+    expect(wrapper.text()).not.toContain("hours ago");
+  });
+
+  it("shows singular 'day ago' for exactly 1 day", () => {
+    const oneDayAgo = new Date(Date.now() - 25 * 60 * 60 * 1000).toISOString();
+    const wrapper = mount(TeamMembersList, {
+      props: { members: [makeMember({ lastActive: oneDayAgo })], pendingInvitations: [] },
+    });
+    expect(wrapper.text()).toContain("day ago");
+    expect(wrapper.text()).not.toContain("days ago");
+  });
+
+  // ----- emits change-role and remove-member via canManageTeam -----
+  it("emits change-role when change role button clicked (canManageTeam=true)", async () => {
+    const member = makeMember({ role: "viewer" });
+    const wrapper = mount(TeamMembersList, {
+      props: { members: [member], pendingInvitations: [], canManageTeam: true },
+    });
+    const changeRoleBtn = wrapper.findAll("button").find((b) => b.text().match(/Change Role/i));
+    if (changeRoleBtn) {
+      await changeRoleBtn.trigger("click");
+      expect(wrapper.emitted("change-role")).toBeDefined();
+    }
+  });
+
+  it("emits remove-member when remove button clicked (canManageTeam=true)", async () => {
+    const member = makeMember({ role: "viewer" });
+    const wrapper = mount(TeamMembersList, {
+      props: { members: [member], pendingInvitations: [], canManageTeam: true },
+    });
+    const removeBtn = wrapper.findAll("button").find((b) => b.text().match(/Remove/i));
+    if (removeBtn) {
+      await removeBtn.trigger("click");
+      expect(wrapper.emitted("remove-member")).toBeDefined();
+    }
+  });
 });
