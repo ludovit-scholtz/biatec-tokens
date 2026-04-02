@@ -1170,14 +1170,17 @@ describe('buildMockTimelineEntries', () => {
   })
 
   it('produces exactly 2 date groups (Today and Yesterday) when grouped', () => {
-    const anchor = new Date()
+    // Use a fixed noon anchor so tl-001/002/003 (10min/30min/5h offsets) stay in "Today"
+    // regardless of when the test runs. new Date() fails past midnight because
+    // recent-offset entries cross the calendar boundary into the previous day.
+    const anchor = new Date('2026-04-15T12:00:00.000Z')
     const entries = buildMockTimelineEntries(anchor)
     const groups = groupTimelineByDate(entries, anchor)
     expect(groups.length).toBe(2)
   })
 
   it('Today group has exactly 3 entries', () => {
-    const anchor = new Date()
+    const anchor = new Date('2026-04-15T12:00:00.000Z')
     const entries = buildMockTimelineEntries(anchor)
     const groups = groupTimelineByDate(entries, anchor)
     const today = groups.find(g => g.dateLabel === 'Today')!
@@ -1186,7 +1189,7 @@ describe('buildMockTimelineEntries', () => {
   })
 
   it('Yesterday group has exactly 1 entry', () => {
-    const anchor = new Date()
+    const anchor = new Date('2026-04-15T12:00:00.000Z')
     const entries = buildMockTimelineEntries(anchor)
     const groups = groupTimelineByDate(entries, anchor)
     const yesterday = groups.find(g => g.dateLabel === 'Yesterday')!
@@ -1195,7 +1198,7 @@ describe('buildMockTimelineEntries', () => {
   })
 
   it('tl-004 always falls in Yesterday group (calendar-day offset, always noon on previous day)', () => {
-    const anchor = new Date()
+    const anchor = new Date('2026-04-15T12:00:00.000Z')
     const entries = buildMockTimelineEntries(anchor)
     const groups = groupTimelineByDate(entries, anchor)
     const yesterday = groups.find(g => g.dateLabel === 'Yesterday')!
