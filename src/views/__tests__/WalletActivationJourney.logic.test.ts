@@ -337,4 +337,178 @@ describe('WalletActivationJourney View — Logic', () => {
       }
     })
   })
+
+  describe('completeActivation', () => {
+    it('completeActivation() sets currentStep to 4', async () => {
+      const { wrapper } = await mountView()
+      const vm = wrapper.vm as any
+      vm.selectedAction = 'guided'
+      vm.completeActivation()
+      await nextTick()
+      expect(vm.currentStep).toBe(4)
+    })
+
+    it('completeActivation() calls clearCheckpoint', async () => {
+      const { wrapper } = await mountView()
+      const vm = wrapper.vm as any
+      vm.selectedAction = 'compare'
+      vm.completeActivation()
+      expect(vi.mocked(checkpointModule.clearCheckpoint)).toHaveBeenCalled()
+    })
+
+    it('completeActivation() tracks analytics event', async () => {
+      const { wrapper } = await mountView()
+      const vm = wrapper.vm as any
+      vm.selectedAction = 'guided'
+      vm.completeActivation()
+      expect(vi.mocked(analyticsModule.analyticsService.trackEvent)).toHaveBeenCalledWith(
+        expect.objectContaining({ event: 'wallet_activation_complete' })
+      )
+    })
+  })
+
+  describe('retryProvisioningCheck', () => {
+    it('retryProvisioningCheck() calls checkAccountReadiness', async () => {
+      const { wrapper } = await mountView()
+      const vm = wrapper.vm as any
+      const trackSpy = vi.mocked(analyticsModule.analyticsService.trackEvent)
+      const callsBefore = trackSpy.mock.calls.length
+      await vm.retryProvisioningCheck()
+      expect(trackSpy.mock.calls.length).toBeGreaterThan(callsBefore)
+    })
+  })
+
+  describe('provisioningStatusMessage computed branches', () => {
+    it('shows "Checking account provisioning status" when checkingProvisioning is true', async () => {
+      const { wrapper } = await mountView({
+        isConnected: true,
+        user: { address: 'ADDR', email: 'test@test.com', canDeploy: true },
+      })
+      const vm = wrapper.vm as any
+      vm.accountReadiness.authenticated = true
+      vm.checkingProvisioning = true
+      await nextTick()
+      expect(vm.provisioningStatusMessage).toContain('Checking')
+    })
+
+    it('shows "Account needs to be provisioned" when provisioned is false', async () => {
+      const { wrapper } = await mountView({ isConnected: true, user: { address: 'ADDR' } })
+      const vm = wrapper.vm as any
+      vm.accountReadiness.authenticated = true
+      vm.accountReadiness.provisioned = false
+      vm.checkingProvisioning = false
+      await nextTick()
+      expect(vm.provisioningStatusMessage).toContain('needs to be provisioned')
+    })
+
+    it('shows "Account is properly provisioned" when fully provisioned', async () => {
+      const { wrapper } = await mountView({ isConnected: true })
+      const vm = wrapper.vm as any
+      vm.accountReadiness.authenticated = true
+      vm.accountReadiness.provisioned = true
+      vm.checkingProvisioning = false
+      await nextTick()
+      expect(vm.provisioningStatusMessage).toContain('properly provisioned')
+    })
+  })
+
+  describe('accountReadinessMessage computed branches', () => {
+    it('returns empty string when fully ready', async () => {
+      const { wrapper } = await mountView()
+      const vm = wrapper.vm as any
+      vm.accountReadiness.authenticated = true
+      vm.accountReadiness.provisioned = true
+      vm.accountReadiness.canDeploy = true
+      await nextTick()
+      expect(vm.accountReadinessMessage).toBe('')
+    })
+
+    it('shows provisioning message when not provisioned', async () => {
+      const { wrapper } = await mountView()
+      const vm = wrapper.vm as any
+      vm.accountReadiness.authenticated = true
+      vm.accountReadiness.provisioned = false
+      vm.accountReadiness.canDeploy = false
+      await nextTick()
+      expect(vm.accountReadinessMessage).toContain('provisioned')
+    })
+
+    it('shows canDeploy message when provisioned but cannot deploy', async () => {
+      const { wrapper } = await mountView()
+      const vm = wrapper.vm as any
+      vm.accountReadiness.authenticated = true
+      vm.accountReadiness.provisioned = true
+      vm.accountReadiness.canDeploy = false
+      await nextTick()
+      expect(vm.accountReadinessMessage).toContain('not yet ready')
+    })
+  })
+
+  describe('progressPercentage computed', () => {
+    it('is 100% at step 4', async () => {
+      vi.mocked(checkpointModule.loadCheckpoint).mockReturnValue({
+        checkpoint: { step: 4, totalSteps: 4, completedSteps: [1, 2, 3] },
+      } as ReturnType<typeof checkpointModule.loadCheckpoint>)
+      vi.mocked(checkpointModule.isCheckpointResumable).mockReturnValue(true)
+      const { wrapper } = await mountView()
+      await flushPromises()
+      await nextTick()
+      const vm = wrapper.vm as any
+      expect(vm.progressPercentage).toBe(100)
+    })
+
+    it('is 50% at step 2', async () => {
+      vi.mocked(checkpointModule.loadCheckpoint).mockReturnValue({
+        checkpoint: { step: 2, totalSteps: 4, completedSteps: [1] },
+      } as ReturnType<typeof checkpointModule.loadCheckpoint>)
+      vi.mocked(checkpointModule.isCheckpointResumable).mockReturnValue(true)
+      const { wrapper } = await mountView()
+      await flushPromises()
+      await nextTick()
+      const vm = wrapper.vm as any
+      expect(vm.progressPercentage).toBe(50)
+    })
+  })
+
+  describe('currentStepBadgeVariant computed', () => {
+    it('returns "success" at step 4', async () => {
+      vi.mocked(checkpointModule.loadCheckpoint).mockReturnValue({
+        checkpoint: { step: 4, totalSteps: 4, completedSteps: [1, 2, 3] },
+      } as ReturnType<typeof checkpointModule.loadCheckpoint>)
+      vi.mocked(checkpointModule.isCheckpointResumable).mockReturnValue(true)
+      const { wrapper } = await mountView()
+      await flushPromises()
+      await nextTick()
+      const vm = wrapper.vm as any
+      expect(vm.currentStepBadgeVariant).toBe('success')
+    })
+
+    it('returns "info" at step 1', async () => {
+      const { wrapper } = await mountView()
+      const vm = wrapper.vm as any
+      expect(vm.currentStepBadgeVariant).toBe('info')
+    })
+  })
+
+  describe('isAccountReady computed', () => {
+    it('is true when all readiness flags are true', async () => {
+      const { wrapper } = await mountView()
+      const vm = wrapper.vm as any
+      vm.accountReadiness.authenticated = true
+      vm.accountReadiness.provisioned = true
+      vm.accountReadiness.canDeploy = true
+      await nextTick()
+      expect(vm.isAccountReady).toBe(true)
+    })
+
+    it('is false when any flag is false', async () => {
+      const { wrapper } = await mountView()
+      const vm = wrapper.vm as any
+      vm.accountReadiness.authenticated = true
+      vm.accountReadiness.provisioned = true
+      vm.accountReadiness.canDeploy = false
+      await nextTick()
+      expect(vm.isAccountReady).toBe(false)
+    })
+  })
 })
