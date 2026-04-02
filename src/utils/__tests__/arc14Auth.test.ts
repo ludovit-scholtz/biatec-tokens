@@ -36,6 +36,7 @@ describe('arc14Auth', () => {
   describe('bytesToBase64 fallback (Buffer=undefined)', () => {
     afterEach(() => {
       vi.unstubAllGlobals()
+      vi.resetModules()
     })
 
     it('makeArc14AuthHeader still works when Buffer is undefined (uses btoa fallback)', async () => {

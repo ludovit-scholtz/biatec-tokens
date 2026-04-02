@@ -307,8 +307,9 @@ describe('Marketplace View', () => {
     // queriesEqual check: both queries have { network: 'All' } so replace should NOT be called
     // (this exercises the queriesEqual branch of the watch callback)
     expect(wrapper.exists()).toBe(true)
-    wrapper.unmount()
     // Whether replace was called or not, the view should render without errors
-    expect(true).toBe(true)
+    // queriesEqual=true (both queries have { network: 'All' }) so replace should NOT be called
+    expect(routerReplaceSpy).not.toHaveBeenCalled()
+    wrapper.unmount()
   })
 })

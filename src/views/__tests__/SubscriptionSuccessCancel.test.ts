@@ -79,10 +79,9 @@ describe('Subscription Success View', () => {
     })
     await flushPromises()
     const dashboardBtn = wrapper.findAll('button').find(btn => btn.text().includes('Go to Dashboard'))
-    if (dashboardBtn) {
-      await dashboardBtn.trigger('click')
-      expect(mockPush).toHaveBeenCalledWith('/dashboard')
-    }
+    expect(dashboardBtn).toBeTruthy()
+    await dashboardBtn!.trigger('click')
+    expect(mockPush).toHaveBeenCalledWith('/dashboard')
   })
 
   it('shows "Create Your First Token" button', async () => {
@@ -99,10 +98,9 @@ describe('Subscription Success View', () => {
     })
     await flushPromises()
     const createBtn = wrapper.findAll('button').find(btn => btn.text().includes('Create Your First Token'))
-    if (createBtn) {
-      await createBtn.trigger('click')
-      expect(mockPush).toHaveBeenCalledWith('/launch/guided')
-    }
+    expect(createBtn).toBeTruthy()
+    await createBtn!.trigger('click')
+    expect(mockPush).toHaveBeenCalledWith('/launch/guided')
   })
 
   it('calls fetchSubscription on mount', async () => {
@@ -204,10 +202,9 @@ describe('Subscription Cancel View', () => {
     })
     await flushPromises()
     const tryAgainBtn = wrapper.findAll('button').find(btn => btn.text().includes('Try Again'))
-    if (tryAgainBtn) {
-      await tryAgainBtn.trigger('click')
-      expect(mockPush).toHaveBeenCalledWith('/subscription/pricing')
-    }
+    expect(tryAgainBtn).toBeTruthy()
+    await tryAgainBtn!.trigger('click')
+    expect(mockPush).toHaveBeenCalledWith('/subscription/pricing')
   })
 
   it('shows "Back to Home" button', async () => {
@@ -224,9 +221,8 @@ describe('Subscription Cancel View', () => {
     })
     await flushPromises()
     const homeBtn = wrapper.findAll('button').find(btn => btn.text().includes('Back to Home'))
-    if (homeBtn) {
-      await homeBtn.trigger('click')
-      expect(mockPush).toHaveBeenCalledWith('/')
-    }
+    expect(homeBtn).toBeTruthy()
+    await homeBtn!.trigger('click')
+    expect(mockPush).toHaveBeenCalledWith('/')
   })
 })
