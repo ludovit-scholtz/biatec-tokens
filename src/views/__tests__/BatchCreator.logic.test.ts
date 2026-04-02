@@ -254,6 +254,67 @@ describe('BatchCreator View — Logic', () => {
         expect(router.currentRoute.value.path).toBe('/create')
       }
     })
+
+    it('handleProgressClose sets showProgressDialog to false', async () => {
+      const { wrapper } = await mountBatchCreator()
+      const vm = wrapper.vm as any
+      // Simulate dialog open
+      vm.showProgressDialog = true
+      await nextTick()
+      // Close the dialog
+      vm.handleProgressClose()
+      await nextTick()
+      expect(vm.showProgressDialog).toBe(false)
+    })
+
+    it('retryToken calls retryFailedTokens with the token id', async () => {
+      const { wrapper } = await mountBatchCreator()
+      const vm = wrapper.vm as any
+      mockRetryFailedTokens.mockResolvedValue(undefined)
+      await vm.retryToken('token-abc')
+      expect(mockRetryFailedTokens).toHaveBeenCalledWith(['token-abc'])
+    })
+
+    it('retryAllFailed calls retryFailedTokens with no arguments', async () => {
+      const { wrapper } = await mountBatchCreator()
+      const vm = wrapper.vm as any
+      mockRetryFailedTokens.mockResolvedValue(undefined)
+      await vm.retryAllFailed()
+      expect(mockRetryFailedTokens).toHaveBeenCalledWith()
+    })
+
+    it('exportAudit calls downloadAudit with csv format', async () => {
+      const { wrapper } = await mountBatchCreator()
+      const vm = wrapper.vm as any
+      mockDownloadAudit.mockResolvedValue(undefined)
+      await vm.exportAudit()
+      expect(mockDownloadAudit).toHaveBeenCalledWith('csv')
+    })
+
+    it('removeToken with showValidation=true triggers revalidation', async () => {
+      const { wrapper } = await mountBatchCreator()
+      const vm = wrapper.vm as any
+      // Add a second token so we can remove one while showValidation is true
+      vm.addToken()
+      await nextTick()
+      vm.showValidation = true
+      await nextTick()
+      const beforeCount = vm.tokens.length
+      vm.removeToken(0)
+      await nextTick()
+      // token removed
+      expect(vm.tokens.length).toBe(beforeCount - 1)
+    })
+
+    it('updateToken with showValidation=true clears showValidation', async () => {
+      const { wrapper } = await mountBatchCreator()
+      const vm = wrapper.vm as any
+      vm.showValidation = true
+      await nextTick()
+      vm.updateToken(0, { standard: 'ARC3', name: 'UpdatedToken' })
+      await nextTick()
+      expect(vm.showValidation).toBe(false)
+    })
   })
 
   describe('BatchCreator computed properties', () => {

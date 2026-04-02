@@ -72,11 +72,37 @@ describe('Subscription Success View', () => {
     expect(dashboardBtn).toBeTruthy()
   })
 
+  it('"Go to Dashboard" button click calls router.push("/dashboard")', async () => {
+    const mockPush = vi.fn()
+    const wrapper = mount(Success, {
+      global: { plugins: [createPinia()], mocks: { $router: { push: mockPush } } },
+    })
+    await flushPromises()
+    const dashboardBtn = wrapper.findAll('button').find(btn => btn.text().includes('Go to Dashboard'))
+    if (dashboardBtn) {
+      await dashboardBtn.trigger('click')
+      expect(mockPush).toHaveBeenCalledWith('/dashboard')
+    }
+  })
+
   it('shows "Create Your First Token" button', async () => {
     const wrapper = mountSuccess()
     await flushPromises()
     const createBtn = wrapper.findAll('button').find(btn => btn.text().includes('Create Your First Token'))
     expect(createBtn).toBeTruthy()
+  })
+
+  it('"Create Your First Token" button click calls router.push("/launch/guided")', async () => {
+    const mockPush = vi.fn()
+    const wrapper = mount(Success, {
+      global: { plugins: [createPinia()], mocks: { $router: { push: mockPush } } },
+    })
+    await flushPromises()
+    const createBtn = wrapper.findAll('button').find(btn => btn.text().includes('Create Your First Token'))
+    if (createBtn) {
+      await createBtn.trigger('click')
+      expect(mockPush).toHaveBeenCalledWith('/launch/guided')
+    }
   })
 
   it('calls fetchSubscription on mount', async () => {
@@ -171,10 +197,36 @@ describe('Subscription Cancel View', () => {
     expect(tryAgainBtn).toBeTruthy()
   })
 
+  it('"Try Again" button click calls router.push("/subscription/pricing")', async () => {
+    const mockPush = vi.fn()
+    const wrapper = mount(Cancel, {
+      global: { plugins: [createPinia()], mocks: { $router: { push: mockPush } } },
+    })
+    await flushPromises()
+    const tryAgainBtn = wrapper.findAll('button').find(btn => btn.text().includes('Try Again'))
+    if (tryAgainBtn) {
+      await tryAgainBtn.trigger('click')
+      expect(mockPush).toHaveBeenCalledWith('/subscription/pricing')
+    }
+  })
+
   it('shows "Back to Home" button', async () => {
     const wrapper = mountCancel()
     await flushPromises()
     const homeBtn = wrapper.findAll('button').find(btn => btn.text().includes('Back to Home'))
     expect(homeBtn).toBeTruthy()
+  })
+
+  it('"Back to Home" button click calls router.push("/")', async () => {
+    const mockPush = vi.fn()
+    const wrapper = mount(Cancel, {
+      global: { plugins: [createPinia()], mocks: { $router: { push: mockPush } } },
+    })
+    await flushPromises()
+    const homeBtn = wrapper.findAll('button').find(btn => btn.text().includes('Back to Home'))
+    if (homeBtn) {
+      await homeBtn.trigger('click')
+      expect(mockPush).toHaveBeenCalledWith('/')
+    }
   })
 })

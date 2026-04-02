@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, afterEach } from 'vitest'
 import { makeArc14AuthHeader, makeArc14TxWithSuggestedParams } from '../arc14Auth'
 
 describe('arc14Auth', () => {
@@ -30,6 +30,40 @@ describe('arc14Auth', () => {
     const header1 = makeArc14AuthHeader(bytes1)
     const header2 = makeArc14AuthHeader(bytes2)
     expect(header1).not.toBe(header2)
+  })
+
+  // bytesToBase64 fallback path (lines 9-14) — exercises the btoa loop when Buffer is undefined
+  describe('bytesToBase64 fallback (Buffer=undefined)', () => {
+    afterEach(() => {
+      vi.unstubAllGlobals()
+    })
+
+    it('makeArc14AuthHeader still works when Buffer is undefined (uses btoa fallback)', async () => {
+      // Temporarily remove the Buffer global so the else-branch (btoa loop) runs
+      vi.stubGlobal('Buffer', undefined)
+      // Re-import the module so it uses the current (no-Buffer) environment
+      vi.resetModules()
+      const { makeArc14AuthHeader: makeHeaderFresh } = await import('../arc14Auth')
+      const bytes = new Uint8Array([72, 101, 108, 108, 111]) // "Hello"
+      const header = makeHeaderFresh(bytes)
+      expect(header).toMatch(/^SigTx /)
+      // "Hello" base64 is "SGVsbG8="
+      expect(header).toBe('SigTx SGVsbG8=')
+    })
+
+    it('btoa fallback produces the same base64 as Buffer.from().toString()', async () => {
+      vi.stubGlobal('Buffer', undefined)
+      vi.resetModules()
+      const { makeArc14AuthHeader: makeHeaderFresh } = await import('../arc14Auth')
+      const bytes = new Uint8Array([1, 2, 3, 4, 5])
+      const headerFallback = makeHeaderFresh(bytes)
+      // Restore Buffer and compare
+      vi.unstubAllGlobals()
+      vi.resetModules()
+      const { makeArc14AuthHeader: makeHeaderNormal } = await import('../arc14Auth')
+      const headerNormal = makeHeaderNormal(bytes)
+      expect(headerFallback).toBe(headerNormal)
+    })
   })
 
   // makeArc14TxWithSuggestedParams coverage (lines 17-27)
