@@ -203,3 +203,52 @@ describe('NetworkSwitcher', () => {
     })
   })
 })
+
+  describe('handleNetworkSwitch — non-Error exception branch (line 272)', () => {
+    it('sets error to default message when thrown exception is not an Error object', async () => {
+      const wrapper = mountSwitcher()
+      const vm = wrapper.vm as any
+      if (vm.networkStore) {
+        vm.networkStore.switchNetwork = vi.fn().mockRejectedValue('plain string error')
+        await vm.handleNetworkSwitch('voi-mainnet')
+        expect(vm.error).toBe('Failed to switch network')
+        expect(vm.isSwitching).toBe(false)
+      }
+    })
+  })
+
+  describe('onUnmounted — removeEventListener called (line 293)', () => {
+    it('removes click listener when component is unmounted', () => {
+      const wrapper = mountSwitcher()
+      const removeSpy = vi.spyOn(document, 'removeEventListener')
+      wrapper.unmount()
+      expect(removeSpy).toHaveBeenCalledWith('click', expect.any(Function))
+      removeSpy.mockRestore()
+    })
+  })
+
+  describe('evmTestNetworks sort — locale comparison (line 244)', () => {
+    it('sorts EVM test networks by displayName', () => {
+      const wrapper = mountSwitcher()
+      const vm = wrapper.vm as any
+      const testNets = vm.evmTestNetworks
+      // Should be sorted alphabetically
+      for (let i = 0; i < testNets.length - 1; i++) {
+        expect(testNets[i].displayName.localeCompare(testNets[i + 1].displayName)).toBeLessThanOrEqual(0)
+      }
+    })
+  })
+
+  describe('handleClickOutside — dropdownRef null branch (line ~286)', () => {
+    it('does not crash when dropdownRef is null', () => {
+      const wrapper = mountSwitcher()
+      const vm = wrapper.vm as any
+      vm.isOpen = true
+      // Simulate when dropdownRef is null (not yet attached)
+      const origRef = vm.dropdownRef
+      vm.dropdownRef = null
+      const event = { target: document.body } as unknown as MouseEvent
+      expect(() => vm.handleClickOutside(event)).not.toThrow()
+      vm.dropdownRef = origRef
+    })
+  })
