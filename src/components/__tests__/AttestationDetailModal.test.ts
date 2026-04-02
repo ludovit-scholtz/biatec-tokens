@@ -187,4 +187,88 @@ describe('AttestationDetailModal', () => {
     const wrapper = mountModal(att)
     expect(wrapper.text()).toContain('Unknown')
   })
+
+  // Lines 92-164: optional fields v-if branches
+  it('renders verifiedAt section when attestation has verifiedAt', () => {
+    const att = { ...mockAttestation, verifiedAt: '2024-02-01T12:00:00Z' }
+    const wrapper = mountModal(att)
+    expect(wrapper.text()).toContain('Verified At')
+  })
+
+  it('does not render verifiedAt section when verifiedAt is absent', () => {
+    const att = { ...mockAttestation, verifiedAt: undefined }
+    const wrapper = mountModal(att)
+    expect(wrapper.text()).not.toContain('Verified At')
+  })
+
+  it('renders verifiedBy section when attestation has verifiedBy', () => {
+    const att = { ...mockAttestation, verifiedBy: 'compliance@biatec.io' }
+    const wrapper = mountModal(att)
+    expect(wrapper.text()).toContain('Verified By')
+    expect(wrapper.text()).toContain('compliance@biatec.io')
+  })
+
+  it('does not render verifiedBy section when verifiedBy is absent', () => {
+    const att = { ...mockAttestation, verifiedBy: undefined }
+    const wrapper = mountModal(att)
+    expect(wrapper.text()).not.toContain('Verified By')
+  })
+
+  it('renders expiresAt section when attestation has expiresAt', () => {
+    const att = { ...mockAttestation, expiresAt: '2025-01-15T10:30:00Z' }
+    const wrapper = mountModal(att)
+    expect(wrapper.text()).toContain('Expires At')
+  })
+
+  it('does not render expiresAt section when expiresAt is absent', () => {
+    const att = { ...mockAttestation, expiresAt: undefined }
+    const wrapper = mountModal(att)
+    expect(wrapper.text()).not.toContain('Expires At')
+  })
+
+  it('renders proofHash section when attestation has proofHash', () => {
+    const att = { ...mockAttestation, proofHash: '0xdeadbeef1234567890abcdef' }
+    const wrapper = mountModal(att)
+    expect(wrapper.text()).toContain('Proof Hash')
+    expect(wrapper.text()).toContain('0xdeadbeef1234567890abcdef')
+  })
+
+  it('renders documentUrl section when attestation has documentUrl', () => {
+    const att = { ...mockAttestation, documentUrl: 'https://docs.biatec.io/kyc/att-001.pdf' }
+    const wrapper = mountModal(att)
+    expect(wrapper.text()).toContain('Document URL')
+    expect(wrapper.text()).toContain('https://docs.biatec.io/kyc/att-001.pdf')
+  })
+
+  it('renders Proof Metadata section when proofHash and documentUrl are both present', () => {
+    const att = {
+      ...mockAttestation,
+      proofHash: '0xabc123',
+      documentUrl: 'https://example.com/doc.pdf',
+    }
+    const wrapper = mountModal(att)
+    expect(wrapper.text()).toContain('Proof Metadata')
+    expect(wrapper.text()).toContain('0xabc123')
+    expect(wrapper.text()).toContain('https://example.com/doc.pdf')
+  })
+
+  it('does not render Proof Metadata when neither proofHash nor documentUrl', () => {
+    const att = { ...mockAttestation, proofHash: undefined, documentUrl: undefined }
+    const wrapper = mountModal(att)
+    expect(wrapper.text()).not.toContain('Proof Metadata')
+  })
+
+  // Line 197: Notes v-if branch
+  it('renders notes section when attestation has notes', () => {
+    const att = { ...mockAttestation, notes: 'Important compliance note' }
+    const wrapper = mountModal(att)
+    expect(wrapper.text()).toContain('Important compliance note')
+  })
+
+  it('does not render notes section when notes is absent', () => {
+    const att = { ...mockAttestation, notes: undefined }
+    const wrapper = mountModal(att)
+    // notes section label absent
+    expect(wrapper.findAll('label').map(l => l.text()).join(' ')).not.toContain('Notes')
+  })
 })

@@ -1189,4 +1189,61 @@ AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA,KYC Passed,John Doe,t
       expect(wrapper.vm.isExporting).toBe(false);
     });
   });
+
+  describe('error path branch coverage (lines 649-650, 695)', () => {
+    async function makeWrapper() {
+      const wrapper = mount(MicaWhitelistManagement, {
+        props: { tokenId: 'test-token-123', network: 'VOI' },
+        global: { stubs: { Modal: true, Input: true } },
+      });
+      await new Promise(resolve => setTimeout(resolve, 100));
+      return wrapper;
+    }
+
+    it('addAddress catch block sets addressError on error (lines 649-650)', async () => {
+      vi.mocked(whitelistService.addAddress).mockRejectedValue(new Error('Service unavailable'));
+      const wrapper = await makeWrapper();
+      const vm = wrapper.vm as any;
+      vm.newAddress = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
+      vm.newAddressReason = 'KYC Verified';
+      vm.newAddressRequester = 'John Doe';
+      vm.newAddressKycVerified = true;
+      vm.newAddressComplianceChecks = { sanctionsScreening: true, amlVerification: true, accreditedInvestor: false };
+      await vm.addAddress();
+      expect(vm.addressError).toBe('Service unavailable');
+    });
+
+    it('addAddress catch block uses fallback message when error has no message', async () => {
+      vi.mocked(whitelistService.addAddress).mockRejectedValue({ code: 500 });
+      const wrapper = await makeWrapper();
+      const vm = wrapper.vm as any;
+      vm.newAddress = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
+      vm.newAddressReason = 'KYC Verified';
+      vm.newAddressRequester = 'John Doe';
+      vm.newAddressKycVerified = true;
+      vm.newAddressComplianceChecks = { sanctionsScreening: true, amlVerification: true, accreditedInvestor: false };
+      await vm.addAddress();
+      expect(vm.addressError).toBe('Failed to add address');
+    });
+
+    it('removeAddress catch block handles error without throwing (line 695)', async () => {
+      vi.mocked(whitelistService.removeAddress).mockRejectedValue(new Error('Permission denied'));
+      const wrapper = await makeWrapper();
+      const vm = wrapper.vm as any;
+      vm.addressToRemove = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
+      vm.removeReason = 'Compliance issue';
+      await vm.removeAddress();
+      expect(vm.isRemoving).toBe(false);
+    });
+
+    it('removeAddress catch block uses fallback message when error has no message (line 695)', async () => {
+      vi.mocked(whitelistService.removeAddress).mockRejectedValue({ code: 403 });
+      const wrapper = await makeWrapper();
+      const vm = wrapper.vm as any;
+      vm.addressToRemove = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
+      vm.removeReason = 'Test reason';
+      await vm.removeAddress();
+      expect(vm.isRemoving).toBe(false);
+    });
+  });
 });

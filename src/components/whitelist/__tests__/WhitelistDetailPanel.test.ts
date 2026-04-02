@@ -469,4 +469,73 @@ describe("WhitelistDetailPanel", () => {
       expect(wrapper.text()).toContain("Minimal User");
     });
   });
+
+  describe("additional branch coverage", () => {
+    it("renders v-for items in documentsUploaded when docs are present (line 117)", () => {
+      const wrapper = mountPanel(MOCK_ENTRY); // has documentsUploaded: ["kyc-doc.pdf"]
+      expect(wrapper.text()).toContain("kyc-doc.pdf");
+    });
+
+    it("confirmRequestInfo returns early when requestedInfo is empty and notes is empty (line 416)", async () => {
+      const wrapper = mountPanel(PENDING_ENTRY);
+      const vm = wrapper.vm as any;
+      const { useWhitelistStore } = await import("../../../stores/whitelist");
+      const store = useWhitelistStore();
+      (store.requestMoreInfo as any) = vi.fn().mockResolvedValue(true);
+
+      // Both empty — should return early without calling store
+      vm.requestedInfo = [];
+      vm.requestInfoNotes = "   "; // whitespace only
+      await vm.confirmRequestInfo();
+      await nextTick();
+
+      expect(store.requestMoreInfo).not.toHaveBeenCalled();
+    });
+
+    it("confirmRequestInfo succeeds when notes are non-empty (success branch)", async () => {
+      const wrapper = mountPanel(PENDING_ENTRY);
+      const vm = wrapper.vm as any;
+      const { useWhitelistStore } = await import("../../../stores/whitelist");
+      const store = useWhitelistStore();
+      (store.requestMoreInfo as any) = vi.fn().mockResolvedValue(true);
+
+      vm.requestedInfo = [];
+      vm.requestInfoNotes = "Please provide passport";
+      await vm.confirmRequestInfo();
+      await nextTick();
+
+      expect(store.requestMoreInfo).toHaveBeenCalled();
+      expect(vm.requestInfoNotes).toBe("");
+    });
+
+    it("confirmRequestInfo closes modal on success", async () => {
+      const wrapper = mountPanel(PENDING_ENTRY);
+      const vm = wrapper.vm as any;
+      const { useWhitelistStore } = await import("../../../stores/whitelist");
+      const store = useWhitelistStore();
+      (store.requestMoreInfo as any) = vi.fn().mockResolvedValue(true);
+
+      vm.showRequestInfoModal = true;
+      vm.requestedInfo = ["Passport"];
+      await vm.confirmRequestInfo();
+      await nextTick();
+
+      expect(vm.showRequestInfoModal).toBe(false);
+    });
+
+    it("confirmRequestInfo keeps modal open when store returns false", async () => {
+      const wrapper = mountPanel(PENDING_ENTRY);
+      const vm = wrapper.vm as any;
+      const { useWhitelistStore } = await import("../../../stores/whitelist");
+      const store = useWhitelistStore();
+      (store.requestMoreInfo as any) = vi.fn().mockResolvedValue(false);
+
+      vm.showRequestInfoModal = true;
+      vm.requestedInfo = ["Passport"];
+      await vm.confirmRequestInfo();
+      await nextTick();
+
+      expect(vm.showRequestInfoModal).toBe(true);
+    });
+  });
 });

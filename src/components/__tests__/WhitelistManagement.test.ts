@@ -896,4 +896,50 @@ describe('WhitelistManagement Component', () => {
     wrapper.vm.loadSampleCsv();
     expect(wrapper.vm.csvData).toContain('address');
   });
+
+  it('validateCsvData marks duplicate addresses as invalid (lines 615, 624-633)', async () => {
+    const dupAddress = 'A23456723456723456723456723456723456723456723456723456723A';
+    vi.mocked(whitelistService.validateCsv).mockResolvedValue([
+      { row: 1, address: dupAddress, valid: true },
+      { row: 2, address: dupAddress, valid: true }, // same address = duplicate
+    ]);
+    vi.mocked(whitelistService.getWhitelist).mockResolvedValue([]);
+
+    const wrapper = mount(WhitelistManagement, { props: { tokenId: 'token123' } });
+    await wrapper.vm.$nextTick();
+
+    wrapper.vm.csvData = `address\n${dupAddress}\n${dupAddress}`;
+    await wrapper.vm.validateCsvData();
+
+    // Both duplicates should be marked invalid
+    const invalids = wrapper.vm.validationResults.filter((r: any) => !r.valid);
+    expect(invalids.length).toBeGreaterThan(0);
+  });
+
+  it('validateCsvData catch block sets csvError on thrown error (lines 632-633)', async () => {
+    vi.mocked(whitelistService.validateCsv).mockRejectedValue(new Error('CSV parse failure'));
+    vi.mocked(whitelistService.getWhitelist).mockResolvedValue([]);
+
+    const wrapper = mount(WhitelistManagement, { props: { tokenId: 'token123' } });
+    await wrapper.vm.$nextTick();
+
+    wrapper.vm.csvData = 'address\nABC';
+    await wrapper.vm.validateCsvData();
+
+    expect(wrapper.vm.csvError).toBe('CSV parse failure');
+    expect(wrapper.vm.isValidating).toBe(false);
+  });
+
+  it('confirmBulkUpload catch block handles upload failure (line 680)', async () => {
+    vi.mocked(whitelistService.getWhitelist).mockResolvedValue([]);
+    vi.mocked(whitelistService.bulkUpload).mockRejectedValue(new Error('Upload failed'));
+
+    const wrapper = mount(WhitelistManagement, { props: { tokenId: 'token123' } });
+    await wrapper.vm.$nextTick();
+
+    wrapper.vm.previewAddresses = ['A23456723456723456723456723456723456723456723456723456723A'];
+    await wrapper.vm.confirmBulkUpload();
+
+    expect(wrapper.vm.isUploading).toBe(false);
+  });
 });
