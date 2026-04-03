@@ -213,3 +213,121 @@ describe('ComplianceExports', () => {
     })
   })
 })
+
+describe('ComplianceExports additional coverage', () => {
+  describe('formatDate', () => {
+    it('formats an ISO date to locale string', () => {
+      const wrapper = mountExports()
+      const vm = wrapper.vm as any
+      const result = vm.formatDate('2026-01-15T10:30:00.000Z')
+      expect(typeof result).toBe('string')
+      expect(result.length).toBeGreaterThan(5)
+    })
+  })
+
+  describe('formatShortDate', () => {
+    it('formats a date string to short locale string', () => {
+      const wrapper = mountExports()
+      const vm = wrapper.vm as any
+      const result = vm.formatShortDate('2026-01-15')
+      expect(typeof result).toBe('string')
+      expect(result.length).toBeGreaterThan(3)
+    })
+
+    it('returns empty string for empty input', () => {
+      const wrapper = mountExports()
+      const vm = wrapper.vm as any
+      expect(vm.formatShortDate('')).toBe('')
+    })
+  })
+
+  describe('formatFilterSummary', () => {
+    it('returns "All filters" when no filters set', () => {
+      const wrapper = mountExports()
+      const vm = wrapper.vm as any
+      expect(vm.formatFilterSummary({})).toBe('All filters')
+    })
+
+    it('includes actionType in summary', () => {
+      const wrapper = mountExports()
+      const vm = wrapper.vm as any
+      const result = vm.formatFilterSummary({ actionType: 'transfer' })
+      expect(result).toContain('Action: transfer')
+    })
+
+    it('includes truncated actor in summary', () => {
+      const wrapper = mountExports()
+      const vm = wrapper.vm as any
+      const result = vm.formatFilterSummary({ actor: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' })
+      expect(result).toContain('Actor: ABCDEFGHIJ...')
+    })
+
+    it('joins multiple parts with bullet separator', () => {
+      const wrapper = mountExports()
+      const vm = wrapper.vm as any
+      const result = vm.formatFilterSummary({ actionType: 'mint', actor: 'ABCDEFGHIJKLMNOP' })
+      expect(result).toContain(' • ')
+    })
+  })
+
+  describe('loadDownloadHistory', () => {
+    it('loads download history from localStorage', () => {
+      const wrapper = mountExports()
+      const vm = wrapper.vm as any
+      const mockHistory = [{ filename: 'test.csv', format: 'csv', timestamp: '2026-01-01', status: 'success', recordCount: 10 }]
+      localStorage.setItem('compliance-export-history', JSON.stringify(mockHistory))
+      vm.loadDownloadHistory()
+      expect(vm.downloadHistory.length).toBe(1)
+      localStorage.removeItem('compliance-export-history')
+    })
+
+    it('handles invalid JSON in localStorage gracefully', () => {
+      const wrapper = mountExports()
+      const vm = wrapper.vm as any
+      localStorage.setItem('compliance-export-history', 'NOT_VALID_JSON::')
+      vm.loadDownloadHistory()
+      // Should not throw
+      expect(vm.downloadHistory).toBeDefined()
+      localStorage.removeItem('compliance-export-history')
+    })
+  })
+
+  describe('saveDownloadHistory', () => {
+    it('saves download history to localStorage', () => {
+      const wrapper = mountExports()
+      const vm = wrapper.vm as any
+      vm.downloadHistory = [{ filename: 'test.csv', format: 'csv', timestamp: '2026-01-01', status: 'success', recordCount: 5 }]
+      vm.saveDownloadHistory()
+      const stored = localStorage.getItem('compliance-export-history')
+      expect(stored).toBeTruthy()
+      expect(JSON.parse(stored!)[0].filename).toBe('test.csv')
+      localStorage.removeItem('compliance-export-history')
+    })
+  })
+
+  describe('generateMockSampleData', () => {
+    it('generates sample data array', () => {
+      const wrapper = mountExports()
+      const vm = wrapper.vm as any
+      const data = vm.generateMockSampleData()
+      expect(Array.isArray(data)).toBe(true)
+      expect(data.length).toBeGreaterThan(0)
+    })
+  })
+
+  describe('downloadFile', () => {
+    it('creates and clicks download link for CSV', async () => {
+      const wrapper = mountExports()
+      const vm = wrapper.vm as any
+      vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:mock-download')
+      vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {})
+      // downloadFile internally creates a link and clicks it — should not throw
+      const appendSpy = vi.spyOn(document.body, 'appendChild').mockImplementation(() => document.body)
+      const removeSpy = vi.spyOn(document.body, 'removeChild').mockImplementation(() => document.body)
+      vm.downloadFile('test-export.csv', 'csv')
+      expect(URL.createObjectURL).toHaveBeenCalled()
+      appendSpy.mockRestore()
+      removeSpy.mockRestore()
+    })
+  })
+})

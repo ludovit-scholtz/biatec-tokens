@@ -1,7 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { createTestingPinia } from '@pinia/testing'
+import { nextTick } from 'vue'
 import ComplianceDashboardFilters from '../ComplianceDashboardFilters.vue'
+import { useComplianceDashboardStore } from '../../stores/complianceDashboard'
 
 vi.mock('../ui/Card.vue', () => ({
   default: {
@@ -24,6 +26,7 @@ function mountFilters(initialState: Record<string, unknown> = {}) {
       plugins: [
         createTestingPinia({
           createSpy: vi.fn,
+          stubActions: false,
           initialState: {
             complianceDashboard: {
               filters: {
@@ -285,6 +288,112 @@ describe('ComplianceDashboardFilters', () => {
       })
       const html = wrapper.html()
       expect(html).toContain('pi-chevron-up')
+    })
+  })
+
+  describe('active class rendering for jurisdictionRestricted filter', () => {
+    it('renders Restricted button with active orange class when jurisdictionRestricted=true', async () => {
+      const wrapper = mountFilters()
+      const store = useComplianceDashboardStore()
+      store.filters.jurisdictionRestricted = true
+      await nextTick()
+      const html = wrapper.html()
+      expect(html).toContain('bg-orange-600')
+    })
+
+    it('renders Permitted button with active green class when jurisdictionRestricted=false', async () => {
+      const wrapper = mountFilters()
+      const store = useComplianceDashboardStore()
+      store.filters.jurisdictionRestricted = false
+      await nextTick()
+      const html = wrapper.html()
+      expect(html).toContain('bg-green-600')
+    })
+
+    it('renders All button with active gray class when jurisdictionRestricted=null', () => {
+      const wrapper = mountFilters()
+      const html = wrapper.html()
+      expect(html).toContain('bg-gray-600')
+    })
+  })
+
+  describe('active class rendering for transferRestricted filter', () => {
+    it('renders Controlled button with active red class when transferRestricted=true', async () => {
+      const wrapper = mountFilters()
+      const store = useComplianceDashboardStore()
+      store.filters.transferRestricted = true
+      await nextTick()
+      const html = wrapper.html()
+      expect(html).toContain('bg-red-600')
+    })
+
+    it('renders Open button with active green class when transferRestricted=false', async () => {
+      const wrapper = mountFilters()
+      const store = useComplianceDashboardStore()
+      store.filters.transferRestricted = false
+      await nextTick()
+      const html = wrapper.html()
+      expect(html).toContain('bg-green-600')
+    })
+  })
+
+  describe('active class rendering for whitelistRequired filter', () => {
+    it('renders Required button with active yellow class when whitelistRequired=true', async () => {
+      const wrapper = mountFilters()
+      const store = useComplianceDashboardStore()
+      store.filters.whitelistRequired = true
+      await nextTick()
+      const html = wrapper.html()
+      expect(html).toContain('bg-yellow-600')
+    })
+
+    it('renders Not Required button with active blue class when whitelistRequired=false', async () => {
+      const wrapper = mountFilters()
+      const store = useComplianceDashboardStore()
+      store.filters.whitelistRequired = false
+      await nextTick()
+      const html = wrapper.html()
+      expect(html).toContain('bg-blue-600')
+    })
+  })
+
+  describe('active class rendering for kycRequired filter', () => {
+    it('renders Required button with active blue class when kycRequired=true', async () => {
+      const wrapper = mountFilters()
+      const store = useComplianceDashboardStore()
+      store.filters.kycRequired = true
+      await nextTick()
+      const html = wrapper.html()
+      expect(html).toContain('bg-blue-600')
+    })
+
+    it('renders Not Required button with active green class when kycRequired=false', async () => {
+      const wrapper = mountFilters()
+      const store = useComplianceDashboardStore()
+      store.filters.kycRequired = false
+      await nextTick()
+      const html = wrapper.html()
+      expect(html).toContain('bg-green-600')
+    })
+  })
+
+  describe('active class rendering for micaReady filter', () => {
+    it('renders Yes button with active green class when micaReady=true', async () => {
+      const wrapper = mountFilters()
+      const store = useComplianceDashboardStore()
+      store.filters.micaReady = true
+      await nextTick()
+      const html = wrapper.html()
+      expect(html).toContain('bg-green-600')
+    })
+
+    it('renders No button with active red class when micaReady=false', async () => {
+      const wrapper = mountFilters()
+      const store = useComplianceDashboardStore()
+      store.filters.micaReady = false
+      await nextTick()
+      const html = wrapper.html()
+      expect(html).toContain('bg-red-600')
     })
   })
 })

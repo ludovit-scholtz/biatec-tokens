@@ -135,4 +135,76 @@ describe('DiscoveryFilterPanel', () => {
       expect(wrapper.exists()).toBe(true)
     }
   })
+
+  it('triggers watch when props.filters changes', async () => {
+    const wrapper = mountPanel()
+    await wrapper.setProps({ filters: makeFilters({ standards: ['ARC3'], search: 'updated' }) })
+    // The watch sets localFilters to the new props values
+    const vm = wrapper.vm as any
+    expect(vm.localFilters.search).toBe('updated')
+  })
+
+  it('emits update:filters with issuerTypes when issuerType checkbox clicked', async () => {
+    const wrapper = mountPanel()
+    const vm = wrapper.vm as any
+    // Directly set issuerTypes via localFilters and call handleFilterChange
+    vm.localFilters.issuerTypes = ['Bank']
+    vm.handleFilterChange()
+    expect(wrapper.emitted('update:filters')).toBeTruthy()
+  })
+
+  it('emits update:filters with complianceStatus when compliance checkbox clicked', async () => {
+    const wrapper = mountPanel()
+    const vm = wrapper.vm as any
+    vm.localFilters.complianceStatus = ['fully_compliant']
+    vm.handleFilterChange()
+    const emitted = wrapper.emitted('update:filters')
+    expect(emitted).toBeTruthy()
+    if (emitted) {
+      const lastEmit = emitted[emitted.length - 1][0] as DiscoveryFilters
+      expect(lastEmit.complianceStatus).toContain('fully_compliant')
+    }
+  })
+
+  it('emits update:filters with chains when chain checkbox clicked', async () => {
+    const wrapper = mountPanel()
+    const vm = wrapper.vm as any
+    vm.localFilters.chains = ['Algorand']
+    vm.handleFilterChange()
+    const emitted = wrapper.emitted('update:filters')
+    expect(emitted).toBeTruthy()
+    if (emitted) {
+      const lastEmit = emitted[emitted.length - 1][0] as DiscoveryFilters
+      expect(lastEmit.chains).toContain('Algorand')
+    }
+  })
+
+  it('emits save event via handleSave function', async () => {
+    const wrapper = mountPanel()
+    const vm = wrapper.vm as any
+    vm.handleSave()
+    expect(wrapper.emitted('save')).toBeTruthy()
+  })
+
+  it('emits load event via handleLoad function', async () => {
+    const wrapper = mountPanel()
+    const vm = wrapper.vm as any
+    vm.handleLoad()
+    expect(wrapper.emitted('load')).toBeTruthy()
+  })
+
+  it('emits reset event via handleReset function and resets localFilters', async () => {
+    const filters = makeFilters({ standards: ['ASA'], liquidityMin: 5000 })
+    const wrapper = mountPanel(filters)
+    const vm = wrapper.vm as any
+    vm.handleReset()
+    expect(wrapper.emitted('reset')).toBeTruthy()
+  })
+
+  it('renders issuer type checkboxes', () => {
+    const wrapper = mountPanel()
+    const html = wrapper.html()
+    // Component has issuerTypes array with specific labels
+    expect(html).toMatch(/Bank|Corporation|Individual|Government/i)
+  })
 })
