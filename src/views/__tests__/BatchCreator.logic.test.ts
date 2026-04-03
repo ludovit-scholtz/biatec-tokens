@@ -392,6 +392,114 @@ describe('BatchCreator View — Logic', () => {
       const descInput = wrapper.find('input[placeholder*="description"], textarea[placeholder*="description"]')
       expect(descInput.exists()).toBe(true)
     })
+
+    it('batch description v-model: typing updates batchDescription ref (line 52)', async () => {
+      const { wrapper } = await mountBatchCreator()
+      const vm = wrapper.vm as any
+      const descInput = wrapper.find('input[placeholder*="description"]')
+      expect(descInput.exists()).toBe(true)
+      await descInput.setValue('My batch description text')
+      await nextTick()
+      expect(vm.batchDescription).toBe('My batch description text')
+    })
+  })
+
+  describe('Validation Errors Banner — dismiss button (line 78)', () => {
+    it('dismiss button click sets showValidation to false', async () => {
+      const { wrapper } = await mountBatchCreator()
+      const vm = wrapper.vm as any
+
+      // Set showValidation=true with an invalid result (errors present)
+      vm.batchValidation = {
+        valid: false,
+        errors: [{ code: 'TEST_ERROR', message: 'Test error message' }],
+        warnings: [],
+      }
+      vm.showValidation = true
+      await nextTick()
+
+      // The validation errors banner should now be visible
+      const dismissBtn = wrapper.find('button[aria-label="Dismiss error"]')
+      expect(dismissBtn.exists()).toBe(true)
+
+      // Click dismiss button — covers @click="showValidation = false" (line 78)
+      await dismissBtn.trigger('click')
+      await nextTick()
+      expect(vm.showValidation).toBe(false)
+    })
+
+    it('validation errors banner shows error messages from batchValidation', async () => {
+      const { wrapper } = await mountBatchCreator()
+      const vm = wrapper.vm as any
+
+      vm.batchValidation = {
+        valid: false,
+        errors: [{ code: 'ERR1', message: 'First error' }, { code: 'ERR2', message: 'Second error' }],
+        warnings: [],
+      }
+      vm.showValidation = true
+      await nextTick()
+
+      const html = wrapper.html()
+      expect(html).toContain('First error')
+      expect(html).toContain('Second error')
+    })
+  })
+
+  describe('Validation Warnings section (lines 97, 113-114)', () => {
+    it('renders warnings section when batchValidation has warnings', async () => {
+      const { wrapper } = await mountBatchCreator()
+      const vm = wrapper.vm as any
+
+      // Set batchValidation with warnings — covers v-if="batchValidation && batchValidation.warnings.length > 0"
+      vm.batchValidation = {
+        valid: true,
+        errors: [],
+        warnings: [
+          { code: 'WARN1', message: 'First warning message' },
+          { code: 'WARN2', message: 'Second warning message' },
+        ],
+      }
+      await nextTick()
+
+      // Warnings section should be visible (lines 97-114 covered by v-for)
+      const html = wrapper.html()
+      expect(html).toContain('First warning message')
+      expect(html).toContain('Second warning message')
+      expect(html).toContain('Warnings:')
+    })
+
+    it('does not render warnings section when batchValidation has empty warnings', async () => {
+      const { wrapper } = await mountBatchCreator()
+      const vm = wrapper.vm as any
+
+      vm.batchValidation = { valid: true, errors: [], warnings: [] }
+      await nextTick()
+
+      const html = wrapper.html()
+      expect(html).not.toContain('Warnings:')
+    })
+
+    it('validateBatch with complete tokens and warnings populates warnings section', async () => {
+      const { validateBatchDeployment } = await import('../../utils/batchValidation')
+      vi.mocked(validateBatchDeployment).mockReturnValue({
+        valid: true,
+        errors: [],
+        warnings: [{ code: 'LOW_SUPPLY', message: 'Total supply is very low' }],
+      })
+
+      const { wrapper } = await mountBatchCreator()
+      const vm = wrapper.vm as any
+      vm.tokens = [{ standard: 'ERC20', name: 'My Token', decimals: 18, totalSupply: '1' }]
+      await nextTick()
+
+      vm.validateBatch()
+      await nextTick()
+
+      expect(vm.batchValidation?.warnings.length).toBe(1)
+      const html = wrapper.html()
+      expect(html).toContain('Total supply is very low')
+    })
   })
 
   describe('cleanup on unmount', () => {
@@ -399,6 +507,82 @@ describe('BatchCreator View — Logic', () => {
       const { wrapper } = await mountBatchCreator()
       wrapper.unmount()
       expect(mockReset).toHaveBeenCalled()
+    })
+  })
+
+  describe('BatchTokenEntryForm event handlers (template lines 113-114)', () => {
+    async function mountBatchCreatorWithEmitStub() {
+      const router = makeRouter()
+      await router.push('/batch-creator')
+      await router.isReady()
+
+      const pinia = createTestingPinia({
+        createSpy: vi.fn,
+        initialState: {
+          auth: {
+            isConnected: true,
+            user: { email: 'test@test.com', address: 'TESTADDR123456' },
+          },
+        },
+      })
+
+      // Use a stub that has buttons to emit @update:token and @remove events
+      const wrapper = mount(BatchCreator, {
+        global: {
+          plugins: [pinia, router],
+          stubs: {
+            MainLayout: { template: '<div><slot /></div>' },
+            BatchTokenEntryForm: {
+              template: `<div data-testid="batch-token-entry-form">
+                <button data-testid="emit-update" @click="$emit('update:token', {standard:'ERC20',name:'Updated'})">Update</button>
+                <button data-testid="emit-remove" @click="$emit('remove')">Remove</button>
+              </div>`,
+              emits: ['update:token', 'remove'],
+            },
+            BatchProgressDialog: {
+              template: '<div data-testid="batch-progress-dialog" />',
+              props: ['isOpen', 'progress'],
+              emits: ['close', 'retry', 'retry-all', 'export', 'finish'],
+            },
+            Badge: { template: '<span class="badge"><slot /></span>', props: ['variant'] },
+          },
+        },
+      })
+      await nextTick()
+      return { wrapper, router }
+    }
+
+    it('@update:token="updateToken(index, $event)" — emitting update from child calls updateToken (line 113)', async () => {
+      const { wrapper } = await mountBatchCreatorWithEmitStub()
+      const vm = wrapper.vm as any
+      const initialToken = { ...vm.tokens[0] }
+
+      // Click the "Update" button in the stub — fires @update:token event (covers line 113)
+      const updateBtn = wrapper.find('[data-testid="emit-update"]')
+      expect(updateBtn.exists()).toBe(true)
+      await updateBtn.trigger('click')
+      await nextTick()
+
+      // updateToken should have been called — token[0] updated
+      expect(vm.tokens[0]).toMatchObject({ standard: 'ERC20', name: 'Updated' })
+    })
+
+    it('@remove="removeToken(index)" — emitting remove from child calls removeToken (line 114)', async () => {
+      const { wrapper } = await mountBatchCreatorWithEmitStub()
+      const vm = wrapper.vm as any
+      // Add a second token so we don't go below minBatchSize check
+      vm.addToken()
+      await nextTick()
+      const beforeCount = vm.tokens.length
+
+      // Click the "Remove" button in the first stub — fires @remove event (covers line 114)
+      const removeBtns = wrapper.findAll('[data-testid="emit-remove"]')
+      expect(removeBtns.length).toBeGreaterThan(0)
+      await removeBtns[0].trigger('click')
+      await nextTick()
+
+      // removeToken should have been called — token removed from array
+      expect(vm.tokens.length).toBe(beforeCount - 1)
     })
   })
 })
