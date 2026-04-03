@@ -199,4 +199,102 @@ describe('OrganizationProfileStep', () => {
     const labels = wrapper.findAll('label')
     expect(labels.length).toBeGreaterThan(0)
   })
+
+  describe('validateField', () => {
+    it('sets organizationName error when name is empty', () => {
+      const wrapper = mount(OrganizationProfileStep)
+      const vm = wrapper.vm as any
+      vm.formData.organizationName = ''
+      vm.validateField('organizationName')
+      expect(vm.fieldErrors.organizationName).toBeTruthy()
+    })
+
+    it('clears organizationName error when name is provided', () => {
+      const wrapper = mount(OrganizationProfileStep)
+      const vm = wrapper.vm as any
+      vm.formData.organizationName = ''
+      vm.validateField('organizationName')
+      vm.formData.organizationName = 'Valid Corp'
+      vm.validateField('organizationName')
+      expect(vm.fieldErrors.organizationName).toBeUndefined()
+    })
+
+    it('ignores unhandled field in switch', () => {
+      const wrapper = mount(OrganizationProfileStep)
+      const vm = wrapper.vm as any
+      // Should not throw for unhandled fields
+      expect(() => vm.validateField('website')).not.toThrow()
+    })
+  })
+
+  describe('validateForm - warnings', () => {
+    it('includes warning when registrationNumber is missing', () => {
+      const wrapper = mount(OrganizationProfileStep)
+      const vm = wrapper.vm as any
+      vm.formData.organizationName = 'Corp'
+      vm.formData.organizationType = 'company'
+      vm.formData.jurisdiction = 'US'
+      vm.formData.contactName = 'Jane'
+      vm.formData.contactEmail = 'jane@corp.com'
+      vm.formData.role = 'business_owner'
+      vm.formData.registrationNumber = ''
+      vm.formData.website = ''
+      const result = vm.validateForm()
+      expect(result.isValid).toBe(true)
+      expect(result.warnings).toContain('Registration number recommended for compliance')
+      expect(result.warnings).toContain('Website recommended for credibility')
+    })
+
+    it('no warnings when registrationNumber and website are provided', () => {
+      const wrapper = mount(OrganizationProfileStep)
+      const vm = wrapper.vm as any
+      vm.formData.organizationName = 'Corp'
+      vm.formData.organizationType = 'company'
+      vm.formData.jurisdiction = 'US'
+      vm.formData.contactName = 'Jane'
+      vm.formData.contactEmail = 'jane@corp.com'
+      vm.formData.role = 'business_owner'
+      vm.formData.registrationNumber = 'REG123'
+      vm.formData.website = 'https://corp.com'
+      const result = vm.validateForm()
+      expect(result.isValid).toBe(true)
+      expect(result.warnings.length).toBe(0)
+    })
+  })
+
+  describe('isFormValid computed', () => {
+    it('returns false when required fields are empty', () => {
+      const wrapper = mount(OrganizationProfileStep)
+      const vm = wrapper.vm as any
+      expect(vm.isFormValid).toBe(false)
+    })
+
+    it('returns true when all required fields are filled', async () => {
+      const wrapper = mount(OrganizationProfileStep)
+      const vm = wrapper.vm as any
+      vm.formData.organizationName = 'Corp'
+      vm.formData.organizationType = 'company'
+      vm.formData.jurisdiction = 'EU'
+      vm.formData.contactName = 'Alice'
+      vm.formData.contactEmail = 'alice@corp.com'
+      vm.formData.role = 'compliance_officer'
+      await wrapper.vm.$nextTick()
+      expect(vm.isFormValid).toBe(true)
+    })
+  })
+
+  describe('handleSubmit - invalid form', () => {
+    it('does not emit complete when role is missing', () => {
+      const wrapper = mount(OrganizationProfileStep)
+      const vm = wrapper.vm as any
+      vm.formData.organizationName = 'Corp'
+      vm.formData.organizationType = 'company'
+      vm.formData.jurisdiction = 'EU'
+      vm.formData.contactName = 'Alice'
+      vm.formData.contactEmail = 'alice@corp.com'
+      vm.formData.role = ''
+      vm.handleSubmit()
+      expect(wrapper.emitted('complete')).toBeUndefined()
+    })
+  })
 })

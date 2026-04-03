@@ -1163,4 +1163,169 @@ describe('AttestationPanel', () => {
       expect(vm.showErrorToast).toBe(false);
     });
   });
+
+  describe('downloadBlob', () => {
+    it('should create an anchor element and trigger download', async () => {
+      // Mount BEFORE setting up spies to avoid interfering with Vue's renderer
+      wrapper = mount(AttestationPanel, {
+        props: { tokenId: 'token123', network: 'VOI' },
+      });
+      await wrapper.vm.$nextTick();
+
+      const mockUrl = 'blob:http://localhost/mock-url';
+      const mockAnchor = {
+        href: '',
+        download: '',
+        click: vi.fn(),
+      };
+      const createObjectURLSpy = vi.spyOn(URL, 'createObjectURL').mockReturnValue(mockUrl);
+      const revokeObjectURLSpy = vi.spyOn(URL, 'revokeObjectURL').mockReturnValue(undefined);
+      const createElementSpy = vi.spyOn(document, 'createElement').mockReturnValue(mockAnchor as any);
+      const appendChildSpy = vi.spyOn(document.body, 'appendChild').mockReturnValue(mockAnchor as any);
+      const removeChildSpy = vi.spyOn(document.body, 'removeChild').mockReturnValue(mockAnchor as any);
+
+      const blob = new Blob(['test content'], { type: 'application/pdf' });
+      (wrapper.vm as any).downloadBlob(blob, 'test-file.pdf');
+
+      expect(createObjectURLSpy).toHaveBeenCalledWith(blob);
+      expect(createElementSpy).toHaveBeenCalledWith('a');
+      expect(mockAnchor.href).toBe(mockUrl);
+      expect(mockAnchor.download).toBe('test-file.pdf');
+      expect(appendChildSpy).toHaveBeenCalled();
+      expect(mockAnchor.click).toHaveBeenCalled();
+      expect(removeChildSpy).toHaveBeenCalled();
+      expect(revokeObjectURLSpy).toHaveBeenCalledWith(mockUrl);
+
+      createObjectURLSpy.mockRestore();
+      revokeObjectURLSpy.mockRestore();
+      createElementSpy.mockRestore();
+      appendChildSpy.mockRestore();
+      removeChildSpy.mockRestore();
+    });
+  });
+
+  describe('formatDate', () => {
+    beforeEach(() => {
+      wrapper = mount(AttestationPanel, {
+        props: { tokenId: 'token123', network: 'VOI' },
+      });
+    });
+
+    it('should format a valid ISO date string', () => {
+      const result = (wrapper.vm as any).formatDate('2026-01-23T12:00:00Z');
+      expect(typeof result).toBe('string');
+      expect(result.length).toBeGreaterThan(0);
+      expect(result).toContain('2026');
+    });
+
+    it('should format another valid ISO date', () => {
+      const result = (wrapper.vm as any).formatDate('2025-06-15T08:30:00Z');
+      expect(typeof result).toBe('string');
+      expect(result).toContain('2025');
+    });
+
+    it('should format a date at midnight', () => {
+      const result = (wrapper.vm as any).formatDate('2024-12-31T00:00:00Z');
+      expect(typeof result).toBe('string');
+      expect(result.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('formatType', () => {
+    beforeEach(() => {
+      wrapper = mount(AttestationPanel, {
+        props: { tokenId: 'token123', network: 'VOI' },
+      });
+    });
+
+    it('should return PDF for pdf format', () => {
+      expect((wrapper.vm as any).formatType('pdf')).toBe('PDF');
+    });
+
+    it('should return JSON for json format', () => {
+      expect((wrapper.vm as any).formatType('json')).toBe('JSON');
+    });
+
+    it('should return PDF + JSON for both format', () => {
+      expect((wrapper.vm as any).formatType('both')).toBe('PDF + JSON');
+    });
+
+    it('should return uppercased unknown format', () => {
+      expect((wrapper.vm as any).formatType('xml')).toBe('XML');
+    });
+  });
+
+  describe('loadHistory error branch', () => {
+    it('should handle error gracefully when getAttestationHistory throws', async () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockReturnValue(undefined);
+      (attestationService.getAttestationHistory as any).mockRejectedValue(new Error('Network failure'));
+
+      wrapper = mount(AttestationPanel, {
+        props: { tokenId: 'token123', network: 'VOI' },
+      });
+
+      await wrapper.vm.$nextTick();
+      await new Promise(resolve => setTimeout(resolve, 50));
+
+      const vm = wrapper.vm as any;
+      // History remains empty, no crash
+      expect(vm.downloadHistory).toEqual([]);
+      expect(consoleSpy).toHaveBeenCalled();
+      consoleSpy.mockRestore();
+    });
+  });
+
+  describe('generateAttestation failure path', () => {
+    it('should show error toast and add failed history item when attestation throws', async () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockReturnValue(undefined);
+      (attestationService.generateAttestation as any).mockRejectedValue(new Error('Service unavailable'));
+
+      wrapper = mount(AttestationPanel, {
+        props: { tokenId: 'token123', network: 'VOI' },
+      });
+
+      const vm = wrapper.vm as any;
+      vm.issuerCredentials = {
+        name: 'Test Company',
+        jurisdiction: 'EU',
+        walletAddress: 'A'.repeat(58),
+      };
+      await wrapper.vm.$nextTick();
+
+      await vm.generateAttestation();
+      await wrapper.vm.$nextTick();
+
+      expect(vm.showErrorToast).toBe(true);
+      expect(vm.errorMessage).toBe('Failed to generate attestation package');
+      expect(vm.downloadHistory.length).toBe(1);
+      expect(vm.downloadHistory[0].status).toBe('failed');
+      expect(vm.downloadHistory[0].errorMessage).toBe('Service unavailable');
+      expect(vm.isGenerating).toBe(false);
+      consoleSpy.mockRestore();
+    });
+
+    it('should include unknown error message for non-Error throws', async () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockReturnValue(undefined);
+      (attestationService.generateAttestation as any).mockRejectedValue('string error');
+
+      wrapper = mount(AttestationPanel, {
+        props: { tokenId: 'token123', network: 'VOI' },
+      });
+
+      const vm = wrapper.vm as any;
+      vm.issuerCredentials = {
+        name: 'Test Company',
+        jurisdiction: 'EU',
+        walletAddress: 'A'.repeat(58),
+      };
+      await wrapper.vm.$nextTick();
+
+      await vm.generateAttestation();
+      await wrapper.vm.$nextTick();
+
+      expect(vm.showErrorToast).toBe(true);
+      expect(vm.downloadHistory[0].errorMessage).toBe('Unknown error');
+      consoleSpy.mockRestore();
+    });
+  });
 });

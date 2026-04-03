@@ -294,4 +294,110 @@ describe('WhitelistTable', () => {
       expect(wrapper.text()).toContain('Page 1 of 5');
     });
   });
+
+  describe('sort', () => {
+    it('calls setFilters and fetchWhitelistEntries when sort is called', () => {
+      const wrapper = mountTable({ filters: { sortBy: undefined, sortOrder: 'asc' } });
+      const vm = wrapper.vm as any;
+      const whitelistStore = vm.whitelistStore;
+      vm.sort('name');
+      expect(whitelistStore.setFilters).toHaveBeenCalledWith({ sortBy: 'name', sortOrder: 'asc' });
+      expect(whitelistStore.fetchWhitelistEntries).toHaveBeenCalled();
+    });
+
+    it('toggles sort order to desc when already sorting asc on same field', () => {
+      const wrapper = mountTable({ filters: { sortBy: 'name', sortOrder: 'asc' } });
+      const vm = wrapper.vm as any;
+      const whitelistStore = vm.whitelistStore;
+      vm.sort('name');
+      expect(whitelistStore.setFilters).toHaveBeenCalledWith({ sortBy: 'name', sortOrder: 'desc' });
+    });
+  });
+
+  describe('changePage', () => {
+    it('calls setFilters with page and fetchWhitelistEntries', () => {
+      const wrapper = mountTable();
+      const vm = wrapper.vm as any;
+      const whitelistStore = vm.whitelistStore;
+      vm.changePage(3);
+      expect(whitelistStore.setFilters).toHaveBeenCalledWith({ page: 3 });
+      expect(whitelistStore.fetchWhitelistEntries).toHaveBeenCalled();
+    });
+  });
+
+  describe('getStatusVariant', () => {
+    it('returns success for approved', () => {
+      const wrapper = mountTable();
+      expect((wrapper.vm as any).getStatusVariant('approved')).toBe('success');
+    });
+
+    it('returns warning for pending', () => {
+      const wrapper = mountTable();
+      expect((wrapper.vm as any).getStatusVariant('pending')).toBe('warning');
+    });
+
+    it('returns warning for under_review', () => {
+      const wrapper = mountTable();
+      expect((wrapper.vm as any).getStatusVariant('under_review')).toBe('warning');
+    });
+
+    it('returns error for rejected', () => {
+      const wrapper = mountTable();
+      expect((wrapper.vm as any).getStatusVariant('rejected')).toBe('error');
+    });
+
+    it('returns error for expired', () => {
+      const wrapper = mountTable();
+      expect((wrapper.vm as any).getStatusVariant('expired')).toBe('error');
+    });
+
+    it('returns default for unknown status', () => {
+      const wrapper = mountTable();
+      expect((wrapper.vm as any).getStatusVariant('unknown' as any)).toBe('default');
+    });
+  });
+
+  describe('getRiskVariant', () => {
+    it('returns success for low risk', () => {
+      const wrapper = mountTable();
+      expect((wrapper.vm as any).getRiskVariant('low')).toBe('success');
+    });
+
+    it('returns warning for medium risk', () => {
+      const wrapper = mountTable();
+      expect((wrapper.vm as any).getRiskVariant('medium')).toBe('warning');
+    });
+
+    it('returns error for high risk', () => {
+      const wrapper = mountTable();
+      expect((wrapper.vm as any).getRiskVariant('high')).toBe('error');
+    });
+
+    it('returns error for critical risk', () => {
+      const wrapper = mountTable();
+      expect((wrapper.vm as any).getRiskVariant('critical')).toBe('error');
+    });
+
+    it('returns default for unknown risk', () => {
+      const wrapper = mountTable();
+      expect((wrapper.vm as any).getRiskVariant('unknown' as any)).toBe('default');
+    });
+  });
+
+  describe('hasConflict', () => {
+    it('returns false when conflicts prop is undefined', () => {
+      const wrapper = mountTable({}, {});
+      expect((wrapper.vm as any).hasConflict('e1')).toBe(false);
+    });
+
+    it('returns true when entry id is in conflicts', () => {
+      const wrapper = mountTable({}, { conflicts: ['e1', 'e2'] });
+      expect((wrapper.vm as any).hasConflict('e1')).toBe(true);
+    });
+
+    it('returns false when entry id is not in conflicts', () => {
+      const wrapper = mountTable({}, { conflicts: ['e2'] });
+      expect((wrapper.vm as any).hasConflict('e1')).toBe(false);
+    });
+  });
 });

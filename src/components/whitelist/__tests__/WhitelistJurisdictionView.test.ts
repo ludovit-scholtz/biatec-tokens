@@ -257,4 +257,120 @@ describe('WhitelistJurisdictionView', () => {
       expect(vm.selectedEntry).toBeNull();
     });
   });
+
+  describe('confirmApprove', () => {
+    it('does nothing when pendingApprovalEntry is null', async () => {
+      const wrapper = mountView();
+      const vm = wrapper.vm as any;
+      vm.pendingApprovalEntry = null;
+      await vm.confirmApprove();
+      expect(vm.showApproveDialog).toBe(false);
+    });
+
+    it('calls approveWhitelistEntry and closes dialog on success', async () => {
+      const wrapper = mountView();
+      const vm = wrapper.vm as any;
+      const whitelistStore = vm.whitelistStore;
+      whitelistStore.approveWhitelistEntry = vi.fn().mockResolvedValue(true);
+      vm.pendingApprovalEntry = { id: 'e1', name: 'Alice' };
+      vm.approvalNotes = 'Looks good';
+      vm.showApproveDialog = true;
+      await vm.confirmApprove();
+      expect(whitelistStore.approveWhitelistEntry).toHaveBeenCalledWith({ id: 'e1', notes: 'Looks good' });
+      expect(vm.showApproveDialog).toBe(false);
+      expect(vm.pendingApprovalEntry).toBeNull();
+      expect(vm.approvalNotes).toBe('');
+    });
+
+    it('passes undefined notes when approvalNotes is empty', async () => {
+      const wrapper = mountView();
+      const vm = wrapper.vm as any;
+      const whitelistStore = vm.whitelistStore;
+      whitelistStore.approveWhitelistEntry = vi.fn().mockResolvedValue(true);
+      vm.pendingApprovalEntry = { id: 'e2', name: 'Bob' };
+      vm.approvalNotes = '';
+      await vm.confirmApprove();
+      expect(whitelistStore.approveWhitelistEntry).toHaveBeenCalledWith({ id: 'e2', notes: undefined });
+    });
+
+    it('does not close dialog when approval fails', async () => {
+      const wrapper = mountView();
+      const vm = wrapper.vm as any;
+      const whitelistStore = vm.whitelistStore;
+      whitelistStore.approveWhitelistEntry = vi.fn().mockResolvedValue(false);
+      vm.pendingApprovalEntry = { id: 'e3', name: 'Carol' };
+      vm.showApproveDialog = true;
+      await vm.confirmApprove();
+      expect(vm.showApproveDialog).toBe(true);
+    });
+  });
+
+  describe('confirmReject', () => {
+    it('does nothing when pendingRejectionEntry is null', async () => {
+      const wrapper = mountView();
+      const vm = wrapper.vm as any;
+      vm.pendingRejectionEntry = null;
+      await vm.confirmReject();
+      expect(vm.showRejectDialog).toBe(false);
+    });
+
+    it('sets rejectionError when rejection reason is empty', async () => {
+      const wrapper = mountView();
+      const vm = wrapper.vm as any;
+      vm.pendingRejectionEntry = { id: 'e1', name: 'Alice' };
+      vm.rejectionReason = '   ';
+      await vm.confirmReject();
+      expect(vm.rejectionError).toBe('Rejection reason is required');
+    });
+
+    it('calls rejectWhitelistEntry and closes dialog on success', async () => {
+      const wrapper = mountView();
+      const vm = wrapper.vm as any;
+      const whitelistStore = vm.whitelistStore;
+      whitelistStore.rejectWhitelistEntry = vi.fn().mockResolvedValue(true);
+      vm.pendingRejectionEntry = { id: 'e1', name: 'Alice' };
+      vm.rejectionReason = 'Does not meet criteria';
+      vm.showRejectDialog = true;
+      await vm.confirmReject();
+      expect(whitelistStore.rejectWhitelistEntry).toHaveBeenCalled();
+      expect(vm.showRejectDialog).toBe(false);
+      expect(vm.pendingRejectionEntry).toBeNull();
+      expect(vm.rejectionReason).toBe('');
+      expect(vm.rejectionError).toBe('');
+    });
+
+    it('does not close dialog when rejection fails', async () => {
+      const wrapper = mountView();
+      const vm = wrapper.vm as any;
+      const whitelistStore = vm.whitelistStore;
+      whitelistStore.rejectWhitelistEntry = vi.fn().mockResolvedValue(false);
+      vm.pendingRejectionEntry = { id: 'e2', name: 'Bob' };
+      vm.rejectionReason = 'Reason';
+      vm.showRejectDialog = true;
+      await vm.confirmReject();
+      expect(vm.showRejectDialog).toBe(true);
+    });
+  });
+
+  describe('handleCreateEntry', () => {
+    it('closes entry form when createWhitelistEntry succeeds', async () => {
+      const wrapper = mountView();
+      const vm = wrapper.vm as any;
+      const whitelistStore = vm.whitelistStore;
+      whitelistStore.createWhitelistEntry = vi.fn().mockResolvedValue({ id: 'new1' });
+      vm.showEntryForm = true;
+      await vm.handleCreateEntry({ name: 'Test', email: 'test@example.com' });
+      expect(vm.showEntryForm).toBe(false);
+    });
+
+    it('keeps entry form open when createWhitelistEntry returns falsy', async () => {
+      const wrapper = mountView();
+      const vm = wrapper.vm as any;
+      const whitelistStore = vm.whitelistStore;
+      whitelistStore.createWhitelistEntry = vi.fn().mockResolvedValue(null);
+      vm.showEntryForm = true;
+      await vm.handleCreateEntry({ name: 'Test', email: 'test@example.com' });
+      expect(vm.showEntryForm).toBe(true);
+    });
+  });
 });

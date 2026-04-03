@@ -219,4 +219,86 @@ describe('WhitelistEntryForm', () => {
       expect(vm.generalError).toBeTruthy();
     });
   });
+
+  describe('validateForm - wallet address branches', () => {
+    it('accepts a valid Ethereum address', () => {
+      const wrapper = mountForm();
+      const vm = wrapper.vm as any;
+      vm.formData.name = 'Alice';
+      vm.formData.email = 'alice@example.com';
+      vm.formData.jurisdictionCode = 'US';
+      vm.formData.riskLevel = 'low';
+      vm.formData.entityType = 'individual';
+      vm.formData.walletAddress = '0xAbCdEf1234567890abcdef1234567890ABCDEF12';
+      expect(vm.validateForm()).toBe(true);
+      expect(vm.errors.walletAddress).toBeFalsy();
+    });
+
+    it('accepts a valid Algorand address (58 uppercase base32 chars)', () => {
+      const wrapper = mountForm();
+      const vm = wrapper.vm as any;
+      vm.formData.name = 'Bob';
+      vm.formData.email = 'bob@example.com';
+      vm.formData.jurisdictionCode = 'US';
+      vm.formData.riskLevel = 'low';
+      vm.formData.entityType = 'individual';
+      vm.formData.walletAddress = 'A'.repeat(58);
+      expect(vm.validateForm()).toBe(true);
+      expect(vm.errors.walletAddress).toBeFalsy();
+    });
+
+    it('rejects an invalid wallet address', () => {
+      const wrapper = mountForm();
+      const vm = wrapper.vm as any;
+      vm.formData.name = 'Carol';
+      vm.formData.email = 'carol@example.com';
+      vm.formData.jurisdictionCode = 'US';
+      vm.formData.riskLevel = 'low';
+      vm.formData.entityType = 'individual';
+      vm.formData.walletAddress = 'invalid-address';
+      expect(vm.validateForm()).toBe(false);
+      expect(vm.errors.walletAddress).toBeTruthy();
+    });
+
+    it('accepts empty wallet address (optional field)', () => {
+      const wrapper = mountForm();
+      const vm = wrapper.vm as any;
+      vm.formData.name = 'Dave';
+      vm.formData.email = 'dave@example.com';
+      vm.formData.jurisdictionCode = 'US';
+      vm.formData.riskLevel = 'low';
+      vm.formData.entityType = 'individual';
+      vm.formData.walletAddress = '';
+      expect(vm.validateForm()).toBe(true);
+    });
+  });
+
+  describe('validateForm - name length branch', () => {
+    it('rejects name shorter than 2 characters', () => {
+      const wrapper = mountForm();
+      const vm = wrapper.vm as any;
+      vm.formData.name = 'A';
+      vm.formData.email = 'a@example.com';
+      vm.formData.jurisdictionCode = 'US';
+      vm.formData.riskLevel = 'low';
+      vm.formData.entityType = 'individual';
+      expect(vm.validateForm()).toBe(false);
+      expect(vm.errors.name).toContain('at least 2 characters');
+    });
+  });
+
+  describe('handleSubmit error branch', () => {
+    it('sets isSubmitting to false after successful submit', async () => {
+      const wrapper = mountForm();
+      const vm = wrapper.vm as any;
+      vm.formData.name = 'Valid Name';
+      vm.formData.email = 'valid@example.com';
+      vm.formData.jurisdictionCode = 'US';
+      vm.formData.riskLevel = 'low';
+      vm.formData.entityType = 'individual';
+      await vm.handleSubmit();
+      await nextTick();
+      expect(vm.isSubmitting).toBe(false);
+    });
+  });
 });
