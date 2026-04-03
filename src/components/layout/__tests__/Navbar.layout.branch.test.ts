@@ -381,7 +381,7 @@ describe('Navbar layout – branch coverage', () => {
     expect(menu.exists()).toBe(true)
     const links = menu.findAll('a')
     // There should be at least 3 links (Security, Subscription, Billing, Usage, Settings)
-    expect(links.length).toBeGreaterThan(2)
+    expect(links.length).toBe(5) // 5 router-link stubs: Security Center, Subscription, Billing History, Usage & Limits, Settings
 
     // Click the 3rd link (index 2 = Billing History, line 127)
     await links[2].trigger('click')
@@ -428,7 +428,7 @@ describe('Navbar layout – branch coverage', () => {
 
     const menu = wrapper.find('[role="menu"]')
     const links = menu.findAll('a')
-    expect(links.length).toBeGreaterThan(3)
+    expect(links.length).toBe(5) // 5 router-link stubs: Security Center, Subscription, Billing History, Usage & Limits, Settings
 
     // Click the 4th link (index 3 = Usage & Limits, line 130)
     await links[3].trigger('click')
@@ -475,7 +475,7 @@ describe('Navbar layout – branch coverage', () => {
 
     const menu = wrapper.find('[role="menu"]')
     const links = menu.findAll('a')
-    expect(links.length).toBeGreaterThan(4)
+    expect(links.length).toBe(5) // 5 router-link stubs: Security Center, Subscription, Billing History, Usage & Limits, Settings
 
     // Click the 5th link (index 4 = Settings, line 133)
     await links[4].trigger('click')
@@ -525,7 +525,7 @@ describe('Navbar layout – branch coverage', () => {
     const menu = wrapper.find('[role="menu"]')
     expect(menu.exists()).toBe(true)
     const links = menu.findAll('a')
-    expect(links.length).toBeGreaterThan(0)
+    expect(links.length).toBe(5) // 5 router-link stubs: Security Center, Subscription, Billing History, Usage & Limits, Settings
 
     // Click the 1st link (index 0 = Security Center, line 124)
     await links[0].trigger('click')
@@ -579,19 +579,12 @@ describe('Navbar layout – branch coverage', () => {
     })
     // When isDark=true the SunIcon v-if branch is taken (line 43) and the theme
     // toggle button shows "Switch to light mode" as its aria-label
-    const themeBtn = wrapper.find('button[aria-label]')
     const darkModeBtn = Array.from(wrapper.findAll('button[aria-label]')).find(b =>
       b.attributes('aria-label')?.includes('light mode'),
     )
-    // Either the specific button or the theme button exists and isDark branch is covered
-    expect(wrapper.exists()).toBe(true)
-    // Confirm the SunIcon branch is hit — the aria-label switches to light mode
-    if (darkModeBtn) {
-      expect(darkModeBtn.attributes('aria-label')).toContain('light mode')
-    } else {
-      // isDark=true was passed; branch is still executed by the component
-      expect(themeBtn.exists()).toBe(true)
-    }
+    // isDark=true is set in initialState — the aria-label must reflect dark mode is active
+    expect(darkModeBtn).toBeDefined()
+    expect(darkModeBtn!.attributes('aria-label')).toContain('light mode')
   })
 
   it('arc76email displays in user menu header (line 121)', async () => {
@@ -678,7 +671,7 @@ describe('Navbar layout – branch coverage', () => {
     const menu = wrapper.find('[role="menu"]')
     expect(menu.exists()).toBe(true)
     const links = menu.findAll('a')
-    expect(links.length).toBeGreaterThan(1)
+    expect(links.length).toBe(5) // 5 router-link stubs: Security Center, Subscription, Billing History, Usage & Limits, Settings
 
     // Click the 2nd link (index 1 = Subscription, line 124)
     await links[1].trigger('click')
@@ -726,7 +719,7 @@ describe('Navbar — WCAG 2.1 AA accessibility compliance', () => {
     const themeButtons = wrapper.findAll('button[aria-label]').filter(
       b => b.attributes('aria-label')?.toLowerCase().includes('mode')
     )
-    expect(themeButtons.length).toBeGreaterThan(0)
+    expect(themeButtons.length).toBe(1) // exactly 1 theme toggle button
   })
 
   it('sign-in button has aria-label for screen readers (WCAG SC 4.1.2)', () => {
@@ -772,7 +765,7 @@ describe('Navbar — WCAG 2.1 AA accessibility compliance', () => {
     vm.showUserMenu = true
     await wrapper.vm.$nextTick()
     const menuItems = wrapper.findAll('[role="menuitem"]')
-    expect(menuItems.length).toBeGreaterThan(0)
+    expect(menuItems.length).toBe(6) // 5 router-link menuitems + 1 Sign Out button menuitem
   })
 
   it('user menu button has aria-label naming the account (WCAG SC 4.1.2)', () => {

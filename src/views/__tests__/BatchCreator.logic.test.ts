@@ -577,7 +577,7 @@ describe('BatchCreator View — Logic', () => {
 
       // Click the "Remove" button in the first stub — fires @remove event (covers line 114)
       const removeBtns = wrapper.findAll('[data-testid="emit-remove"]')
-      expect(removeBtns.length).toBeGreaterThan(0)
+      expect(removeBtns.length).toBe(2) // 1 initial token + 1 added via vm.addToken() = 2 forms
       await removeBtns[0].trigger('click')
       await nextTick()
 
