@@ -22,6 +22,7 @@ import { nextTick } from 'vue'
 import CaseDrillDownPanel from '../CaseDrillDownPanel.vue'
 import { DRILL_DOWN_TEST_IDS } from '../../../utils/caseDrillDown'
 import type { WorkItem } from '../../../utils/complianceOperationsCockpit'
+import * as liveIntegration from '../../../utils/liveComplianceIntegration'
 
 // ---------------------------------------------------------------------------
 // Helpers
