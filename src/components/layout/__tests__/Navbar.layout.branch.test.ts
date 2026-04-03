@@ -619,6 +619,72 @@ describe('Navbar layout – branch coverage', () => {
     expect(removeSpy).toHaveBeenCalledWith('keydown', expect.any(Function))
     removeSpy.mockRestore()
   })
+
+  it('theme toggle button click calls themeStore.toggleTheme (line 43)', async () => {
+    const wrapper = mountNavbar()
+    const { useThemeStore } = await import('../../../stores/theme')
+    const themeStore = useThemeStore()
+    themeStore.toggleTheme = vi.fn()
+
+    // Find the theme toggle button by its aria-label (either light or dark mode)
+    const allBtns = wrapper.findAll('button[aria-label]')
+    const themeBtn = allBtns.find(b =>
+      b.attributes('aria-label')?.includes('mode'),
+    )
+    expect(themeBtn).toBeDefined()
+    // Clicking it should call themeStore.toggleTheme (line 43)
+    await themeBtn!.trigger('click')
+    await wrapper.vm.$nextTick()
+    expect(themeStore.toggleTheme).toHaveBeenCalled()
+  })
+
+  it('user menu Subscription link click sets showUserMenu to false (line 124)', async () => {
+    const mountWithClickableUserMenu = () => {
+      const router = makeRouter()
+      return mount(Navbar, {
+        global: {
+          plugins: [
+            createTestingPinia({
+              createSpy: vi.fn,
+              initialState: {
+                auth: { user: { email: 'u@b.io' }, isConnected: true, account: 'AAAA', arc76email: 'u@b.io' },
+                subscription: { subscription: null },
+                theme: { isDark: false },
+              },
+            }),
+            router,
+          ],
+          stubs: {
+            EmailAuthModal: {
+              template: '<div data-testid="email-auth-modal" />',
+              props: ['isOpen'],
+              emits: ['close', 'connected'],
+            },
+            RouterLink: {
+              template: '<a @click="$emit(\'click\', $event)"><slot /></a>',
+              props: ['to'],
+              emits: ['click'],
+            },
+          },
+        },
+      })
+    }
+    const wrapper = mountWithClickableUserMenu()
+    const vm = wrapper.vm as any
+
+    vm.showUserMenu = true
+    await wrapper.vm.$nextTick()
+
+    const menu = wrapper.find('[role="menu"]')
+    expect(menu.exists()).toBe(true)
+    const links = menu.findAll('a')
+    expect(links.length).toBeGreaterThan(1)
+
+    // Click the 2nd link (index 1 = Subscription, line 124)
+    await links[1].trigger('click')
+    await wrapper.vm.$nextTick()
+    expect(vm.showUserMenu).toBe(false)
+  })
 })
 
 describe('Navbar — WCAG 2.1 AA accessibility compliance', () => {
