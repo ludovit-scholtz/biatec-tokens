@@ -11,7 +11,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { mount, flushPromises } from '@vue/test-utils'
 import { createRouter, createWebHistory } from 'vue-router'
 import { nextTick } from 'vue'
 import { createTestingPinia } from '@pinia/testing'
@@ -34,7 +34,25 @@ vi.mock('@heroicons/vue/24/outline', () => ({
   CheckBadgeIcon: { template: '<svg />' },
   ExclamationCircleIcon: { template: '<svg />' },
   ShieldExclamationIcon: { template: '<svg />' },
+  XMarkIcon: { template: '<svg />' },
+  UserCircleIcon: { template: '<svg />' },
+  BuildingOfficeIcon: { template: '<svg />' },
+  FlagIcon: { template: '<svg />' },
+  BriefcaseIcon: { template: '<svg />' },
+  ClockIcon: { template: '<svg />' },
+  ArrowTrendingUpIcon: { template: '<svg />' },
+  DocumentTextIcon: { template: '<svg />' },
+  InformationCircleIcon: { template: '<svg />' },
+  PaperAirplaneIcon: { template: '<svg />' },
 }))
+
+vi.mock('../../utils/liveComplianceIntegration', async () => {
+  const actual = await vi.importActual<typeof import('../../utils/liveComplianceIntegration')>('../../utils/liveComplianceIntegration')
+  return {
+    ...actual,
+    submitLiveEscalation: vi.fn().mockResolvedValue({ success: true }),
+  }
+})
 
 // ---------------------------------------------------------------------------
 // Router & mount helpers
@@ -655,5 +673,117 @@ describe('ComplianceOperationsCockpit — work item handoff context', () => {
     expect(ctx.exists()).toBe(true)
     // Should contain "Next:" prefix
     expect(ctx.text()).toContain('Next:')
+  })
+})
+
+// ---------------------------------------------------------------------------
+// 11. openDrillDown, openEscalation, onEscalationSubmitted, handoffCardBorderClass
+// ---------------------------------------------------------------------------
+
+describe('ComplianceOperationsCockpit — drill-down and escalation functions', () => {
+  const mockItem = {
+    id: 'esc-test-1',
+    title: 'Escalation Test Item',
+    stage: 'kyc_aml',
+    status: 'blocked' as const,
+    ownership: 'assigned_to_me' as const,
+    lastActionAt: null,
+    dueAt: null,
+    workspacePath: '/compliance/onboarding',
+    note: null,
+    isLaunchBlocking: true,
+  }
+
+  /** Mount with child modal components stubbed so opening them doesn't cause render errors */
+  async function mountCockpitWithModalStubs() {
+    vi.useFakeTimers()
+    const router = makeRouter()
+    const wrapper = mount(ComplianceOperationsCockpit, {
+      global: {
+        plugins: [createTestingPinia({ createSpy: vi.fn })],
+        components: {
+          RouterLink: { template: '<a :href="to"><slot /></a>', props: ['to'] },
+        },
+        stubs: {
+          CaseDrillDownPanel: { template: '<div data-testid="drill-down-stub" />' },
+          EscalationFlowModal: { template: '<div data-testid="escalation-stub" />' },
+        },
+      },
+    })
+    await vi.advanceTimersByTimeAsync(200)
+    await nextTick()
+    await nextTick()
+    return wrapper
+  }
+
+  it('openDrillDown sets selectedWorkItem and opens drillDown', async () => {
+    const wrapper = await mountCockpitWithModalStubs()
+    const vm = wrapper.vm as any
+    vm.openDrillDown(mockItem)
+    await nextTick()
+    expect(vm.selectedWorkItem).toEqual(mockItem)
+    expect(vm.drillDownOpen).toBe(true)
+    vi.useRealTimers()
+  })
+
+  it('openEscalation sets escalationItem and closes drill-down while opening escalation panel', async () => {
+    const wrapper = await mountCockpitWithModalStubs()
+    const vm = wrapper.vm as any
+    vm.drillDownOpen = true
+    vm.openEscalation(mockItem)
+    await nextTick()
+    expect(vm.escalationItem).toEqual(mockItem)
+    expect(vm.drillDownOpen).toBe(false)
+    expect(vm.escalationOpen).toBe(true)
+    vi.useRealTimers()
+  })
+
+  it('onEscalationSubmitted sets escalationSubmitting immediately', async () => {
+    const wrapper = await mountCockpitWithModalStubs()
+    const vm = wrapper.vm as any
+    vm.escalationSubmitting = false
+    vm.escalationError = null
+    const { submitLiveEscalation } = await import('../../utils/liveComplianceIntegration')
+    vi.mocked(submitLiveEscalation).mockResolvedValueOnce({ success: true })
+    vm.onEscalationSubmitted({ item: mockItem, reason: 'fraud', note: 'urgent', destination: 'legal_ops' })
+    expect(vm.escalationSubmitting).toBe(true)
+    vi.useRealTimers()
+    await flushPromises()
+    await nextTick()
+    expect(wrapper.exists()).toBe(true)
+  })
+
+  it('onEscalationSubmitted sets escalationError when result.success is false', async () => {
+    const wrapper = await mountCockpitWithModalStubs()
+    const vm = wrapper.vm as any
+    const { submitLiveEscalation } = await import('../../utils/liveComplianceIntegration')
+    vi.mocked(submitLiveEscalation).mockResolvedValueOnce({ success: false, errorMessage: 'Rejected.' })
+    vm.onEscalationSubmitted({ item: mockItem, reason: 'fraud', note: 'test', destination: 'legal_ops' })
+    vi.useRealTimers()
+    await flushPromises()
+    await nextTick()
+    expect(vm.escalationError).toBe('Rejected.')
+  })
+
+  it('onEscalationSubmitted handles unexpected error (catch branch)', async () => {
+    const wrapper = await mountCockpitWithModalStubs()
+    const vm = wrapper.vm as any
+    const { submitLiveEscalation } = await import('../../utils/liveComplianceIntegration')
+    vi.mocked(submitLiveEscalation).mockRejectedValueOnce(new Error('network failure'))
+    vm.onEscalationSubmitted({ item: mockItem, reason: 'fraud', note: 'urgent', destination: 'legal_ops' })
+    vi.useRealTimers()
+    await flushPromises()
+    await nextTick()
+    expect(vm.escalationError).toMatch(/unexpected error/i)
+  })
+
+  it('handoffCardBorderClass returns correct class for each readiness state', async () => {
+    const wrapper = await mountCockpitWithModalStubs()
+    const vm = wrapper.vm as any
+    expect(vm.handoffCardBorderClass('ready')).toContain('green')
+    expect(vm.handoffCardBorderClass('has_warnings')).toContain('yellow')
+    expect(vm.handoffCardBorderClass('not_ready')).toContain('red')
+    expect(vm.handoffCardBorderClass('unknown')).toContain('gray')
+    vi.useRealTimers()
   })
 })

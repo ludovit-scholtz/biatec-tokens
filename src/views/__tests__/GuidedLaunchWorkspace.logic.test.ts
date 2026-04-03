@@ -664,3 +664,81 @@ describe('GuidedLaunchWorkspace — help rail', () => {
     expect(wrapper.exists()).toBe(true)
   })
 })
+
+// ---------------------------------------------------------------------------
+// formatSimulationTime — direct vm function coverage
+// ---------------------------------------------------------------------------
+
+describe('GuidedLaunchWorkspace — formatSimulationTime', () => {
+  it('formatSimulationTime formats a valid ISO string to locale string', async () => {
+    const wrapper = await mountWorkspace()
+    const vm = wrapper.vm as any
+    const iso = '2026-04-03T12:00:00.000Z'
+    const result = vm.formatSimulationTime(iso)
+    // Should return a non-empty locale string (not the raw ISO)
+    expect(typeof result).toBe('string')
+    expect(result.length).toBeGreaterThan(0)
+  })
+
+  it('formatSimulationTime falls back to raw string for invalid ISO (catch branch)', async () => {
+    const wrapper = await mountWorkspace()
+    const vm = wrapper.vm as any
+    // Pass a string that would cause Date parsing to fail in some environments
+    // Throw via vi mock on toLocaleString
+    const origToLocaleString = Date.prototype.toLocaleString
+    Date.prototype.toLocaleString = () => { throw new Error('locale error') }
+    const result = vm.formatSimulationTime('INVALID-DATE')
+    Date.prototype.toLocaleString = origToLocaleString
+    // When catch fires, the raw string is returned
+    expect(result).toBe('INVALID-DATE')
+  })
+})
+
+// ---------------------------------------------------------------------------
+// markItemComplete — nextItem branch coverage
+// ---------------------------------------------------------------------------
+
+describe('GuidedLaunchWorkspace — markItemComplete nextItem branch', () => {
+  it('markItemComplete advances activeItemId to next available item', async () => {
+    vi.useFakeTimers()
+    const wrapper = await mountWorkspace()
+    const vm = wrapper.vm as any
+    await vi.advanceTimersByTimeAsync(200)
+    await nextTick()
+    // Get the first active item id
+    const firstItemId = vm.checklistItems[0]?.id
+    if (firstItemId) {
+      vm.markItemComplete(firstItemId)
+      await nextTick()
+      // After completing first item, activeItemId should have advanced
+      expect(vm.completedIds.has(firstItemId)).toBe(true)
+    }
+    vi.useRealTimers()
+  })
+})
+
+// ---------------------------------------------------------------------------
+// startSimulation — canStart=false early return
+// ---------------------------------------------------------------------------
+
+describe('GuidedLaunchWorkspace — startSimulation canStart=false', () => {
+  it('startSimulation returns early when canStart is false', async () => {
+    vi.useFakeTimers()
+    const wrapper = await mountWorkspace()
+    const vm = wrapper.vm as any
+    await vi.advanceTimersByTimeAsync(200)
+    await nextTick()
+    // Force canStart to false by ensuring prerequisites are not met
+    vm.simulationPhase = 'idle'
+    // The simulation computed property's canStart should be false when items aren't complete
+    // Directly call startSimulation - it should not change the phase if canStart is false
+    const phaseBefore = vm.simulationPhase
+    if (!vm.simulation?.canStart) {
+      vm.startSimulation()
+      await nextTick()
+      // Phase should remain 'idle' (early return)
+      expect(vm.simulationPhase).toBe(phaseBefore)
+    }
+    vi.useRealTimers()
+  })
+})

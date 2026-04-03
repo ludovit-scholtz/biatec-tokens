@@ -185,4 +185,88 @@ describe('VisionInsightsWorkspace — logic', () => {
     await nextTick()
     expect(store.initialize).toHaveBeenCalled()
   })
+
+  it('onMounted tracks insights_workspace_viewed event', async () => {
+    const wrapper = mountView()
+    await nextTick()
+    await nextTick()
+    expect(analyticsService.trackEvent).toHaveBeenCalledWith(
+      expect.objectContaining({ event: 'insights_workspace_viewed' }),
+    )
+    expect(wrapper.exists()).toBe(true)
+  })
+
+  it('handleRetry delegates to handleRefresh (calls fetchMetrics and fetchBenchmarks)', async () => {
+    const wrapper = mountView()
+    const store = useInsightsStore()
+    const vm = wrapper.vm as any
+    vm.handleRetry()
+    await nextTick()
+    expect(store.fetchMetrics).toHaveBeenCalled()
+    expect(store.fetchBenchmarks).toHaveBeenCalled()
+  })
+
+  it('handleMetricClick tracks insights_metric_clicked with metric id and label', async () => {
+    const wrapper = mountView()
+    const vm = wrapper.vm as any
+    vm.handleMetricClick({ id: 'aum_total', label: 'Total AUM' })
+    await nextTick()
+    expect(analyticsService.trackEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event: 'insights_metric_clicked',
+        label: 'Total AUM',
+        metricId: 'aum_total',
+      }),
+    )
+  })
+
+  it('handleRunScenario sets scenarioLoading, runs scenario, tracks event, and resets loading', async () => {
+    const wrapper = mountView()
+    const store = useInsightsStore()
+    const vm = wrapper.vm as any
+    const inputs = { baseAUM: 1_000_000, growthRate: 0.05 }
+    const scenarioPromise = vm.handleRunScenario(inputs)
+    expect(vm.scenarioLoading).toBe(true)
+    await scenarioPromise
+    expect(store.runScenario).toHaveBeenCalledWith(inputs)
+    expect(analyticsService.trackEvent).toHaveBeenCalledWith(
+      expect.objectContaining({ event: 'insights_scenario_run' }),
+    )
+    expect(vm.scenarioLoading).toBe(false)
+  })
+
+  it('handleRunScenario resets scenarioLoading to false even if runScenario throws', async () => {
+    const wrapper = mountView()
+    const store = useInsightsStore()
+    ;(store.runScenario as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error('scenario failure'))
+    const vm = wrapper.vm as any
+    await vm.handleRunScenario({})
+    expect(vm.scenarioLoading).toBe(false)
+  })
+
+  it('metricsAsRecord builds a record from coreMetrics values', () => {
+    const wrapper = mountView()
+    const store = useInsightsStore()
+    // metricsAsRecord iterates over `metrics` (not coreMetrics)
+    ;(store as any).metrics = [
+      { id: 'metric_a', value: 42 },
+      { id: 'metric_b', value: 99 },
+    ]
+    const vm = wrapper.vm as any
+    const record = vm.metricsAsRecord
+    expect(record.metric_a).toBe(42)
+    expect(record.metric_b).toBe(99)
+  })
+
+  it('showGlossary toggles state', async () => {
+    const wrapper = mountView()
+    const vm = wrapper.vm as any
+    expect(vm.showGlossary).toBe(false)
+    vm.showGlossary = true
+    await nextTick()
+    expect(vm.showGlossary).toBe(true)
+    vm.showGlossary = false
+    await nextTick()
+    expect(vm.showGlossary).toBe(false)
+  })
 })
