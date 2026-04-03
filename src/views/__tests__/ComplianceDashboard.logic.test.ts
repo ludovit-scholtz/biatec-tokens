@@ -355,3 +355,27 @@ describe('no wallet connector UI', () => {
     expect(html).not.toMatch(/not connected/i)
   })
 })
+
+// ---------------------------------------------------------------------------
+// Console-log navigation handlers (showIssuerDetails, showRiskDetails, showNetworkHealthDetails)
+// These functions currently log to the console and return undefined.
+// ---------------------------------------------------------------------------
+describe('console-log widget navigation handlers', () => {
+  it('showIssuerDetails does not throw', async () => {
+    const wrapper = await mountDashboard()
+    const vm = wrapper.vm as unknown as { showIssuerDetails: () => void }
+    expect(() => vm.showIssuerDetails()).not.toThrow()
+  })
+
+  it('showRiskDetails does not throw', async () => {
+    const wrapper = await mountDashboard()
+    const vm = wrapper.vm as unknown as { showRiskDetails: () => void }
+    expect(() => vm.showRiskDetails()).not.toThrow()
+  })
+
+  it('showNetworkHealthDetails does not throw', async () => {
+    const wrapper = await mountDashboard()
+    const vm = wrapper.vm as unknown as { showNetworkHealthDetails: () => void }
+    expect(() => vm.showNetworkHealthDetails()).not.toThrow()
+  })
+})

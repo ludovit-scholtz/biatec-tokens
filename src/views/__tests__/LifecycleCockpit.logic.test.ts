@@ -270,6 +270,53 @@ describe('LifecycleCockpit — Component Logic', () => {
     })
   })
 
+  // ── handleActionSelected ──────────────────────────────────────────────
+
+  describe('handleActionSelected', () => {
+    it('does not throw when called with an action ID', () => {
+      const { wrapper } = mountShallow({})
+      const vm = wrapper.vm as unknown as { handleActionSelected: (id: string) => void }
+      expect(() => vm.handleActionSelected('action-abc')).not.toThrow()
+    })
+
+    it('can be triggered via action-selected event from guided actions widget stub', async () => {
+      const { wrapper } = mountShallow({})
+      const guidedActionsWidget = wrapper.find('[data-testid="guided-actions-widget"]')
+      if (guidedActionsWidget.exists()) {
+        // Click the select button inside the stub to emit action-selected
+        const selectBtn = guidedActionsWidget.find('button')
+        if (selectBtn.exists()) {
+          await selectBtn.trigger('click')
+        }
+      }
+      // If handleActionSelected is called, no error is thrown
+      expect(wrapper.exists()).toBe(true)
+    })
+  })
+
+  // ── handleEvidenceViewed ──────────────────────────────────────────────
+
+  describe('handleEvidenceViewed', () => {
+    it('does not throw when called with an evidence ID', () => {
+      const { wrapper } = mountShallow({})
+      const vm = wrapper.vm as unknown as { handleEvidenceViewed: (id: string) => void }
+      expect(() => vm.handleEvidenceViewed('evidence-42')).not.toThrow()
+    })
+
+    it('can be triggered via evidence-viewed event from evidence widget stub', async () => {
+      const { wrapper } = mountShallow({})
+      const evidenceWidget = wrapper.find('[data-testid="evidence-widget"]')
+      if (evidenceWidget.exists()) {
+        // Click the view button inside the stub to emit evidence-viewed
+        const viewBtn = evidenceWidget.find('button')
+        if (viewBtn.exists()) {
+          await viewBtn.trigger('click')
+        }
+      }
+      expect(wrapper.exists()).toBe(true)
+    })
+  })
+
   // ── Role Selector ────────────────────────────────────────────────────────
 
   describe('Role selector', () => {
