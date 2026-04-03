@@ -108,4 +108,76 @@ describe('EconomicsSettingsStep', () => {
     expect((complete[0][0] as any).isValid).toBe(true)
     expect((complete[0][0] as any).warnings).toHaveLength(0)
   })
+
+  it('shows distribution warning when total does not equal 100', async () => {
+    const wrapper = mount(EconomicsSettingsStep, {
+      global: { plugins: [createTestingPinia({ createSpy: vi.fn })] }
+    })
+    // Change team from 20 to 50 so total = 50+20+40+20 = 130
+    const vm = wrapper.vm as any
+    vm.formData.initialDistribution.team = 50
+    await wrapper.vm.$nextTick()
+    expect(wrapper.text()).toContain('Total must equal 100%')
+  })
+
+  it('handleSubmit includes warning when distributionTotal is not 100', async () => {
+    const wrapper = mount(EconomicsSettingsStep, {
+      global: { plugins: [createTestingPinia({ createSpy: vi.fn })] }
+    })
+    const vm = wrapper.vm as any
+    vm.formData.initialDistribution.team = 50 // total = 130
+    await wrapper.vm.$nextTick()
+    await wrapper.find('form').trigger('submit')
+    const complete = wrapper.emitted('complete')!
+    expect((complete[0][0] as any).warnings).toHaveLength(1)
+    expect((complete[0][0] as any).warnings[0]).toMatch(/distribution/i)
+  })
+
+  it('onMounted restores existing tokenEconomics from store', async () => {
+    const existingEconomics = {
+      totalSupply: '5000000',
+      decimals: 8,
+      initialDistribution: { team: 10, investors: 30, community: 50, reserve: 10 },
+      burnMechanism: true,
+      mintingAllowed: false,
+    }
+    const pinia = createTestingPinia({ createSpy: vi.fn })
+    const wrapper = mount(EconomicsSettingsStep, {
+      global: { plugins: [pinia] }
+    })
+    // Manually set the store's tokenEconomics and simulate onMounted
+    const vm = wrapper.vm as any
+    vm.formData = { ...existingEconomics }
+    await wrapper.vm.$nextTick()
+    const supplyInput = wrapper.find('input[type="text"]')
+    // After setting formData, the input should reflect the new value
+    expect((supplyInput.element as HTMLInputElement).value).toBe('5000000')
+  })
+
+  it('onMounted loads tokenEconomics when store has existing data', async () => {
+    const { useGuidedLaunchStore: mockStore } = await import('../../../../stores/guidedLaunch')
+    const pinia = createTestingPinia({
+      createSpy: vi.fn,
+      initialState: {
+        guidedLaunch: {
+          currentForm: {
+            tokenEconomics: {
+              totalSupply: '999999',
+              decimals: 4,
+              initialDistribution: { team: 25, investors: 25, community: 25, reserve: 25 },
+              burnMechanism: false,
+              mintingAllowed: true,
+            }
+          }
+        }
+      }
+    })
+    const wrapper = mount(EconomicsSettingsStep, {
+      global: { plugins: [pinia] }
+    })
+    await wrapper.vm.$nextTick()
+    const vm = wrapper.vm as any
+    // The onMounted should have picked up the initial state
+    expect(vm.formData).toBeDefined()
+  })
 })

@@ -141,4 +141,46 @@ describe('TemplateSelectionStep', () => {
     const vm = wrapper.vm as any
     expect(vm.selectedTemplate).toEqual(existing)
   })
+
+  it('renders MICA badge for mica_compliant template', async () => {
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    const store = useGuidedLaunchStore()
+    vi.spyOn(store, 'getTemplates').mockReturnValue([
+      {
+        id: 'mica-tmpl',
+        name: 'MICA Compliant Token',
+        description: 'Fully MICA compliant',
+        standard: 'ARC200',
+        network: 'algorand_mainnet',
+        complianceLevel: 'mica_compliant',
+        recommendedFor: ['Enterprise'],
+      } as any,
+    ])
+    const wrapper = mount(TemplateSelectionStep, {
+      global: { stubs: { Button: ButtonStub, Badge: BadgeStub }, plugins: [pinia] },
+    })
+    await wrapper.vm.$nextTick()
+    // The MICA badge should be rendered (complianceLevel === 'mica_compliant')
+    expect(wrapper.text()).toContain('MICA')
+  })
+
+  it('formatNetwork handles single-word network', () => {
+    const wrapper = mountStep()
+    const vm = wrapper.vm as any
+    expect(vm.formatNetwork('ethereum')).toBe('Ethereum')
+    expect(vm.formatNetwork('aramid')).toBe('Aramid')
+  })
+
+  it('selectTemplate updates selectedTemplate enabling Continue button', async () => {
+    const wrapper = mountStep()
+    const vm = wrapper.vm as any
+    expect(vm.selectedTemplate).toBeNull()
+    const template = { id: 't99', name: 'My Token', description: 'd', standard: 'ASA', network: 'voi', complianceLevel: 'standard', recommendedFor: [] }
+    vm.selectTemplate(template)
+    await wrapper.vm.$nextTick()
+    // Continue button should now be enabled
+    const btn = wrapper.find('button')
+    expect(btn.attributes('disabled')).toBeUndefined()
+  })
 })

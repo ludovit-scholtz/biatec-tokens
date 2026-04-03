@@ -630,5 +630,94 @@ describe('JurisdictionPolicyStep Component', () => {
       
       expect(wrapper2.emitted('validation-change')).toBeTruthy()
     })
+
+    // ── policySummary: country_specific with allowedCountries (line ~238) ──
+    it('policySummary includes country count when scope is country_specific with allowedCountries', async () => {
+      wrapper.vm.formData.issuerCountry = 'US'
+      wrapper.vm.formData.distributionScope = 'country_specific'
+      wrapper.vm.formData.allowedCountries = ['US', 'GB']
+      wrapper.vm.formData.investorTypes = ['institutional']
+      await wrapper.vm.$nextTick()
+      const summary = wrapper.vm.policySummary
+      expect(summary).toContain('2 specific countries')
+    })
+
+    it('policySummary handles single country in country_specific scope', async () => {
+      wrapper.vm.formData.issuerCountry = 'US'
+      wrapper.vm.formData.distributionScope = 'country_specific'
+      wrapper.vm.formData.allowedCountries = ['US']
+      wrapper.vm.formData.investorTypes = ['institutional']
+      await wrapper.vm.$nextTick()
+      const summary = wrapper.vm.policySummary
+      expect(summary).toContain('1 specific country')
+    })
+
+    it('policySummary includes regional text when scope is regional', async () => {
+      wrapper.vm.formData.issuerCountry = 'DE'
+      wrapper.vm.formData.distributionScope = 'regional'
+      wrapper.vm.formData.investorTypes = ['accredited']
+      await wrapper.vm.$nextTick()
+      const summary = wrapper.vm.policySummary
+      expect(summary).toContain('selected regions')
+    })
+
+    it('policySummary includes accreditation info when requiresAccreditation is true', async () => {
+      wrapper.vm.formData.issuerCountry = 'US'
+      wrapper.vm.formData.distributionScope = 'global'
+      wrapper.vm.formData.investorTypes = ['accredited']
+      wrapper.vm.formData.requiresAccreditation = true
+      await wrapper.vm.$nextTick()
+      const summary = wrapper.vm.policySummary
+      expect(summary).toContain('Accreditation required')
+    })
+
+    // ── validateForm: allowedCountries required when country_specific ─────
+    it('validateForm adds error when country_specific scope has no allowedCountries', () => {
+      wrapper.vm.formData.issuerCountry = 'US'
+      wrapper.vm.formData.distributionScope = 'country_specific'
+      wrapper.vm.formData.allowedCountries = []
+      wrapper.vm.formData.investorTypes = ['institutional']
+      const result = wrapper.vm.validateForm()
+      expect(result.errors.some((e: any) => e.field === 'allowedCountries')).toBe(true)
+    })
+
+    it('country_specific with allowedCountries shows the select element', async () => {
+      wrapper.vm.formData.distributionScope = 'country_specific'
+      await wrapper.vm.$nextTick()
+      const html = wrapper.html()
+      expect(html).toMatch(/allowed-countries|allowedCountries|Allowed Countries/i)
+    })
+
+    // ── validateForm: MICA compliance warning for non-EU ─────────────────
+    it('validateForm emits warning when MICA enabled for non-EU jurisdiction', async () => {
+      wrapper.vm.formData.issuerCountry = 'US'
+      wrapper.vm.formData.distributionScope = 'global'
+      wrapper.vm.formData.investorTypes = ['institutional']
+      wrapper.vm.formData.requiresMICACompliance = true
+      wrapper.vm.formData.issuerJurisdictionType = 'other' // not EU
+      const result = wrapper.vm.validateForm()
+      expect(result.warnings.some((w: any) => w.field === 'requiresMICACompliance')).toBe(true)
+    })
+
+    // ── handleFieldChange: emits update:modelValue ────────────────────────
+    it('handleFieldChange emits update:modelValue with current form data', async () => {
+      wrapper.vm.formData.issuerCountry = 'DE'
+      wrapper.vm.handleFieldChange()
+      await wrapper.vm.$nextTick()
+      const emitted = wrapper.emitted('update:modelValue')
+      expect(emitted).toBeTruthy()
+      const lastEmit = emitted![emitted!.length - 1][0] as any
+      expect(lastEmit.issuerCountry).toBe('DE')
+    })
+
+    // ── retail + accreditation warning ────────────────────────────────────
+    it('validateForm emits warning when retail investor + accreditation required', () => {
+      wrapper.vm.formData.issuerCountry = 'US'
+      wrapper.vm.formData.distributionScope = 'global'
+      wrapper.vm.formData.investorTypes = ['retail']
+      wrapper.vm.formData.requiresAccreditation = true
+      const result = wrapper.vm.validateForm()
+      expect(result.warnings.some((w: any) => w.field === 'investorTypes')).toBe(true)
+    })
   })
 })

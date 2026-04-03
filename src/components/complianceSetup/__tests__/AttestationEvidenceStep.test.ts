@@ -258,5 +258,242 @@ describe("AttestationEvidenceStep", () => {
       expect(wrapper.text()).toContain(`Evidence ${type}`);
     }
   });
+
+  // ----- getAttestationTitle via vm direct call -----
+  it("getAttestationTitle returns correct labels for all types", async () => {
+    const wrapper = mount(AttestationEvidenceStep);
+    await nextTick();
+    const vm = wrapper.vm as any;
+    expect(vm.getAttestationTitle("jurisdiction_declaration")).toBe("Jurisdiction Declaration");
+    expect(vm.getAttestationTitle("investor_suitability")).toBe("Investor Suitability Confirmation");
+    expect(vm.getAttestationTitle("regulatory_compliance")).toBe("Regulatory Compliance Affirmation");
+    expect(vm.getAttestationTitle("data_privacy")).toBe("Data Privacy Acknowledgment");
+    expect(vm.getAttestationTitle("other")).toBe("Other Attestation");
+    // Unknown type falls back to the type string itself
+    expect(vm.getAttestationTitle("unknown_type")).toBe("unknown_type");
+  });
+
+  // ----- getEvidenceIcon via vm direct call -----
+  it("getEvidenceIcon returns correct icon classes for all types", async () => {
+    const wrapper = mount(AttestationEvidenceStep);
+    await nextTick();
+    const vm = wrapper.vm as any;
+    expect(vm.getEvidenceIcon("legal_opinion")).toBe("pi pi-file-pdf");
+    expect(vm.getEvidenceIcon("regulatory_filing")).toBe("pi pi-file");
+    expect(vm.getEvidenceIcon("audit_report")).toBe("pi pi-chart-line");
+    expect(vm.getEvidenceIcon("policy_document")).toBe("pi pi-book");
+    expect(vm.getEvidenceIcon("external_link")).toBe("pi pi-external-link");
+    expect(vm.getEvidenceIcon("other")).toBe("pi pi-paperclip");
+    expect(vm.getEvidenceIcon("unknown")).toBe("pi pi-file");
+  });
+
+  // ----- getEvidenceTypeLabel via vm direct call -----
+  it("getEvidenceTypeLabel returns human-readable labels for all types", async () => {
+    const wrapper = mount(AttestationEvidenceStep);
+    await nextTick();
+    const vm = wrapper.vm as any;
+    expect(vm.getEvidenceTypeLabel("legal_opinion")).toBe("Legal Opinion");
+    expect(vm.getEvidenceTypeLabel("regulatory_filing")).toBe("Regulatory Filing");
+    expect(vm.getEvidenceTypeLabel("audit_report")).toBe("Audit Report");
+    expect(vm.getEvidenceTypeLabel("policy_document")).toBe("Policy Document");
+    expect(vm.getEvidenceTypeLabel("external_link")).toBe("External Link");
+    expect(vm.getEvidenceTypeLabel("other")).toBe("Other");
+    expect(vm.getEvidenceTypeLabel("unknown")).toBe("unknown");
+  });
+
+  // ----- formatDate via vm direct call -----
+  it("formatDate formats a date to a readable string", async () => {
+    const wrapper = mount(AttestationEvidenceStep);
+    await nextTick();
+    const vm = wrapper.vm as any;
+    const formatted = vm.formatDate(new Date("2026-01-15T00:00:00Z"));
+    expect(typeof formatted).toBe("string");
+    expect(formatted.length).toBeGreaterThan(0);
+  });
+
+  // ----- handleAttestationChange: check and uncheck attestation -----
+  it("handleAttestationChange sets attestedAt and attestedBy when attested", async () => {
+    const wrapper = mount(AttestationEvidenceStep);
+    await nextTick();
+    const vm = wrapper.vm as any;
+    const attestation = vm.formData.attestations[0];
+    attestation.isAttested = true;
+    vm.handleAttestationChange(attestation);
+    await nextTick();
+    expect(attestation.attestedAt).toBeDefined();
+    expect(attestation.attestedBy).toBe("Current User");
+    expect(wrapper.emitted("update:modelValue")).toBeTruthy();
+    expect(wrapper.emitted("validation-change")).toBeTruthy();
+  });
+
+  it("handleAttestationChange clears attestedAt and attestedBy when un-attested", async () => {
+    const wrapper = mount(AttestationEvidenceStep);
+    await nextTick();
+    const vm = wrapper.vm as any;
+    const attestation = vm.formData.attestations[0];
+    // First attest
+    attestation.isAttested = true;
+    vm.handleAttestationChange(attestation);
+    // Then un-attest
+    attestation.isAttested = false;
+    vm.handleAttestationChange(attestation);
+    await nextTick();
+    expect(attestation.attestedAt).toBeUndefined();
+    expect(attestation.attestedBy).toBeUndefined();
+  });
+
+  // ----- handleFieldChange: legal review date -----
+  it("handleFieldChange syncs legalReviewDateString to Date on form data", async () => {
+    const wrapper = mount(AttestationEvidenceStep);
+    await nextTick();
+    const vm = wrapper.vm as any;
+    vm.legalReviewDateString = "2026-06-01";
+    vm.handleFieldChange();
+    await nextTick();
+    expect(vm.formData.legalReviewDate).toBeDefined();
+    expect(wrapper.emitted("update:modelValue")).toBeTruthy();
+  });
+
+  it("handleFieldChange syncs auditTrailStartDateString to Date on form data", async () => {
+    const wrapper = mount(AttestationEvidenceStep);
+    await nextTick();
+    const vm = wrapper.vm as any;
+    vm.auditTrailStartDateString = "2026-09-01";
+    vm.handleFieldChange();
+    await nextTick();
+    expect(vm.formData.auditTrailStartDate).toBeDefined();
+    expect(wrapper.emitted("validation-change")).toBeTruthy();
+  });
+
+  // ----- removeEvidence via vm direct call -----
+  it("removeEvidence removes the correct evidence item by id", async () => {
+    const wrapper = mount(AttestationEvidenceStep, {
+      props: {
+        modelValue: makeEvidence({
+          evidenceReferences: [
+            makeEvidenceRef({ id: "ev1", title: "First Evidence" }),
+            makeEvidenceRef({ id: "ev2", title: "Second Evidence" }),
+          ],
+        }),
+      },
+    });
+    await nextTick();
+    const vm = wrapper.vm as any;
+    expect(vm.formData.evidenceReferences).toHaveLength(2);
+    vm.removeEvidence("ev1");
+    await nextTick();
+    expect(vm.formData.evidenceReferences).toHaveLength(1);
+    expect(vm.formData.evidenceReferences[0].id).toBe("ev2");
+    expect(wrapper.emitted("update:modelValue")).toBeTruthy();
+  });
+
+  it("removeEvidence does nothing for non-existent id", async () => {
+    const wrapper = mount(AttestationEvidenceStep, {
+      props: {
+        modelValue: makeEvidence({
+          evidenceReferences: [makeEvidenceRef({ id: "ev1" })],
+        }),
+      },
+    });
+    await nextTick();
+    const vm = wrapper.vm as any;
+    vm.removeEvidence("non-existent-id");
+    await nextTick();
+    expect(vm.formData.evidenceReferences).toHaveLength(1);
+  });
+
+  // ----- showAddEvidenceDialog toggle -----
+  it("clicking Add Evidence button opens the dialog", async () => {
+    const wrapper = mount(AttestationEvidenceStep);
+    await nextTick();
+    const vm = wrapper.vm as any;
+    expect(vm.showAddEvidenceDialog).toBe(false);
+    const addBtn = wrapper.findAll("button").find((b) => b.text().match(/add evidence/i));
+    expect(addBtn).toBeDefined();
+    await addBtn!.trigger("click");
+    await nextTick();
+    expect(vm.showAddEvidenceDialog).toBe(true);
+  });
+
+  it("dialog is visible when showAddEvidenceDialog is true", async () => {
+    const wrapper = mount(AttestationEvidenceStep);
+    await nextTick();
+    const vm = wrapper.vm as any;
+    vm.showAddEvidenceDialog = true;
+    await nextTick();
+    // Dialog heading should appear
+    expect(wrapper.text()).toContain("Add Evidence");
+  });
+
+  // ----- validateForm: warnings for missing review -----
+  it("validateForm emits warnings for missing legal review and no evidence", async () => {
+    const wrapper = mount(AttestationEvidenceStep, {
+      props: {
+        modelValue: makeEvidence({
+          attestations: [makeAttestation({ isRequired: true, isAttested: true })],
+          hasLegalReview: false,
+          evidenceReferences: [],
+        }),
+      },
+    });
+    await nextTick();
+    const events = wrapper.emitted("validation-change") as any[];
+    const lastValidation = events[events.length - 1][0];
+    // Should have warnings for missing evidence and legal review
+    expect(lastValidation.warnings.length).toBe(2);
+  });
+
+  // ----- complianceBadgeLevel: mica_compliant path -----
+  it("sets mica_compliant badge when legal review done and 2+ evidence references", async () => {
+    const wrapper = mount(AttestationEvidenceStep, {
+      props: {
+        modelValue: makeEvidence({
+          attestations: [makeAttestation({ isRequired: true, isAttested: true })],
+          hasLegalReview: true,
+          evidenceReferences: [
+            makeEvidenceRef({ id: "e1" }),
+            makeEvidenceRef({ id: "e2", type: "audit_report", title: "Audit" }),
+          ],
+        }),
+      },
+    });
+    await nextTick();
+    const vm = wrapper.vm as any;
+    expect(vm.formData.complianceBadgeEligible).toBe(true);
+    expect(vm.formData.complianceBadgeLevel).toBe("mica_compliant");
+  });
+
+  // ----- badge level: standard path (evidence but no legal review) -----
+  it("sets standard badge level when attested + evidence but no legal review", async () => {
+    const wrapper = mount(AttestationEvidenceStep, {
+      props: {
+        modelValue: makeEvidence({
+          attestations: [makeAttestation({ isRequired: true, isAttested: true })],
+          hasLegalReview: false,
+          evidenceReferences: [makeEvidenceRef()],
+        }),
+      },
+    });
+    await nextTick();
+    const vm = wrapper.vm as any;
+    expect(vm.formData.complianceBadgeLevel).toBe("standard");
+  });
+
+  // ----- badge level: basic path (no evidence, no legal review) -----
+  it("sets basic badge level when attested but no evidence and no legal review", async () => {
+    const wrapper = mount(AttestationEvidenceStep, {
+      props: {
+        modelValue: makeEvidence({
+          attestations: [makeAttestation({ isRequired: true, isAttested: true })],
+          hasLegalReview: false,
+          evidenceReferences: [],
+        }),
+      },
+    });
+    await nextTick();
+    const vm = wrapper.vm as any;
+    expect(vm.formData.complianceBadgeLevel).toBe("basic");
+  });
 });
+
 

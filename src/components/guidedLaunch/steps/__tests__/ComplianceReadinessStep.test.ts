@@ -303,4 +303,53 @@ describe('ComplianceReadinessStep', () => {
     const lastUpdate = updates[updates.length - 1][0] as ComplianceReadiness
     expect(lastUpdate.riskAcknowledged).toBe(false)
   })
+
+  // ── handleSubmit: MICA + no legal review error path ─────────────────────
+  it('emits complete with isValid=false when MICA=true, legalReview=false, acknowledged=true', async () => {
+    const wrapper = mountStep()
+    const vm = wrapper.vm as any
+    // Set form data directly to bypass button disabled state
+    vm.formData.requiresMICA = true
+    vm.formData.hasLegalReview = false
+    vm.formData.riskAcknowledged = true
+    await wrapper.vm.$nextTick()
+
+    // Call handleSubmit directly since button is disabled when canProceed is false
+    vm.handleSubmit()
+    await wrapper.vm.$nextTick()
+
+    const emitted = wrapper.emitted('complete')
+    expect(emitted).toBeTruthy()
+    const validation = (emitted![0] as any[])[0] as { isValid: boolean; errors: string[] }
+    expect(validation.isValid).toBe(false)
+    expect(validation.errors.length).toBeGreaterThan(0)
+    expect(validation.errors[0]).toMatch(/mica|legal review/i)
+  })
+
+  // ── watch: riskAcknowledged stays false (no error clear) ─────────────────
+  it('watch does not clear acknowledgement error when riskAcknowledged remains false', async () => {
+    const wrapper = mountStep()
+    // Trigger the error first
+    await wrapper.find('form').trigger('submit')
+    await wrapper.vm.$nextTick()
+    expect(wrapper.find('[role="alert"]').exists()).toBe(true)
+
+    // Change a different checkbox (not the acknowledgement) - error should persist
+    const kycCheckbox = wrapper.findAll('input[type="checkbox"]')[1]
+    await kycCheckbox.setValue(true)
+    await wrapper.vm.$nextTick()
+    // Error should still be shown (riskAcknowledged is still false)
+    expect(wrapper.find('[role="alert"]').exists()).toBe(true)
+  })
+
+  // ── canProceed: all false branches ───────────────────────────────────────
+  it('canProceed returns false when riskAcknowledged is false regardless of MICA', async () => {
+    const wrapper = mountStep()
+    const vm = wrapper.vm as any
+    vm.formData.requiresMICA = true
+    vm.formData.hasLegalReview = true
+    vm.formData.riskAcknowledged = false
+    await wrapper.vm.$nextTick()
+    expect(vm.canProceed).toBe(false)
+  })
 })
