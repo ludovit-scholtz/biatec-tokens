@@ -362,7 +362,6 @@ describe('Marketplace View', () => {
   })
 
   it('shows token cards when filteredTokens is non-empty (v-for tokens loop)', async () => {
-    const { makeMount } = await import('./Marketplace.test').catch(() => ({ makeMount: null }))
     const router = makeRouter()
     await router.isReady()
     const mockTokens = [

@@ -69,9 +69,9 @@ describe('BenchmarkPanel — formatMetric', () => {
   it('formats a number to locale string', () => {
     const wrapper = mountPanel()
     const vm = wrapper.vm as any
+    // 1000 formatted with toLocaleString() in en-US → "1,000"
     const result = vm.formatMetric(1000)
-    expect(typeof result).toBe('string')
-    expect(result.length).toBeGreaterThan(0)
+    expect(result).toMatch(/1[,.]?000/)
   })
 })
 

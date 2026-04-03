@@ -92,10 +92,9 @@ describe('TrendChart — firstLabel / lastLabel computed', () => {
   it('returns formatted date string for non-empty data', () => {
     const wrapper = mountChart(mockData)
     const vm = wrapper.vm as any
-    expect(typeof vm.firstLabel).toBe('string')
-    expect(vm.firstLabel.length).toBeGreaterThan(0)
-    expect(typeof vm.lastLabel).toBe('string')
-    expect(vm.lastLabel.length).toBeGreaterThan(0)
+    // Known timestamps: '2026-03-01T00:00:00Z' → 'Mar 1' and '2026-04-01T00:00:00Z' → 'Apr 1'
+    expect(vm.firstLabel).toMatch(/Mar/)
+    expect(vm.lastLabel).toMatch(/Apr/)
   })
 })
 

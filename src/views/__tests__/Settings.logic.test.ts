@@ -301,21 +301,23 @@ describe('Settings View — Logic', () => {
   })
 
   describe('testConnection error branch', () => {
-    it('testConnection sets connectionStatus.success=false when the mock timer throws', async () => {
-      // To reach the catch block, we patch setTimeout to throw immediately
+    it('testConnection sets connectionStatus.success=false when the inner promise rejects', async () => {
       vi.useFakeTimers()
       const wrapper = await mountSettings()
       const vm = wrapper.vm as any
-      // Directly invoke to test the try/catch path
-      const origSetTimeout = window.setTimeout
-      // Mock setTimeout to reject inside the promise
-      vi.stubGlobal('Promise', class MockPromise<T> extends Promise<T> {
-        // This is too complex, use vm approach instead
+
+      // Override global setTimeout to throw so the try-block rejects
+      vi.spyOn(window, 'setTimeout').mockImplementationOnce(() => {
+        throw new Error('connection timeout error')
       })
-      vi.unstubAllGlobals()
-      // Verify vm exists (coverage path confirmed via vm call)
-      expect(vm.testConnection).toBeDefined()
+
+      // Call testConnection — the catch block should set connectionStatus.success=false
+      const promise = vm.testConnection()
       vi.useRealTimers()
+      await promise
+      expect(vm.connectionStatus?.success).toBe(false)
+      expect(vm.connectionStatus?.message).toBe('Connection failed')
+      expect(vm.isTestingConnection).toBe(false)
     })
   })
 
