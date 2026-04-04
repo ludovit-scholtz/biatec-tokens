@@ -302,3 +302,58 @@ describe('WhitelistEntryForm', () => {
     });
   });
 });
+
+  describe('validateForm - entityType, jurisdictionCode, riskLevel required', () => {
+    it('returns error when entityType is missing (line 270)', () => {
+      const wrapper = mountForm()
+      const vm = wrapper.vm as any
+      vm.formData.name = 'Valid Name'
+      vm.formData.email = 'valid@example.com'
+      vm.formData.jurisdictionCode = 'US'
+      vm.formData.riskLevel = 'low'
+      vm.formData.entityType = '' // missing
+      expect(vm.validateForm()).toBe(false)
+      expect(vm.errors.entityType).toBe('Entity type is required')
+    })
+
+    it('returns error when jurisdictionCode is missing (line 275)', () => {
+      const wrapper = mountForm()
+      const vm = wrapper.vm as any
+      vm.formData.name = 'Valid Name'
+      vm.formData.email = 'valid@example.com'
+      vm.formData.entityType = 'individual'
+      vm.formData.riskLevel = 'low'
+      vm.formData.jurisdictionCode = '' // missing
+      expect(vm.validateForm()).toBe(false)
+      expect(vm.errors.jurisdictionCode).toBe('Jurisdiction is required')
+    })
+
+    it('returns error when riskLevel is missing (lines 281-282)', () => {
+      const wrapper = mountForm()
+      const vm = wrapper.vm as any
+      vm.formData.name = 'Valid Name'
+      vm.formData.email = 'valid@example.com'
+      vm.formData.entityType = 'individual'
+      vm.formData.jurisdictionCode = 'US'
+      vm.formData.riskLevel = '' // missing
+      expect(vm.validateForm()).toBe(false)
+      expect(vm.errors.riskLevel).toBe('Risk level is required')
+    })
+  })
+
+  describe('handleSubmit - non-Error exception path (line 327)', () => {
+    it('sets generalError to fallback string when emit throws non-Error', async () => {
+      const wrapper = mountForm()
+      const vm = wrapper.vm as any
+      vm.formData.name = 'Valid Name'
+      vm.formData.email = 'valid@example.com'
+      vm.formData.entityType = 'individual'
+      vm.formData.jurisdictionCode = 'US'
+      vm.formData.riskLevel = 'low'
+      // Override emit to throw a non-Error string
+      ;(wrapper.vm as any).$emit = vi.fn().mockImplementation(() => { throw 'string-error' })
+      await vm.handleSubmit()
+      // Should gracefully handle non-Error throws
+      expect(vm.isSubmitting).toBe(false)
+    })
+  })

@@ -295,3 +295,18 @@ describe('TransactionHistoryPanel', () => {
     })
   })
 })
+
+  describe('copyHash - error branch (line 325)', () => {
+    it('handles clipboard write failure gracefully', async () => {
+      const wrapper = mountPanel()
+      const vm = wrapper.vm as any
+      vi.stubGlobal('navigator', {
+        clipboard: { writeText: vi.fn().mockRejectedValue(new Error('Clipboard denied')) },
+      })
+      // Should not throw
+      await vm.copyHash('0xhash')
+      // copiedHash should remain null since the write failed
+      expect(vm.copiedHash).toBeNull()
+      vi.unstubAllGlobals()
+    })
+  })
