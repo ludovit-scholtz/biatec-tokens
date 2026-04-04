@@ -173,4 +173,170 @@ describe('MicaReadinessSummary', () => {
     })
     expect(wrapper.text()).toContain('68%')
   })
+
+  it('readinessScoreColor returns green for score >= 80 (Aramid)', async () => {
+    const wrapper = mount(MicaReadinessSummary, {
+      global: { plugins: [makeRouter()] }
+    })
+    // Switch to Aramid (readinessScore: 82)
+    const aramidBtn = wrapper.findAll('button').find(b => b.text() === 'Aramid')
+    await aramidBtn!.trigger('click')
+    const vm = wrapper.vm as any
+    expect(vm.readinessScoreColor).toBe('text-green-400')
+  })
+
+  it('readinessScoreColor returns yellow for score in 60-79 range (VOI=75)', () => {
+    const wrapper = mount(MicaReadinessSummary, {
+      global: { plugins: [makeRouter()] }
+    })
+    const vm = wrapper.vm as any
+    expect(vm.readinessScoreColor).toBe('text-yellow-400')
+  })
+
+  it('readinessScoreColor returns red for score < 60 (simulated)', () => {
+    const wrapper = mount(MicaReadinessSummary, {
+      global: { plugins: [makeRouter()] }
+    })
+    const vm = wrapper.vm as any
+    // Force readinessScore to be low by mutating networkData
+    vm.networkData.VOI.readinessScore = 40
+    expect(vm.readinessScoreColor).toBe('text-red-400')
+  })
+
+  it('readinessScoreBgClass returns bg-green-500/10 at 80+', async () => {
+    const wrapper = mount(MicaReadinessSummary, {
+      global: { plugins: [makeRouter()] }
+    })
+    const aramidBtn = wrapper.findAll('button').find(b => b.text() === 'Aramid')
+    await aramidBtn!.trigger('click')
+    const vm = wrapper.vm as any
+    expect(vm.readinessScoreBgClass).toBe('bg-green-500/10')
+  })
+
+  it('readinessScoreBgClass returns bg-yellow-500/10 for score 60-79', () => {
+    const wrapper = mount(MicaReadinessSummary, {
+      global: { plugins: [makeRouter()] }
+    })
+    const vm = wrapper.vm as any
+    expect(vm.readinessScoreBgClass).toBe('bg-yellow-500/10')
+  })
+
+  it('readinessScoreBgClass returns bg-red-500/10 for score < 60', () => {
+    const wrapper = mount(MicaReadinessSummary, {
+      global: { plugins: [makeRouter()] }
+    })
+    const vm = wrapper.vm as any
+    vm.networkData.VOI.readinessScore = 30
+    expect(vm.readinessScoreBgClass).toBe('bg-red-500/10')
+  })
+
+  it('readinessScoreGradient returns green gradient for score >= 80', async () => {
+    const wrapper = mount(MicaReadinessSummary, {
+      global: { plugins: [makeRouter()] }
+    })
+    const aramidBtn = wrapper.findAll('button').find(b => b.text() === 'Aramid')
+    await aramidBtn!.trigger('click')
+    const vm = wrapper.vm as any
+    expect(vm.readinessScoreGradient).toContain('green')
+  })
+
+  it('readinessScoreGradient returns yellow gradient for 60-79', () => {
+    const wrapper = mount(MicaReadinessSummary, {
+      global: { plugins: [makeRouter()] }
+    })
+    const vm = wrapper.vm as any
+    expect(vm.readinessScoreGradient).toContain('yellow')
+  })
+
+  it('readinessScoreGradient returns red gradient for score < 60', () => {
+    const wrapper = mount(MicaReadinessSummary, {
+      global: { plugins: [makeRouter()] }
+    })
+    const vm = wrapper.vm as any
+    vm.networkData.VOI.readinessScore = 50
+    expect(vm.readinessScoreGradient).toContain('red')
+  })
+
+  it('readinessLabel returns Enterprise Ready for score >= 80', async () => {
+    const wrapper = mount(MicaReadinessSummary, {
+      global: { plugins: [makeRouter()] }
+    })
+    const aramidBtn = wrapper.findAll('button').find(b => b.text() === 'Aramid')
+    await aramidBtn!.trigger('click')
+    const vm = wrapper.vm as any
+    expect(vm.readinessLabel).toBe('Enterprise Ready')
+  })
+
+  it('readinessLabel returns Good Progress for score 60-79', () => {
+    const wrapper = mount(MicaReadinessSummary, {
+      global: { plugins: [makeRouter()] }
+    })
+    const vm = wrapper.vm as any
+    expect(vm.readinessLabel).toBe('Good Progress')
+  })
+
+  it('readinessLabel returns Needs Attention for score < 60', () => {
+    const wrapper = mount(MicaReadinessSummary, {
+      global: { plugins: [makeRouter()] }
+    })
+    const vm = wrapper.vm as any
+    vm.networkData.VOI.readinessScore = 55
+    expect(vm.readinessLabel).toBe('Needs Attention')
+  })
+
+  it('whitelistCoverageColor returns green for percentage >= 70', async () => {
+    const wrapper = mount(MicaReadinessSummary, {
+      global: { plugins: [makeRouter()] }
+    })
+    const aramidBtn = wrapper.findAll('button').find(b => b.text() === 'Aramid')
+    await aramidBtn!.trigger('click')
+    const vm = wrapper.vm as any
+    // Aramid has 78% whitelist
+    expect(vm.whitelistCoverageColor).toBe('text-green-400')
+  })
+
+  it('whitelistCoverageColor returns yellow for 50-69%', () => {
+    const wrapper = mount(MicaReadinessSummary, {
+      global: { plugins: [makeRouter()] }
+    })
+    const vm = wrapper.vm as any
+    // VOI has 68% whitelist — falls in 50-69 range
+    expect(vm.whitelistCoverageColor).toBe('text-yellow-400')
+  })
+
+  it('whitelistCoverageColor returns red for < 50%', () => {
+    const wrapper = mount(MicaReadinessSummary, {
+      global: { plugins: [makeRouter()] }
+    })
+    const vm = wrapper.vm as any
+    vm.networkData.VOI.whitelistCoverage.percentage = 30
+    expect(vm.whitelistCoverageColor).toBe('text-red-400')
+  })
+
+  it('whitelistCoverageBgClass returns green for percentage >= 70', async () => {
+    const wrapper = mount(MicaReadinessSummary, {
+      global: { plugins: [makeRouter()] }
+    })
+    const aramidBtn = wrapper.findAll('button').find(b => b.text() === 'Aramid')
+    await aramidBtn!.trigger('click')
+    const vm = wrapper.vm as any
+    expect(vm.whitelistCoverageBgClass).toBe('bg-green-500/10')
+  })
+
+  it('whitelistCoverageBgClass returns yellow for 50-69%', () => {
+    const wrapper = mount(MicaReadinessSummary, {
+      global: { plugins: [makeRouter()] }
+    })
+    const vm = wrapper.vm as any
+    expect(vm.whitelistCoverageBgClass).toBe('bg-yellow-500/10')
+  })
+
+  it('whitelistCoverageBgClass returns red for < 50%', () => {
+    const wrapper = mount(MicaReadinessSummary, {
+      global: { plugins: [makeRouter()] }
+    })
+    const vm = wrapper.vm as any
+    vm.networkData.VOI.whitelistCoverage.percentage = 40
+    expect(vm.whitelistCoverageBgClass).toBe('bg-red-500/10')
+  })
 })

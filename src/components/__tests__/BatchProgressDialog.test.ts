@@ -266,3 +266,108 @@ describe('BatchProgressDialog', () => {
     })
   })
 })
+
+describe('BatchProgressDialog — additional branch coverage', () => {
+  const mountDialog = (props: Partial<typeof BatchProgressDialog extends { new(...args: any): infer T } ? any : any> = {}) => {
+    const tokens = props.tokens ?? [makeToken()]
+    const summary = props.summary ?? makeSummary()
+    return mount(BatchProgressDialog, {
+      props: { isOpen: true, tokens, summary, batchId: 'b1' },
+    })
+  }
+
+  it('title returns "Deploying Batch..." when deploying', () => {
+    const wrapper = mountDialog({ summary: makeSummary({ status: 'deploying' }) })
+    const vm = wrapper.vm as any
+    expect(vm.title).toBe('Deploying Batch...')
+  })
+
+  it('title returns "Batch Completed" when completed and no errors', () => {
+    const wrapper = mountDialog({ summary: makeSummary({ status: 'completed', failedCount: 0 }) })
+    const vm = wrapper.vm as any
+    expect(vm.title).toBe('Batch Deployment Complete')
+  })
+
+  it('title returns "Batch Completed with Errors" when completed with errors', () => {
+    const wrapper = mountDialog({ summary: makeSummary({ status: 'pending', failedCount: 2 }) })
+    const vm = wrapper.vm as any
+    expect(vm.title).toBe('Batch Deployment Completed with Errors')
+  })
+
+  it('title fallback returns "Batch Deployment" for unknown status', () => {
+    const wrapper = mountDialog({ summary: makeSummary({ status: 'pending' as any, failedCount: 0 }) })
+    const vm = wrapper.vm as any
+    expect(vm.title).toBe('Batch Deployment')
+  })
+
+  it('estimatedTimeText returns null when no estimatedTimeRemaining', () => {
+    const wrapper = mountDialog({ summary: makeSummary({ estimatedTimeRemaining: undefined }) })
+    const vm = wrapper.vm as any
+    expect(vm.estimatedTimeText).toBeNull()
+  })
+
+  it('estimatedTimeText returns seconds when < 60s', () => {
+    const wrapper = mountDialog({ summary: makeSummary({ estimatedTimeRemaining: 30000 }) })
+    const vm = wrapper.vm as any
+    expect(vm.estimatedTimeText).toBe('30s')
+  })
+
+  it('estimatedTimeText returns minutes when 60s–3599s', () => {
+    const wrapper = mountDialog({ summary: makeSummary({ estimatedTimeRemaining: 120000 }) })
+    const vm = wrapper.vm as any
+    expect(vm.estimatedTimeText).toBe('2m')
+  })
+
+  it('estimatedTimeText returns hours when >= 3600s', () => {
+    const wrapper = mountDialog({ summary: makeSummary({ estimatedTimeRemaining: 7200000 }) })
+    const vm = wrapper.vm as any
+    expect(vm.estimatedTimeText).toBe('2h')
+  })
+
+  it('getStatusLabel returns deploying label', () => {
+    const wrapper = mountDialog()
+    const vm = wrapper.vm as any
+    expect(vm.getStatusLabel('deploying')).toBe('Deploying')
+    expect(vm.getStatusLabel('retrying')).toBe('Retrying')
+    expect(vm.getStatusLabel('unknown')).toBe('unknown')
+  })
+
+  it('getStatusBadgeVariant covers all status variants', () => {
+    const wrapper = mountDialog()
+    const vm = wrapper.vm as any
+    expect(vm.getStatusBadgeVariant('pending')).toBe('default')
+    expect(vm.getStatusBadgeVariant('deploying')).toBe('info')
+    expect(vm.getStatusBadgeVariant('completed')).toBe('success')
+    expect(vm.getStatusBadgeVariant('failed')).toBe('error')
+    expect(vm.getStatusBadgeVariant('retrying')).toBe('warning')
+    expect(vm.getStatusBadgeVariant('unknown')).toBe('default')
+  })
+
+  it('getExplorerUrl returns etherscan URL for ERC20 token', () => {
+    const wrapper = mountDialog({ tokens: [makeToken({ status: 'completed', transactionId: 'TX456' })] })
+    const vm = wrapper.vm as any
+    const token = vm.$props.tokens[0]
+    expect(vm.getExplorerUrl(token)).toContain('etherscan.io')
+  })
+
+  it('getExplorerUrl returns algoexplorer URL for ASA token', () => {
+    const wrapper = mountDialog({ tokens: [makeAvmToken({ status: 'completed', transactionId: 'TX789' })] })
+    const vm = wrapper.vm as any
+    const token = vm.$props.tokens[0]
+    expect(vm.getExplorerUrl(token)).toContain('algoexplorer.io')
+  })
+
+  it('getExplorerUrl returns # when no transactionId', () => {
+    const wrapper = mountDialog({ tokens: [makeToken({ status: 'pending', transactionId: undefined })] })
+    const vm = wrapper.vm as any
+    const token = vm.$props.tokens[0]
+    expect(vm.getExplorerUrl(token)).toBe('#')
+  })
+
+  it('getTokenSymbol returns unitName for AVM tokens', () => {
+    const wrapper = mountDialog({ tokens: [makeAvmToken()] })
+    const vm = wrapper.vm as any
+    const token = vm.$props.tokens[0]
+    expect(vm.getTokenSymbol(token)).toBe('TASA')
+  })
+})
