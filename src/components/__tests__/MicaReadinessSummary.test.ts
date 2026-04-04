@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { nextTick } from 'vue'
 import { mount } from '@vue/test-utils'
 import { createRouter, createWebHistory } from 'vue-router'
 import MicaReadinessSummary from '../MicaReadinessSummary.vue'
@@ -193,13 +194,14 @@ describe('MicaReadinessSummary', () => {
     expect(vm.readinessScoreColor).toBe('text-yellow-400')
   })
 
-  it('readinessScoreColor returns red for score < 60 (simulated)', () => {
+  it('readinessScoreColor returns red for score < 60 (simulated)', async () => {
     const wrapper = mount(MicaReadinessSummary, {
       global: { plugins: [makeRouter()] }
     })
     const vm = wrapper.vm as any
-    // Force readinessScore to be low by mutating networkData
+    // Force readinessScore to be low by mutating networkData and await reactivity
     vm.networkData.VOI.readinessScore = 40
+    await nextTick()
     expect(vm.readinessScoreColor).toBe('text-red-400')
   })
 
@@ -221,12 +223,13 @@ describe('MicaReadinessSummary', () => {
     expect(vm.readinessScoreBgClass).toBe('bg-yellow-500/10')
   })
 
-  it('readinessScoreBgClass returns bg-red-500/10 for score < 60', () => {
+  it('readinessScoreBgClass returns bg-red-500/10 for score < 60', async () => {
     const wrapper = mount(MicaReadinessSummary, {
       global: { plugins: [makeRouter()] }
     })
     const vm = wrapper.vm as any
     vm.networkData.VOI.readinessScore = 30
+    await nextTick()
     expect(vm.readinessScoreBgClass).toBe('bg-red-500/10')
   })
 
@@ -248,12 +251,13 @@ describe('MicaReadinessSummary', () => {
     expect(vm.readinessScoreGradient).toContain('yellow')
   })
 
-  it('readinessScoreGradient returns red gradient for score < 60', () => {
+  it('readinessScoreGradient returns red gradient for score < 60', async () => {
     const wrapper = mount(MicaReadinessSummary, {
       global: { plugins: [makeRouter()] }
     })
     const vm = wrapper.vm as any
     vm.networkData.VOI.readinessScore = 50
+    await nextTick()
     expect(vm.readinessScoreGradient).toContain('red')
   })
 
@@ -275,12 +279,13 @@ describe('MicaReadinessSummary', () => {
     expect(vm.readinessLabel).toBe('Good Progress')
   })
 
-  it('readinessLabel returns Needs Attention for score < 60', () => {
+  it('readinessLabel returns Needs Attention for score < 60', async () => {
     const wrapper = mount(MicaReadinessSummary, {
       global: { plugins: [makeRouter()] }
     })
     const vm = wrapper.vm as any
     vm.networkData.VOI.readinessScore = 55
+    await nextTick()
     expect(vm.readinessLabel).toBe('Needs Attention')
   })
 
@@ -304,12 +309,13 @@ describe('MicaReadinessSummary', () => {
     expect(vm.whitelistCoverageColor).toBe('text-yellow-400')
   })
 
-  it('whitelistCoverageColor returns red for < 50%', () => {
+  it('whitelistCoverageColor returns red for < 50%', async () => {
     const wrapper = mount(MicaReadinessSummary, {
       global: { plugins: [makeRouter()] }
     })
     const vm = wrapper.vm as any
     vm.networkData.VOI.whitelistCoverage.percentage = 30
+    await nextTick()
     expect(vm.whitelistCoverageColor).toBe('text-red-400')
   })
 
@@ -331,12 +337,13 @@ describe('MicaReadinessSummary', () => {
     expect(vm.whitelistCoverageBgClass).toBe('bg-yellow-500/10')
   })
 
-  it('whitelistCoverageBgClass returns red for < 50%', () => {
+  it('whitelistCoverageBgClass returns red for < 50%', async () => {
     const wrapper = mount(MicaReadinessSummary, {
       global: { plugins: [makeRouter()] }
     })
     const vm = wrapper.vm as any
     vm.networkData.VOI.whitelistCoverage.percentage = 40
+    await nextTick()
     expect(vm.whitelistCoverageBgClass).toBe('bg-red-500/10')
   })
 })

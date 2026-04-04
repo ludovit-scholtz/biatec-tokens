@@ -268,7 +268,7 @@ describe('BatchProgressDialog', () => {
 })
 
 describe('BatchProgressDialog — additional branch coverage', () => {
-  const mountDialog = (props: Partial<typeof BatchProgressDialog extends { new(...args: any): infer T } ? any : any> = {}) => {
+  const mountDialog = (props: { tokens?: Parameters<typeof makeToken>[0][]; summary?: ReturnType<typeof makeSummary> } = {}) => {
     const tokens = props.tokens ?? [makeToken()]
     const summary = props.summary ?? makeSummary()
     return mount(BatchProgressDialog, {
@@ -295,6 +295,7 @@ describe('BatchProgressDialog — additional branch coverage', () => {
   })
 
   it('title fallback returns "Batch Deployment" for unknown status', () => {
+    // status='pending' + failedCount=0: not deploying, not completed, no errors → fallback
     const wrapper = mountDialog({ summary: makeSummary({ status: 'pending' as any, failedCount: 0 }) })
     const vm = wrapper.vm as any
     expect(vm.title).toBe('Batch Deployment')

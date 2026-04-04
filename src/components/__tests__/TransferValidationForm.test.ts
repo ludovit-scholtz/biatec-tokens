@@ -100,8 +100,10 @@ describe('TransferValidationForm', () => {
     const wrapper = mountForm()
     const vm = wrapper.vm as any
     const result = vm.formatTimestamp('2026-04-04T12:00:00.000Z')
-    expect(typeof result).toBe('string')
-    expect(result.length).toBeGreaterThan(0)
+    // Should contain month abbreviation (Apr), day, year and time components
+    expect(result).toMatch(/Apr|4/)
+    expect(result).toMatch(/2026/)
+    expect(result).toMatch(/\d{1,2}:\d{2}/)
   })
 
   it('handleDialogClose sets showConfirmDialog to false', () => {
