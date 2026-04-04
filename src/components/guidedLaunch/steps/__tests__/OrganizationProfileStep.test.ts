@@ -298,3 +298,76 @@ describe('OrganizationProfileStep', () => {
     })
   })
 })
+
+  describe('validateForm - missing required fields', () => {
+    it('returns error when organizationType is missing', () => {
+      const wrapper = mount(OrganizationProfileStep)
+      const vm = wrapper.vm as any
+      vm.formData.organizationName = 'Test'
+      vm.formData.organizationType = '' // missing
+      vm.formData.jurisdiction = 'US'
+      vm.formData.contactName = 'John'
+      vm.formData.contactEmail = 'john@test.com'
+      vm.formData.role = 'business_owner'
+      const validation = vm.validateForm()
+      expect(validation.isValid).toBe(false)
+      expect(validation.errors).toContain('Organization type is required')
+    })
+
+    it('returns error when jurisdiction is missing', () => {
+      const wrapper = mount(OrganizationProfileStep)
+      const vm = wrapper.vm as any
+      vm.formData.organizationName = 'Test'
+      vm.formData.organizationType = 'company'
+      vm.formData.jurisdiction = '' // missing
+      vm.formData.contactName = 'John'
+      vm.formData.contactEmail = 'john@test.com'
+      vm.formData.role = 'business_owner'
+      const validation = vm.validateForm()
+      expect(validation.isValid).toBe(false)
+      expect(validation.errors).toContain('Jurisdiction is required')
+    })
+
+    it('returns error when contactName is missing', () => {
+      const wrapper = mount(OrganizationProfileStep)
+      const vm = wrapper.vm as any
+      vm.formData.organizationName = 'Test'
+      vm.formData.organizationType = 'company'
+      vm.formData.jurisdiction = 'US'
+      vm.formData.contactName = '' // missing
+      vm.formData.contactEmail = 'john@test.com'
+      vm.formData.role = 'business_owner'
+      const validation = vm.validateForm()
+      expect(validation.isValid).toBe(false)
+      expect(validation.errors).toContain('Contact name is required')
+    })
+
+    it('returns error when role is missing', () => {
+      const wrapper = mount(OrganizationProfileStep)
+      const vm = wrapper.vm as any
+      vm.formData.organizationName = 'Test'
+      vm.formData.organizationType = 'company'
+      vm.formData.jurisdiction = 'US'
+      vm.formData.contactName = 'John'
+      vm.formData.contactEmail = 'john@test.com'
+      vm.formData.role = '' // missing
+      const validation = vm.validateForm()
+      expect(validation.isValid).toBe(false)
+      expect(validation.errors).toContain('Your role is required')
+    })
+
+    it('returns website warning when website is missing', () => {
+      const wrapper = mount(OrganizationProfileStep)
+      const vm = wrapper.vm as any
+      vm.formData.organizationName = 'Test'
+      vm.formData.organizationType = 'company'
+      vm.formData.jurisdiction = 'US'
+      vm.formData.contactName = 'John'
+      vm.formData.contactEmail = 'john@test.com'
+      vm.formData.role = 'business_owner'
+      vm.formData.website = '' // missing
+      const validation = vm.validateForm()
+      expect(validation.isValid).toBe(true)
+      expect(validation.warnings.some((w: string) => w.includes('Website'))).toBe(true)
+    })
+  })

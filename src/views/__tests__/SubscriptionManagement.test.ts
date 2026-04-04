@@ -301,3 +301,117 @@ describe('SubscriptionManagement View', () => {
     })
   })
 })
+
+  describe('executeCancellation and handleReactivate', () => {
+    const activeSubscription = {
+      customer_id: 'cus_123',
+      subscription_id: 'sub_123',
+      subscription_status: 'active',
+      price_id: 'price_basic_monthly',
+      current_period_start: null,
+      current_period_end: Math.floor(Date.now() / 1000) + 86400 * 30,
+      cancel_at_period_end: false,
+      payment_method_brand: null,
+      payment_method_last4: null,
+    }
+
+    it('executeCancellation calls cancelSubscription and closes modal on success', async () => {
+      const wrapper = mountComponent()
+      const authStore = useAuthStore()
+      authStore.isConnected = true
+      authStore.user = { address: 'TESTADDR123', email: 'test@example.com' } as any
+      const subscriptionStore = useSubscriptionStore()
+      subscriptionStore.subscription = { ...activeSubscription }
+      subscriptionStore.cancelSubscription = vi.fn().mockResolvedValue(undefined)
+      await flushPromises()
+
+      // Open the cancel modal
+      const vm = wrapper.vm as any
+      vm.showCancelModal = true
+      await wrapper.vm.$nextTick()
+
+      // Call executeCancellation via vm
+      await vm.executeCancellation()
+      await flushPromises()
+
+      expect(subscriptionStore.cancelSubscription).toHaveBeenCalled()
+      expect(vm.showCancelModal).toBe(false)
+      expect(vm.cancelLoading).toBe(false)
+    })
+
+    it('executeCancellation resets cancelLoading even if cancelSubscription throws', async () => {
+      const wrapper = mountComponent()
+      const authStore = useAuthStore()
+      authStore.isConnected = true
+      authStore.user = { address: 'TESTADDR123', email: 'test@example.com' } as any
+      const subscriptionStore = useSubscriptionStore()
+      subscriptionStore.subscription = { ...activeSubscription }
+      subscriptionStore.cancelSubscription = vi.fn().mockRejectedValue(new Error('Network error'))
+      await flushPromises()
+
+      const vm = wrapper.vm as any
+      try {
+        await vm.executeCancellation()
+      } catch {
+        // expected
+      }
+      await flushPromises()
+
+      // cancelLoading should be reset via finally block
+      expect(vm.cancelLoading).toBe(false)
+    })
+
+    it('handleReactivate calls reactivateSubscription and resets loading', async () => {
+      const wrapper = mountComponent()
+      const authStore = useAuthStore()
+      authStore.isConnected = true
+      authStore.user = { address: 'TESTADDR123', email: 'test@example.com' } as any
+      const subscriptionStore = useSubscriptionStore()
+      subscriptionStore.reactivateSubscription = vi.fn().mockResolvedValue(undefined)
+      await flushPromises()
+
+      const vm = wrapper.vm as any
+      await vm.handleReactivate()
+      await flushPromises()
+
+      expect(subscriptionStore.reactivateSubscription).toHaveBeenCalled()
+      expect(vm.reactivateLoading).toBe(false)
+    })
+
+    it('handleReactivate resets loading even when reactivateSubscription throws', async () => {
+      const wrapper = mountComponent()
+      const authStore = useAuthStore()
+      authStore.isConnected = true
+      authStore.user = { address: 'TESTADDR123', email: 'test@example.com' } as any
+      const subscriptionStore = useSubscriptionStore()
+      subscriptionStore.reactivateSubscription = vi.fn().mockRejectedValue(new Error('fail'))
+      await flushPromises()
+
+      const vm = wrapper.vm as any
+      try {
+        await vm.handleReactivate()
+      } catch {
+        // expected
+      }
+      await flushPromises()
+
+      expect(vm.reactivateLoading).toBe(false)
+    })
+
+    it('onMounted fetches subscription when authenticated', async () => {
+      const pinia = createPinia()
+      setActivePinia(pinia)
+      const authStore = useAuthStore()
+      authStore.isConnected = true
+      authStore.user = { address: 'TESTADDR123', email: 'test@example.com' } as any
+      const subscriptionStore = useSubscriptionStore()
+      subscriptionStore.fetchSubscription = vi.fn().mockResolvedValue(undefined)
+
+      mount(SubscriptionManagement, {
+        global: { plugins: [pinia, router] },
+      })
+      await flushPromises()
+
+      expect(subscriptionStore.fetchSubscription).toHaveBeenCalled()
+    })
+  })

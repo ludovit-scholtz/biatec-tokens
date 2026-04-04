@@ -396,4 +396,62 @@ describe('ComplianceDashboardFilters', () => {
       expect(html).toContain('bg-red-600')
     })
   })
+
+  describe('active class rendering for jurisdictionRestricted filter', () => {
+    it('renders All button active (gray) when jurisdictionRestricted=null', async () => {
+      const wrapper = mountFilters()
+      const store = useComplianceDashboardStore()
+      store.filters.jurisdictionRestricted = null
+      await nextTick()
+      const html = wrapper.html()
+      expect(html).toContain('bg-gray-600')
+    })
+
+    it('renders Restricted button active (orange) when jurisdictionRestricted=true', async () => {
+      const wrapper = mountFilters()
+      const store = useComplianceDashboardStore()
+      store.filters.jurisdictionRestricted = true
+      await nextTick()
+      const html = wrapper.html()
+      expect(html).toContain('bg-orange-600')
+    })
+
+    it('renders Unrestricted button active (green) when jurisdictionRestricted=false', async () => {
+      const wrapper = mountFilters()
+      const store = useComplianceDashboardStore()
+      store.filters.jurisdictionRestricted = false
+      await nextTick()
+      const html = wrapper.html()
+      expect(html).toContain('bg-green-600')
+    })
+  })
+
+  describe('active class rendering for transferRestricted filter', () => {
+    it('renders All button active (gray) when transferRestricted=null', async () => {
+      const wrapper = mountFilters()
+      const store = useComplianceDashboardStore()
+      store.filters.transferRestricted = null
+      await nextTick()
+      const html = wrapper.html()
+      expect(html).toContain('bg-gray-600')
+    })
+
+    it('renders Controlled button active (red) when transferRestricted=true', async () => {
+      const wrapper = mountFilters()
+      const store = useComplianceDashboardStore()
+      store.filters.transferRestricted = true
+      await nextTick()
+      const html = wrapper.html()
+      expect(html).toContain('bg-red-600')
+    })
+
+    it('renders Free button active (green) when transferRestricted=false', async () => {
+      const wrapper = mountFilters()
+      const store = useComplianceDashboardStore()
+      store.filters.transferRestricted = false
+      await nextTick()
+      const html = wrapper.html()
+      expect(html).toContain('bg-green-600')
+    })
+  })
 })
