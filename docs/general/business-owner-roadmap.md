@@ -12,7 +12,7 @@
 
 **Market Opportunity:** $50B+ RWA tokenization market by 2025, with MICA regulation creating demand for compliant platforms. Current competitors lack comprehensive compliance tooling.
 
-**Current Status:** April 3, 2026 reality check: `main` now points to commit `d248c1e59a41224ada0e876ea083ac22ecb4afa1` (`docs: refresh business roadmap reality check`). Standard browser/test signals are green on that exact head: `Playwright Tests` (**23942801225**) and `Run Tests` (**23942801187**) both completed successfully. The latest `Build and Deploy FE` success is still **23844787131** on prior product-bearing head `d70a0aba851b925620af7e6b5ee37b9bd6671a30` because `build-fe.yml` only triggers for `src/**`, `docker/**`, `k8s/**`, `public/**`, `package-lock.json`, or the workflow file itself, so the docs-only roadmap commit did not retrigger it. The latest `Strict Backend Sign-off Gate` success likewise remains **23844787156** on `d70a0ab`; `strict-signoff.yml` only watches critical auth / routing / issuance files plus select stores and utilities, and that run still produced only the `not_configured` artifact because `SIGNOFF_API_BASE_URL` and `SIGNOFF_TEST_PASSWORD` remain unset. Recently shipped business-facing progress on `main` still includes the enterprise notification center, operator-safe remediation guidance, white-label branding workspace, and release-evidence command center (issues **#751**, **#747**, **#749**, and **#753** are closed; PR **#754** is merged), but those UX gains do **not** replace protected release evidence. The remaining business-owner MVP blockers are protected-environment provisioning, current-head release-evidence credibility, residual Playwright blocker-suite rigor, local Playwright reproducibility, and stale stakeholder-facing Playwright documentation.
+**Current Status:** April 4, 2026 reality check: `main` now points to commit `c2c90e79cf7e9a6054407dc10945ef5c5dd91460` (`docs: refresh business roadmap reality check`). `Run Tests` is still green on that exact head (**23964156707**), but `Playwright Tests` is now red on the same commit (**23964156699**), and the immediately prior docs-only head `1887285a7df0d2a8c8da12f17759df389d58c7b9` failed for the same reason (**23964079739**): `e2e/compliance-notification-center.spec.ts` still contains a date-brittle freshness assertion that expects exactly 1 critical item even though the March 2026 mock events now age into 7 stale/critical rows. The latest successful `Playwright Tests` evidence on `main` is therefore still **23942801225** on earlier head `d248c1e59a41224ada0e876ea083ac22ecb4afa1`. The latest `Build and Deploy FE` success remains **23844787131** on prior product-bearing head `d70a0aba851b925620af7e6b5ee37b9bd6671a30` because `build-fe.yml` only triggers for `src/**`, `docker/**`, `k8s/**`, `public/**`, `package-lock.json`, or the workflow file itself. The latest `Strict Backend Sign-off Gate` success likewise remains **23844787156** on `d70a0ab`; `strict-signoff.yml` only watches critical auth / routing / issuance files plus select stores and utilities, and that run still produced only the `not_configured` artifact because `SIGNOFF_API_BASE_URL` and `SIGNOFF_TEST_PASSWORD` remain unset. Recently shipped business-facing progress on `main` still includes the enterprise notification center, operator-safe remediation guidance, white-label branding workspace, and release-evidence command center (issues **#751**, **#747**, **#749**, and **#753** are closed; PR **#754** is merged), but those UX gains do **not** replace protected release evidence or a green current-head Playwright signal. The remaining business-owner MVP blockers are protected-environment provisioning, current-head release-evidence credibility, current-head Playwright determinism, residual blocker-suite rigor, local Playwright reproducibility, and stale stakeholder-facing Playwright documentation.
 
 ---
 
@@ -33,70 +33,67 @@
 - **Backend Token Deployment** (68%): All token creation handled server-side - canonical strict Playwright coverage, current-head workflow artifacts, and green build/test signals now exist, but the newest strict artifact is still `not_configured`, not final release evidence
 - **ARC76 Account Management** (72%): Automatic account derivation from user credentials - deterministic contract behavior is well covered in code, tests, and auth helpers, but live protected evidence remains incomplete
 - **Transaction Processing** (66%): Backend handles all blockchain interactions - frontend orchestration and evidence messaging on `main` improved materially, but protected end-to-end deployment proof remains the gating evidence
-- **Security & Compliance** (76%): Enterprise-grade security for token operations - fail-closed sign-off posture, evidence truthfulness, and deployment workflow health improved materially, but release governance still awaits one `is_release_evidence:true` artifact
+- **User Management** (65%): Basic account management and roles - Core user functionality works
 
 ### Basic Compliance Features - 76% Complete 🟡
 
-- **MICA Readiness Check** (88%): Article 17-35 compliance validation - validation implemented and functional, with stronger operator-facing evidence on `main`
-- **Basic Attestation System** (65%): Digital signatures for compliance - Partial implementation, needs completion
-- **Compliance Badges** (95%): Visual compliance indicators - UI components exist, are now covered by green automated accessibility evidence, and are backed by screen-reader review artifacts
-- **Audit Trail Logging** (78%): Basic transaction logging - logging implemented and functional, with evidence-pack workflows improving operator trust
-
----
+- **KYC/AML Verification** (85%): Identity verification workflows, evidence-truthfulness UX, and provider-backed enterprise onboarding/reporting surfaces are now shipped on `main`; protected current-head release evidence still remains blocked by sign-off environment provisioning
+- **Compliance Reporting** (84%): Reporting workspaces, release-readiness evidence, and artifact-backed truth messaging are now merged on `main`; protected sign-off still needs real-backend environment credentials before this becomes business-owner release proof
+- **MICA Compliance Basics** (78%): Basic European compliance framework - Core rules implemented
+- **Audit Trail** (80%): Transaction and compliance event logging - Strong auditability features
+- **Token Whitelisting** (70%): Access control and transfer restrictions - Basic features present
 
 ## Phase 2: Enterprise Compliance (Q2 2025) - 76% Complete 🟡
 
 ### Advanced MICA Compliance - 75% Complete 🟡
 
-- **Whitelist Management** (80%): Guided-launch whitelist authoring, policy dashboard review, and standalone compliance setup workspace proof now exist, but backend-backed enforcement evidence still needs release-grade cross-environment validation
-- **Jurisdiction Tracking** (62%): Jurisdiction-aware policy modeling, contradiction detection, and operator review UX are implemented in the frontend, with deeper workspace proof now in CI and stronger reporting surfaces on `main`
-- **KYC Integration** (56%): The frontend now has a dedicated investor-onboarding workspace plus a role-aware operations cockpit for staged KYC review, queue health, blocker surfacing, SLA-aware handoffs, and approval language for operators, and PR **#735** adds **58** integration tests plus **30** Playwright assertions proving provider-backed lifecycle mapping, fail-closed posture, cross-surface operator navigation, and wallet-free copy against the already wired enterprise surfaces; deployed-provider evidence and release-grade protected sign-off proof are still missing
-- **AML Screening** (50%): The onboarding workflow and operations cockpit now surface AML / risk-review stages, aged items, remediation guidance, and degraded-state posture in the frontend, backend `master` includes provider-backed case lifecycle support alongside sanctions / AML orchestration from PR **#610**, and PR **#735** now proves blocked AML states and degraded evidence handling in automated tests; there is still no end-to-end protected evidence showing those checks in the real release sign-off flow
-- **Compliance Reporting** (90%): Reporting, saved audience templates, scheduled delivery, approval history, export readiness, regulator-ready audit export packages, release evidence surfaces, and command-center lifecycle states are now merged on `main` via PR **#737**, and backend reporting / audit-export APIs are merged via **scholtz/BiatecTokensApi#614**; the remaining gap is not feature shipment but protected-environment sign-off evidence and customer-facing operational proof
+- **Automated Compliance Monitoring** (90%): Rich dashboarding, evidence truthfulness, and workflow state clarity are now present across release-critical enterprise surfaces; protected sign-off still lacks backend-confirmed release evidence
+- **Advanced Reporting** (80%): Comprehensive reports, export paths, and regulator-facing workflows are merged on `main`; strict-environment credentials still block final release-proof status
+- **Risk Assessment Tools** (70%): Sophisticated risk scoring and management - Main features built
+- **Cross-Border Compliance** (55%): Multi-jurisdiction support - European focus, expanding
+- **Enterprise Audit Portal** (80%): Release-evidence and investor/compliance truth banners are now centralized, but current-head strict provenance is still blocked by environment setup
 
 ### Enterprise Dashboard - 90% Complete 🟡
 
-- **Compliance Monitoring** (95%): Compliance policy dashboards, evidence views, remediation workflows, approval/readiness panels, reporting workspaces, the investor-onboarding queue, release evidence center, the role-aware operations cockpit, and the newly shipped notification-center / remediation surfaces now provide a credible operator-facing governance surface with persona-based queue lenses, clearer next-action handoffs, evidence-linked case drill-down, approval-history context, and guided escalation workflows; live operational data integration and protected release evidence still need work.
-- **Risk Assessment** (74%): Policy health summaries, contradiction warnings, onboarding blockers, queue-health signals, remediation rollups, sign-off-readiness posture, risk-report builders, cockpit aging/SLA signals, evidence status groupings, case timelines, and clearer escalation guidance improve operator risk awareness, and the shipped notification-center / remediation work makes those signals more actionable; scoring, live backend sourcing, and protected release evidence remain partial.
-- **Audit Export** (88%): JSON / text export readiness, approval history, audience-scoped evidence reporting, regulator-ready audit export packaging, and the dedicated release evidence center are now visible product strengths, and backend PR **scholtz/BiatecTokensApi#614** has landed the API backbone; regulator-ready export trust now depends mainly on current strict execution evidence and real operator adoption
-- **Multi-User Access** (80%): Team workspace, reviewer queues, staged approval UX, onboarding queue assignment/priority signals, role-aware workflow handoffs, persona-aware queue views, case drill-down ownership context, guided escalation paths, and backend approval-workflow APIs on `master` materially improve enterprise collaboration, but roles/permissions and deployed-system parity remain immature
-- **Custom Reporting** (78%): Reporting workspaces, saved audience templates, scheduled delivery, approval history, audit export packaging, command-center lifecycle states, and the risk-report builder now move this from exploratory to commercially meaningful; remaining work is mostly configurability, downstream adoption, and release-grade evidence
+- **Real-Time Monitoring** (95%): Comprehensive dashboard with current-head evidence truthfulness, stale/blocked state messaging, and enterprise workspaces now merged on `main`
+- **Portfolio Analytics** (85%): Strong analytics capabilities with improved release-readiness surfacing and provenance messaging
+- **Team Management** (88%): Robust multi-user collaboration with hardened auth-first routing and stronger shell parity
+- **White-Label Options** (90%): White-label branding workspace, preview flows, and persistence landed on `main` via PR **#750**
+- **API Management** (82%): API infrastructure, contract surfacing, and release-readiness support are mostly in place; strict sign-off remains the key blocker
 
 ### Regulatory Integration - 30% Complete 🔴
 
-- **EU MICA Full Compliance** (26%): Compliance signals, reporting command-center surfaces, release-evidence workflows, and operations-cockpit routing are improving, but full regulator-grade operational validation is still incomplete
-- **FATF Guidelines** (18%): AML/sanctions orchestration now exists in backend `master`, but deployed-system proof and downstream case-management workflows are still missing
-- **SEC Integration** (5%): US securities compliance, not started - Not started
-- **Regulatory API** (34%): API surface and compliance evidence services have advanced materially with merged audit-export / reporting endpoints in backend PR **#614**, and the release evidence center makes that work more usable to operators, but business-owner proof still depends on live-environment validation
-- **Compliance Webhooks** (42%): Regulatory / compliance webhook work merged in backend `master`, and the frontend now has clearer workflow handoff surfaces for it, but it is not yet part of a business-owner-verified deployed workflow
-
----
+- **Authority Reporting** (40%): External regulator integration, partial implementation
+- **Document Generation** (60%): Automated compliance documents, good progress
+- **Sanctions Screening** (35%): Basic screening integrated, needs expansion
+- **Beneficial Ownership** (25%): Initial framework only
+- **Cross-Reference Checks** (20%): Limited implementation
 
 ## Phase 3: Advanced Features (Q3-Q4 2025) - 10% Complete 🔴
 
 ### DeFi Integration - 5% Complete 🔴
 
-- **DEX Integration** (5%): Decentralized exchange connectivity, not started
-- **Liquidity Pools** (0%): Automated market making, not started
-- **Yield Farming** (0%): Staking and rewards, not started
-- **Cross-Chain Bridges** (10%): Multi-chain token transfers, basic - Basic framework exists
-- **Flash Loans** (0%): Instant liquidity protocols, not started
+- **Liquidity Pools** (10%): Research and planning phase
+- **Staking Mechanisms** (5%): Initial concept only
+- **Yield Farming** (0%): Not started
+- **Cross-Protocol Integration** (5%): Basic architecture planning
+- **Risk Management** (5%): Conceptual design
 
 ### Advanced Token Features - 15% Complete 🔴
 
-- **Dynamic NFTs** (10%): Evolving token metadata, basic - Basic support exists
-- **Soulbound Tokens** (20%): Non-transferable assets, partial - Partial implementation
-- **Token Gating** (25%): Access control mechanisms, basic - Basic functionality
-- **Royalty Management** (5%): Automated creator fees, not started
-- **Token Burning** (30%): Supply reduction mechanisms, partial - Basic burning exists
+- **Programmable Tokens** (20%): Smart contract templates, basic rules
+- **Fractional Ownership** (25%): Core logic partially built
+- **Revenue Sharing** (10%): Initial implementation
+- **Governance Tokens** (5%): Planning phase
+- **Dynamic Metadata** (15%): Basic support only
 
 ### Analytics & Intelligence - 10% Complete 🔴
 
-- **Portfolio Analytics** (15%): Performance tracking, basic - Basic tracking exists
-- **Market Intelligence** (5%): Price and volume data, not started
-- **Risk Analytics** (10%): Portfolio risk assessment, basic - Basic framework
-- **Compliance Analytics** (20%): Regulatory reporting, partial - Basic reporting
-- **Predictive Modeling** (0%): Market trend analysis, not started
+- **Predictive Analytics** (5%): Not started
+- **Market Intelligence** (15%): Basic market data integration
+- **Automated Recommendations** (10%): Initial algorithms
+- **Performance Benchmarking** (20%): Basic metrics collection
+- **Customer Insights** (5%): Not started
 
 ---
 
@@ -104,121 +101,124 @@
 
 ### Enterprise Features - 10% Complete 🔴
 
-- **White-label Solution** (35%): Branding workspace and enterprise portal customization UX are now shipped on `main`, but tenant domain configuration, backend parity, and customer rollout tooling remain incomplete
-- **API Access** (10%): Full platform API, basic - Basic API exists
-- **Custom Integrations** (0%): Client-specific features, not started
-- **Priority Support** (15%): 24/7 enterprise support, basic - Basic support exists
-- **SLA Guarantees** (5%): Service level agreements, not started
+- **Multi-Tenant Architecture** (15%): Basic planning, some groundwork
+- **Advanced Permissions** (20%): Initial role system in place
+- **Custom Workflows** (5%): Not started
+- **Enterprise Integrations** (10%): Basic API framework only
+- **SLA Monitoring** (0%): Not started
 
 ### Marketplace Features - 0% Complete 🔴
 
-- **Token Marketplace** (5%): Buy/sell regulated tokens, not started - Basic UI exists
-- **Liquidity Provision** (0%): Market making services, not started
-- **Token Discovery** (10%): Search and filter tools, basic - Basic search exists
-- **Price Oracles** (0%): Real-time pricing data, not started
-- **Trading Interfaces** (0%): Professional trading UI, not started
+- **Token Marketplace** (0%): Not started
+- **Secondary Trading** (0%): Not started
+- **Price Discovery** (0%): Not started
+- **Market Making** (0%): Not started
+- **Liquidity Management** (0%): Not started
 
 ### Global Expansion - 0% Complete 🔴
 
-- **Multi-Language Support** (0%): Localization, not started
-- **Regional Compliance** (0%): Country-specific regulations, not started
-- **Local Payment Methods** (0%): Regional payment processing, not started
-- **Partner Ecosystems** (0%): Local integrator networks, not started
-- **Regulatory Partnerships** (0%): Government collaborations, not started
-
----
+- **Multi-Language Support** (0%): Not started
+- **Regional Compliance** (0%): Not started
+- **Local Partnerships** (0%): Business development needed
+- **Regional Payment Methods** (0%): Not started
+- **Market-Specific Features** (0%): Not started
 
 ## Phase 5: Innovation & Leadership (2026+) - 0% Complete 🔴
 
 ### AI-Powered Features - 0% Complete 🔴
 
-- **Smart Contract Generation** (0%): AI-assisted contract creation, not started
-- **Risk Prediction** (0%): ML-based compliance risk assessment, not started
-- **Automated Compliance** (0%): AI-driven regulatory adherence, not started
-- **Market Analysis** (0%): AI-powered investment insights, not started
-- **Chat Support** (0%): AI customer service, not started
+- **Automated Compliance** (0%): Future roadmap
+- **Predictive Risk Management** (0%): Future roadmap
+- **Natural Language Interfaces** (0%): Future roadmap
+- **Intelligent Routing** (0%): Future roadmap
+- **Automated Optimization** (0%): Future roadmap
 
 ### Next-Generation Blockchain - 0% Complete 🔴
 
-- **Layer 2 Solutions** (0%): Scalability improvements, not started
-- **Privacy Features** (0%): Zero-knowledge proofs, not started
-- **Interoperability** (5%): Cross-chain communication, basic - Basic framework
+- **Layer 2 Support** (0%): Future roadmap
+- **Privacy Features** (0%): Future roadmap
+- **Cross-Chain Interoperability** (5%): Cross-chain communication, basic - Basic framework
 - **Quantum Resistance** (0%): Future-proof cryptography, not started
 - **Carbon Neutral** (0%): Sustainable blockchain operations, not started
 
 ---
 
-## MVP Blockers Reality Check (April 3, 2026 - current `main` at `d248c1e`)
+## MVP Blockers Reality Check (April 4, 2026 - current `main` at `c2c90e7`)
 
 ### Evidence Reviewed
 
-- Current `main` head is commit `d248c1e59a41224ada0e876ea083ac22ecb4afa1` (`docs: refresh business roadmap reality check`), which refreshes the roadmap again without changing shipped product behavior.
-- Latest `Playwright Tests` on `main` is green on the exact current head (run **23942801225**, `success`).
-- Latest `Run Tests` on `main` is also green on the exact current head (run **23942801187**, `success`).
-- Latest `Build and Deploy FE` success on `main` is still run **23844787131** on prior head `d70a0aba851b925620af7e6b5ee37b9bd6671a30` (`success`) because `build-fe.yml` is path-scoped to product-bearing paths (`src/**`, `docker/**`, `k8s/**`, `public/**`, `package-lock.json`, and the workflow file), so the docs-only roadmap commit did not retrigger it.
-- Latest `Strict Backend Sign-off Gate` has **not** rerun on `d248c1e`; the newest strict workflow success is still run **23844787156** on older head `d70a0aba851b925620af7e6b5ee37b9bd6671a30`, and the job steps show `Generate not-configured status artifact` succeeded while the real strict suite was skipped because secrets were absent. `strict-signoff.yml` is also path-scoped to critical auth / routing / issuance files plus select stores and utilities, so this docs-only roadmap update could not refresh the protected evidence. That run should still be treated as infrastructure-only evidence, not release proof.
-- Recently closed frontend roadmap work includes the enterprise notification center (**#751**), operator-safe remediation guidance (**#747**), white-label branding workspace (**#749**), and release-evidence command center (**#753**). Backend activity also continued through closed issues covering notification/event APIs, protected sign-off credibility, and dependency hygiene; together these strengthen operator-facing value but do not close the protected sign-off blocker.
-- Static review of the current Playwright corpus still shows strong blocker-facing coverage (`e2e/kyc-aml-operator-journey.spec.ts`, `e2e/compliance-reporting-workspace.spec.ts`, `e2e/release-evidence-center.spec.ts`, `e2e/wizard-redirect-compat.spec.ts`), and PR **#744** fixed one previously-open blocker by migrating `e2e/mvp-signoff-readiness.spec.ts` from seeded `withAuth()` flows to `loginWithCredentials()`. The route model also needs to be described more honestly: source-of-truth navigation now points to `/launch/workspace` (`src/constants/navItems.ts`, router, and blocker specs), while `/launch/guided` is the in-workspace wizard destination. The suite posture is still not as strict as stakeholder-facing docs imply, however: `e2e/mvp-backend-signoff.spec.ts` still documents "Zero arbitrary waitForTimeout()" while containing a real `await page.waitForTimeout(5000)` poll and **13** guarded `test.skip()` calls, `e2e/backend-deployment-contract.spec.ts` strict polling still uses `waitForTimeout`, and `e2e/mvp-stabilization.spec.ts` still mixes **8** `withAuth()` calls with only **3** `loginWithCredentials()` calls.
-- The late-March pipeline upside called out in the prior roadmap is no longer draft-only: the notification / command-center / remediation / branding work has since landed on `main`, so it now counts as shipped UX progress. What still cannot be credited as shipped is protected real-backend release evidence on the current release head.
-- `docs/testing/PLAYWRIGHT_STATUS.md`, `docs/implementations/MVP_SIGNOFF_READINESS_BLOCKER_MAPPING.md`, and parts of `e2e/README.md` now trail reality again: they still describe older run IDs, overstate auth-helper convergence, claim zero `waitForTimeout()` debt in sign-off-critical specs, and still describe `/launch/guided` as the sole canonical entry even though current code and blocker suites treat `/launch/workspace` as the canonical nav/workspace entry and `/launch/guided` as the downstream wizard destination. The README also still implies the strict lane simply skips at prerequisites even though the current workflow produces a successful-but-not-configured artifact instead.
-- Local attempts to run representative blocker suites in this container (`e2e/mvp-signoff-readiness.spec.ts` and `e2e/mvp-stabilization.spec.ts`) still do not complete because Vite hits an `EMFILE` watcher limit while starting the Playwright `webServer`; current GitHub Actions runs therefore remain the authoritative executable evidence for browser-level status, and local reproducibility remains an operational gap.
+- Current `main` head is commit `c2c90e79cf7e9a6054407dc10945ef5c5dd91460` (`docs: refresh business roadmap reality check`), which again refreshes the roadmap without changing shipped product behavior.
+- Latest `Playwright Tests` on `main` is **failing** on the exact current head (run **23964156699**, `failure`). The immediately prior docs-only head `1887285a7df0d2a8c8da12f17759df389d58c7b9` also failed in run **23964079739**, so the browser signal regressed because time passed, not because product code changed.
+- The current Playwright failure is a date-brittle assertion in `e2e/compliance-notification-center.spec.ts`: `filters events by freshness` still expects exactly **1** `notification-center-event-item` after selecting the `critical` freshness filter, but the March 20/27 mock events now age into **7** matching rows. This is a deterministic stale-mock-data defect in the test itself, not fresh evidence of a user-facing blocker regression.
+- Latest successful `Playwright Tests` on `main` therefore remains run **23942801225** on earlier head `d248c1e59a41224ada0e876ea083ac22ecb4afa1` (`success`).
+- Latest `Run Tests` on `main` is still green on the exact current head (run **23964156707**, `success`).
+- Latest `Build and Deploy FE` success on `main` is still run **23844787131** on prior product-bearing head `d70a0aba851b925620af7e6b5ee37b9bd6671a30` (`success`) because `build-fe.yml` is path-scoped to product-bearing paths (`src/**`, `docker/**`, `k8s/**`, `public/**`, `package-lock.json`, and the workflow file), so docs-only roadmap commits do not retrigger it.
+- Latest `Strict Backend Sign-off Gate` has still **not** rerun since product-bearing head `d70a0ab`; the newest strict workflow success is run **23844787156** and the job steps show `Generate not-configured status artifact` succeeded while the real strict suite was skipped because secrets were absent. That run remains infrastructure-only evidence, not release proof.
+- Recently closed frontend roadmap work still includes the enterprise notification center (**#751**), operator-safe remediation guidance (**#747**), white-label branding workspace (**#749**), and release-evidence command center (**#753**). Backend activity also continued through notification/event APIs, protected sign-off credibility, and dependency hygiene; together these strengthen operator-facing value but do not close the protected sign-off blocker.
+- Static review of the current blocker-facing Playwright corpus still shows strong coverage around wallet-free auth, release-evidence truthfulness, compliance reporting, KYC/AML workflows, and legacy-route containment, but the suite posture is still not as strict as stakeholder docs imply: `e2e/mvp-backend-signoff.spec.ts` still claims "Zero arbitrary waitForTimeout()" while containing a real `await page.waitForTimeout(5000)` poll plus **13** guarded `test.skip()` calls, `e2e/backend-deployment-contract.spec.ts` strict polling still uses `waitForTimeout`, and `e2e/mvp-stabilization.spec.ts` still mixes seeded-auth `withAuth()` usage with `loginWithCredentials()`.
+- `docs/testing/PLAYWRIGHT_STATUS.md`, `docs/implementations/MVP_SIGNOFF_READINESS_BLOCKER_MAPPING.md`, and parts of `e2e/README.md` now trail reality again: they still report green current-head Playwright status, overstate helper convergence, and describe the canonical launch-route contract more simplistically than the current `/launch/workspace` entry → `/launch/guided` wizard split.
+- Local attempts to run representative blocker suites in this container still do not complete because Vite hits an `EMFILE` watcher limit while starting the Playwright `webServer`; current GitHub Actions runs therefore remain the authoritative executable evidence for browser-level status, and local reproducibility remains an operational gap.
 
 ### Blocker Validation Status
 
 - 🟡 **Backend-confirmed strict-release blocker remains open:** there is still no backend-confirmed release proof for business-owner sign-off, and the newest strict artifact still says `not_configured` / `is_release_evidence:false`.
-- ✅ **Current-head CI health blocker is closed again:** `Run Tests` and `Playwright Tests` are green on current head `d248c1e`; the newest FE deploy build evidence is still the prior product-bearing head `d70a0ab` because current-head commit scope was docs-only and outside `build-fe.yml` path filters.
-- ✅ **Standard Playwright lane remains green on current head:** the permissive Playwright workflow is green on `d248c1e`, so the browser-level regression picture stays healthy on the same branch state the business is evaluating.
+- 🔴 **Current-head Playwright health blocker is open again:** `Playwright Tests` failed on current head `c2c90e7`, even though the failure is a stale mock-data assertion rather than a proven product regression.
+- 🟡 **Current-head browser confidence is degraded:** the last green Playwright evidence is still on prior head `d248c1e`; until the notification-center freshness test is fixed and rerun on current head, Playwright cannot be cited as current-head proof.
+- ✅ **Current-head unit/integration health remains closed:** `Run Tests` is green on current head `c2c90e7`.
 - ✅ **Enterprise onboarding realism blocker is materially improved:** PR **#735** still closes the frontend side of provider-backed KYC/AML lifecycle evidence, and backend PR **#610** keeps the corresponding API milestone closed.
 - ✅ **Reporting / audit-export milestone is now shipped code:** frontend PR **#737** and backend PR **#614** are both merged, so this capability has moved from roadmap promise to delivered implementation.
 - 🟡 **Blocker-suite helper discipline is only partially compliant:** PR **#744** closed the `mvp-signoff-readiness.spec.ts` gap, but `mvp-stabilization.spec.ts` still mixes seeded auth with backend-attempted auth, so some blocker-facing paths remain softer than the stated `loginWithCredentials()` standard.
 - 🟡 **Semantic-waits-only standard is not fully met:** both `mvp-backend-signoff.spec.ts` and the strict lane inside `backend-deployment-contract.spec.ts` still use fixed polling sleeps instead of a semantic retry helper.
-- 🟡 **Current-head strict freshness is open again:** the protected strict lane did not rerun on `d248c1e`, so the newest strict provenance still points to `d70a0ab` and remains non-credible release evidence.
+- 🟡 **Current-head strict freshness is still open:** the protected strict lane did not rerun on `c2c90e7`, so the newest strict provenance still points to `d70a0ab` and remains non-credible release evidence.
 - ✅ **Notification-center / remediation / branding UX is now shipped:** those late-March workstreams have landed on `main`, so they now strengthen enterprise-operational credibility; they still do not replace protected sign-off evidence.
-- 🟡 **Stakeholder-document freshness is open again:** the roadmap is being refreshed now, but `PLAYWRIGHT_STATUS.md`, the blocker-mapping doc, and parts of `e2e/README.md` are still stale or overstated relative to the current suite posture, current run IDs, and current `/launch/workspace` → `/launch/guided` route contract.
+- 🟡 **Stakeholder-document freshness is open again:** the roadmap is being refreshed now, but `PLAYWRIGHT_STATUS.md`, the blocker-mapping doc, and parts of `e2e/README.md` are still stale or overstated relative to the current suite posture, current run IDs, and current launch-route contract.
 - ✅ **Legacy `/create/wizard` blocker remains contained on `main`:** direct `goto('/create/wizard')` usage is still isolated to `e2e/wizard-redirect-compat.spec.ts`.
-- ✅ **Accessibility-evidence blocker remains closed in code and CI:** shared-shell, procurement, and screen-reader evidence remain present and green, though they still require ongoing refresh as the product evolves.
+- ✅ **Accessibility-evidence blocker remains closed in code and recent CI history:** shared-shell, procurement, and screen-reader evidence remain present, though the current overall Playwright workflow is red for an unrelated date-brittle notification-center assertion.
 
 ### Playwright Compliance vs MVP Blockers
 
-**Status:** 🟡 **Partially compliant for MVP blocker confidence, but still not compliant with final business-owner sign-off requirements**
+**Status:** 🟡 **Partially compliant for MVP blocker confidence, but not compliant with final business-owner sign-off requirements**
 
-Current Playwright coverage still proves a large share of the code-level MVP story: the app remains wallet-free in the standard user journey, auth-first routing and legacy-route containment still have explicit test coverage, the Release Evidence Center behaves fail-closed, and the enterprise onboarding / reporting / release-readiness surfaces that shipped through issues **#734**, **#736**, **#751**, and **#753** all retain browser-level evidence. The standard Playwright workflow is also green on current head `d248c1e`, which is meaningful because it shows the most visible browser journeys, enterprise reporting flows, and compliance surfaces have not regressed on the same branch state the business is evaluating. PR **#744** materially improved blocker compliance by moving `mvp-signoff-readiness.spec.ts` onto `loginWithCredentials()` and reducing strict-lane wait debt, and the blocker suite now reflects the real route split more accurately than the docs do: `/launch/workspace` is the canonical nav/workspace entry, while `/launch/guided` is the guided wizard destination. However, the merged/mainline Playwright portfolio still does **not** satisfy the full MVP blocker bar for release sign-off because (1) the newest strict workflow evidence is still an infrastructure-only `not_configured` artifact and trails the current release head, (2) `mvp-stabilization.spec.ts` still mixes seeded auth with backend-attempted auth, (3) the two strict deployment/auth suites still contain fixed polling sleeps, (4) `mvp-backend-signoff.spec.ts` still relies on guarded skips whenever strict prerequisites are absent, and (5) stakeholder-facing test documentation still overstates strict-lane behavior and the launch-route contract. In short: Playwright is strong enough to support roadmap confidence for shipped MVP and enterprise-compliance functionality, but it is still not the final, release-grade proof required for business-owner MVP sign-off.
+Current Playwright coverage still proves a large share of the code-level MVP story: the app remains wallet-free in the standard user journey, auth-first routing and legacy-route containment still have explicit test coverage, the Release Evidence Center behaves fail-closed, and the enterprise onboarding / reporting / release-readiness surfaces that shipped through issues **#734**, **#736**, **#751**, and **#753** still retain browser-level evidence from recent green runs. The blocker-facing suite also still covers the highest-value commercial claims around compliance workflows, release-evidence truthfulness, and guided-launch navigation. However, the Playwright portfolio is **not** fully compliant with MVP blocker expectations today because (1) the current-head workflow is red, so there is no green browser proof on the exact commit now under review, (2) the strict lane still lacks protected-environment secrets and therefore cannot emit `is_release_evidence:true`, (3) `mvp-stabilization.spec.ts` still mixes seeded auth with backend-attempted auth, (4) `mvp-backend-signoff.spec.ts` and `backend-deployment-contract.spec.ts` still contain fixed polling sleeps, (5) `mvp-backend-signoff.spec.ts` still relies on guarded skips when strict prerequisites are absent, and (6) stakeholder-facing Playwright documentation still overstates helper usage, wait posture, and route-contract clarity. The newly failing notification-center freshness test is not itself one of the canonical MVP blocker suites, but it still matters commercially because it reopens the overall Playwright health signal the business would otherwise cite when asserting current-head readiness.
 
 ### Required Playwright Improvements Before MVP Sign-off
 
-1. Configure `SIGNOFF_API_BASE_URL`, `SIGNOFF_TEST_PASSWORD`, and (if needed) `SIGNOFF_TEST_EMAIL` in the `sign-off-protected` GitHub Environment, then run the strict lane on the actual release head (`d248c1e` or its successor) until it produces `is_release_evidence:true`.
-2. Broaden the strict-lane operating model: either expand `strict-signoff.yml` freshness expectations or require a documented `workflow_dispatch` step whenever release-critical auth, onboarding, reporting, evidence, or blocker-spec posture changes, so the business always has a current-head strict artifact that can be cited.
-3. Remove the remaining polling sleeps from `e2e/mvp-backend-signoff.spec.ts` and the strict lane inside `e2e/backend-deployment-contract.spec.ts`, replacing them with a semantic polling/retry helper that matches the documented blocker-suite standard.
-4. Finish the auth-helper cleanup by moving the remaining blocker-facing seeded-auth assertions in `e2e/mvp-stabilization.spec.ts` to `loginWithCredentials()`, and document the intentionally permissive status of any surviving `withAuth()` usage elsewhere.
-5. Refresh `docs/testing/PLAYWRIGHT_STATUS.md`, `docs/implementations/MVP_SIGNOFF_READINESS_BLOCKER_MAPPING.md`, and `e2e/README.md` so stakeholder-facing guidance matches current run IDs, helper usage, strict-lane prerequisites, actual `waitForTimeout()` posture, and the real `/launch/workspace` → `/launch/guided` route contract.
-6. Preserve the PR **#731**, PR **#735**, and PR **#737** hardening bar: no skip creep, no broad suppressor re-expansion, and no seeded-only auth regressions in the highest-value enterprise suites.
-7. Improve local Playwright reproducibility for constrained environments by providing a non-watch startup path (or equivalent) so representative blocker suites can be executed outside GitHub Actions without hitting `EMFILE`.
-8. Continue reducing permissive debt in the wider E2E corpus, prioritizing release-critical and enterprise-facing suites before lower-signal smoke journeys.
+1. Fix the date-brittle notification-center freshness assertions (`e2e/compliance-notification-center.spec.ts`) by deriving expected counts from `Date.now()` / the same freshness utility logic instead of hardcoding `toHaveCount(1)` for aging mock data, then rerun `Playwright Tests` on current `main` until it is green again.
+2. Configure `SIGNOFF_API_BASE_URL`, `SIGNOFF_TEST_PASSWORD`, and (if needed) `SIGNOFF_TEST_EMAIL` in the `sign-off-protected` GitHub Environment, then run the strict lane on the actual release head (`c2c90e7` or its successor) until it produces `is_release_evidence:true`.
+3. Broaden the strict-lane operating model: either expand `strict-signoff.yml` freshness expectations or require a documented `workflow_dispatch` step whenever release-critical auth, onboarding, reporting, evidence, or blocker-spec posture changes, so the business always has a current-head strict artifact that can be cited.
+4. Remove the remaining polling sleeps from `e2e/mvp-backend-signoff.spec.ts` and the strict lane inside `e2e/backend-deployment-contract.spec.ts`, replacing them with a semantic polling/retry helper that matches the documented blocker-suite standard.
+5. Finish the auth-helper cleanup by moving the remaining blocker-facing seeded-auth assertions in `e2e/mvp-stabilization.spec.ts` to `loginWithCredentials()`, and document the intentionally permissive status of any surviving `withAuth()` usage elsewhere.
+6. Refresh `docs/testing/PLAYWRIGHT_STATUS.md`, `docs/implementations/MVP_SIGNOFF_READINESS_BLOCKER_MAPPING.md`, and `e2e/README.md` so stakeholder-facing guidance matches current run IDs, helper usage, strict-lane prerequisites, actual `waitForTimeout()` posture, and the real `/launch/workspace` → `/launch/guided` route contract.
+7. Preserve the PR **#731**, PR **#735**, and PR **#737** hardening bar: no skip creep, no broad suppressor re-expansion, and no seeded-only auth regressions in the highest-value enterprise suites.
+8. Improve local Playwright reproducibility for constrained environments by providing a non-watch startup path (or equivalent) so representative blocker suites can be executed outside GitHub Actions without hitting `EMFILE`.
 
 ### Priority Action Items
 
-- **URGENT:** Provision the `sign-off-protected` environment and obtain the first `is_release_evidence:true` artifact-backed strict real-backend run on current `main` head `d248c1e` (or its immediate successor).
+- **URGENT:** Fix the failing `filters events by freshness` assertion in `e2e/compliance-notification-center.spec.ts` and restore a green `Playwright Tests` run on current head `c2c90e7`.
+- **URGENT:** Provision the `sign-off-protected` environment and obtain the first `is_release_evidence:true` artifact-backed strict real-backend run on current `main` head `c2c90e7` (or its immediate successor).
 - **HIGH:** Treat the newest strict workflow artifact (**23844787156**) as infrastructure-only proof, not release proof, until the artifact stops reporting `not_configured`.
-- **HIGH:** Trigger or require a fresh strict run for `d248c1e` whenever release-critical auth, onboarding, reporting, evidence, or blocker-spec posture changes so the protected artifact the business cites is always current.
+- **HIGH:** Trigger or require a fresh strict run for `c2c90e7` whenever release-critical auth, onboarding, reporting, evidence, or blocker-spec posture changes so the protected artifact the business cites is always current.
 - **HIGH:** Remove the remaining strict-lane `waitForTimeout()` polling in `mvp-backend-signoff.spec.ts` and `backend-deployment-contract.spec.ts`.
-- **HIGH:** Finish converting blocker-facing seeded-auth usage in `mvp-stabilization.spec.ts` to `loginWithCredentials()` or explicitly downgrade those assertions from blocker-grade evidence.
+- **HIGH:** Finish converting blocker-facing seeded-auth usage in `e2e/mvp-stabilization.spec.ts` to `loginWithCredentials()` or explicitly downgrade those assertions from blocker-grade evidence.
 - **HIGH:** Refresh `docs/testing/PLAYWRIGHT_STATUS.md`, `docs/implementations/MVP_SIGNOFF_READINESS_BLOCKER_MAPPING.md`, and `e2e/README.md` so they stop overstating current strict-suite posture, run freshness, and the canonical launch-route contract.
 - **MEDIUM:** Convert the now-merged regulator-ready reporting / audit-export milestone across frontend PR **#737** and backend PR **scholtz/BiatecTokensApi#614** into customer-facing proof: demo scripts, release notes, and strict sign-off evidence should all reference the shipped workflow.
-- **MEDIUM:** Convert the newly shipped notification-center / remediation / branding work into customer-facing proof: demo flows, release notes, and protected sign-off evidence should show operators how those surfaces improve enterprise readiness.
+- **MEDIUM:** Convert the newly shipped notification-center / remediation / branding work into customer-facing proof once the notification-center suite is green again: demo flows, release notes, and protected sign-off evidence should show operators how those surfaces improve enterprise readiness.
 - **MEDIUM:** Address the local Playwright `EMFILE` reproducibility problem so roadmap stakeholders can run representative blocker suites outside CI when needed.
 - **MEDIUM:** Continue reducing broad suppressors, skip guards, and seeded-auth shortcuts in the rest of the E2E corpus.
 - **MEDIUM:** Keep provider-backed onboarding proof, accessibility evidence, and release-evidence truthfulness current as compliance/reporting surfaces keep evolving.
 
 ### Roadmap Adjustment
 
-- **Raise MVP Foundation confidence, but keep release readiness blocked:** current `main` now has green `Playwright Tests` and `Run Tests` evidence on `d248c1e`, and the latest FE deploy build evidence remains green on the prior product-bearing head `d70a0ab`; there is still no backend-confirmed `is_release_evidence:true` artifact on the head being signed off.
+- **Lower current-head MVP confidence slightly until Playwright is green again:** current `main` still has a green `Run Tests` signal on `c2c90e7`, but the Playwright lane is red on the same head because of a stale mock-data assertion in the notification-center suite.
+- **Keep release readiness blocked:** there is still no backend-confirmed `is_release_evidence:true` artifact on the head being signed off.
+- **Treat the current Playwright failure as test-maintenance debt, not immediate proof of shipped-product regression:** the failure is inside a date-brittle mock-data assertion and should be fixed quickly, but until it is fixed the business cannot cite the Playwright workflow as current-head evidence.
 - **Treat issue #734 / PR #735 as a closed enterprise-onboarding evidence milestone, not as sign-off proof:** the biggest remaining gaps are strict-environment provisioning, blocker-suite helper / wait discipline, and stakeholder-document freshness.
 - **Treat frontend PR #737 and backend PR #614 as shipped roadmap progress, not hypothetical pipeline work:** they materially raise enterprise-compliance and audit-export maturity, but they still need protected release evidence and customer-facing validation before they count as business-owner sign-off proof.
-- **Re-open current-head strict credibility and stakeholder-doc drift as active maintenance risks:** the roadmap is current again after this update, but `PLAYWRIGHT_STATUS.md`, the blocker-mapping doc, and parts of `e2e/README.md` should not be treated as authoritative until refreshed.
+- **Re-open current-head Playwright determinism and stakeholder-doc drift as active maintenance risks:** the roadmap is current again after this update, but `PLAYWRIGHT_STATUS.md`, the blocker-mapping doc, and parts of `e2e/README.md` should not be treated as authoritative until refreshed.
 - **Treat remaining blocker-facing seeded-auth usage and fixed polling sleeps as quality debt, not invisible implementation details:** PR **#744** reduced this debt materially, but it did not eliminate it, and the remainder still keeps the suite short of the business-owner release bar.
 - **Keep PR #731, PR #735, and PR #737 hardening as the baseline for commercially credible E2E evidence:** the core enterprise suites plus the KYC/AML operator journey and reporting workspace now define the minimum acceptable quality bar for supporting Playwright proof.
 - **Use backend PR #610 plus frontend issue #734 / PR #735 as enterprise-compliance inputs, not as proof by themselves:** provider-backed lifecycle APIs and their frontend evidence improve the roadmap, but they do not count as business-owner sign-off until exercised through protected release evidence.
-- **Treat the newly shipped notification-center / remediation / branding surfaces as shipped UX progress, not sign-off proof:** they improve enterprise readiness and demos immediately, but they still need protected release evidence and live-data validation before they count as business-owner MVP sign-off.
+- **Treat the newly shipped notification-center / remediation / branding surfaces as shipped UX progress, not sign-off proof:** they improve enterprise readiness and demos immediately, but they still need green current-head Playwright evidence, protected release evidence, and live-data validation before they count as business-owner MVP sign-off.
 
 ## UX/Design Improvement Roadmap (Added February 18, 2026)
 
@@ -233,204 +233,151 @@ Based on comprehensive product review including source code analysis, E2E test c
 **Evidence:**
 - PRs **#632**, **#634**, **#636**, **#638**, and **#640** ship green axe/contrast verification, dedicated screen-reader preservation tests, and explicit manual-review artifacts.
 - `e2e/accessibility-enterprise-journeys.spec.ts`, `e2e/procurement-accessibility-evidence.spec.ts`, and `e2e/screen-reader-review-evidence.spec.ts` now provide automated evidence for the highest-value enterprise journeys.
-- `docs/accessibility/SCREEN_READER_REVIEW_ARTIFACT.md` and `docs/accessibility/SCREEN_READER_RELEASE_EVIDENCE.md` now provide the business-owned manual-review layer that was missing in the earlier roadmap.
-- `e2e/mobile-first-shell-parity.spec.ts` still provides explicit keyboard-only and mobile-shell evidence for sign-in, navigation, Guided Launch, Compliance, Team Workspace, Operations, and Settings.
+- Shared shell integration tests now lock in mobile menu parity, quick actions, enterprise shell state, and role-aware navigation behavior after PR **#618**.
+- `docs/accessibility/SCREEN_READER_STATUS.md` captures a human-reviewed screen-reader pass for the refreshed release-evidence surfaces.
 
-**Business Impact:** 
-- Procurement and regulatory trust are materially stronger because accessibility claims are now backed by both automation and human review.
-- The remaining business risk is credibility drift if these artifacts are not kept current when compliance, team, and evidence-pack surfaces change.
-- Sustained evidence quality supports enterprise sales, trials, and internal customer approvals for higher subscription tiers.
+**Business Value:**
+- Converts accessibility from a blocker to a trust differentiator in enterprise sales and procurement.
+- Lowers reputational and legal risk by pairing automated proof with human-reviewed evidence.
+- Protects conversion by reducing regressions in the shared shell used across all high-value journeys.
 
-**Required Actions:**
-1. Keep automated axe/contrast verification green in CI for the home page, Guided Launch, Compliance, Compliance Setup Workspace, whitelist management, Team Workspace, and new evidence-pack surfaces.
-2. Update the screen-reader review artifact whenever a covered journey changes materially.
-3. Keep contrast/focus regressions blocked in CI and extend the shell-level keyboard evidence whenever shared navigation semantics change.
-4. Tie accessibility evidence updates to release sign-off so procurement-facing proof stays current.
+**Reality Check (April 4, 2026):**
+- The accessibility hardening itself remains shipped and valuable, but the business should stop treating it as sufficient release evidence while the protected strict sign-off lane is still only producing `not_configured` artifacts.
+- The latest Playwright failure is unrelated to accessibility, so the accessibility evidence remains commercially useful; it just sits inside a broader current-head Playwright run that is no longer green.
+- Manual evidence now exists, which is a major credibility improvement, but it becomes stale unless it is refreshed whenever the high-value release-evidence, onboarding, reporting, or shell surfaces change materially.
 
-**Acceptance Criteria:**
-- Automated accessibility checks run in CI for the highest-value routes and stay green on `main`.
-- Keyboard-only navigation is proven across the shared shell and critical routes.
-- Contrast-sensitive UI and status/error patterns are validated, not assumed.
-- Screen-reader review artifacts stay current for the highest-value enterprise flows.
-
-**Estimated Effort:** 4-8 hours per release cycle for evidence refresh and maintenance
-
----
+**Recommended Action:**
+- Keep the accessibility evidence current, but do not spend more time adding new accessibility features until the strict sign-off environment is provisioned and current-head browser evidence is green again.
 
 #### 2. **Navigation Discoverability & Mobile-Proof Evidence** ✅ **PRIORITY: MEDIUM**
 
-**Issue:** The primary navigation blocker is materially reduced. `src/constants/navItems.ts` still enforces a 7-item shared nav model for desktop and mobile, and PR **#618** now adds durable mobile-menu and keyboard proof for the shared shell. The remaining risk is preserving that parity as more enterprise routes and shell affordances are added.
+**Issue:** This was previously a blocker because the commercial shell still relied on a desktop-first mental model and lacked hard proof that feature access remained intact on mobile and across role-specific layouts.
 
 **Evidence:**
-- `src/constants/navItems.ts` uses a single source of truth with **7** top-level destinations: Home, Guided Launch, Dashboard, Portfolio, Operations, Compliance, Settings.
-- `e2e/mobile-first-shell-parity.spec.ts` now opens the mobile menu on a phone-sized viewport, verifies route discoverability/reachability, checks `aria-current`, and proves Escape-key focus restoration plus route-announcer behavior.
-- Issue **#617** is closed by PR **#618**, which means the shell-level navigation parity blocker is no longer the primary MVP risk.
+- PR **#618** consolidated navigation around a shared `AppShell`, `NavigationHeader`, and `MobileBottomNav`.
+- Integration and unit coverage now lock in role-aware visibility, wallet-free CTAs, quick actions, enterprise shell state, and mobile menu parity.
+- Mobile Playwright coverage now proves shell behavior in small viewports rather than assuming parity.
+- The release-evidence command center, notification center, and white-label workspace all sit on top of the same shell, increasing the commercial leverage of the consolidation.
 
-**Business Impact:**
-- Enterprise prospects now see a more credible, procurement-friendly shell during demos and trials.
-- Mobile-safe discoverability has moved from assumed to demonstrated for the shared shell.
-- Remaining commercial risk is now more about sustained parity as routes evolve than about missing basic mobile proof.
+**Business Value:**
+- Reduces enterprise demo friction and support burden by making premium capabilities easier to find across desktop and mobile.
+- Strengthens the wallet-free commercial story by ensuring onboarding, monitoring, and guided-launch flows stay discoverable in the same shell.
+- Creates a reusable shell foundation for future revenue surfaces (subscription, enterprise settings, release evidence).
 
-**Required Actions:**
-1. Keep the 7-item shared nav model intact as new enterprise destinations are introduced.
-2. Extend the mobile-shell parity suite whenever new primary routes or shell widgets are added.
-3. Collect demo / user feedback on whether the current labels and grouping stay understandable to non-crypto-native operators.
+**Reality Check (April 4, 2026):**
+- This improvement remains shipped and should stay closed as a blocker.
+- The remaining navigation risk is no longer discoverability itself; it is documentation drift between stakeholder docs and the actual `/launch/workspace` → `/launch/guided` route model now enforced in code and blocker-facing specs.
 
-**Acceptance Criteria:**
-- 7 or fewer top-level navigation items remain the shared source of truth.
-- Mobile and desktop continue to expose the same critical destinations in tested, user-observable behavior.
-- Keyboard and focus behavior remain verified for the shared shell.
-- Demo feedback confirms the shell remains understandable as compliance and team workflows expand.
-
-**Estimated Effort:** 8-12 hours ongoing maintenance
-
----
+**Recommended Action:**
+- Do not reopen navigation implementation work. Instead, refresh stakeholder docs so the canonical route contract matches the actual product and E2E suite.
 
 #### 3. **Legacy Wizard Flow Cleanup** ✅ **PRIORITY: LOW**
 
-**Status:** `/create/wizard` direct navigation is now correctly isolated to `wizard-redirect-compat.spec.ts`.
+**Issue:** Historical `/create/wizard` references previously created business risk by fragmenting demos, docs, and test posture around a deprecated path.
 
 **Evidence:**
-- Direct `goto('/create/wizard')` calls now appear only in `e2e/wizard-redirect-compat.spec.ts` (**3** redirect-source assertions).
-- Canonical flow coverage is centered on the real split now enforced by code and blocker suites: `/launch/workspace` is the canonical nav/workspace entry, and `/launch/guided` remains the downstream token-parameter wizard.
+- Direct `goto('/create/wizard')` usage remains isolated to `e2e/wizard-redirect-compat.spec.ts`.
+- Production nav and home CTA behavior now route through the canonical launch workspace / guided flow instead of exposing the legacy wizard.
+- Blocker-facing docs and specs now treat `/create/wizard` as redirect-only rather than a first-class destination.
 
-**Business Impact:**
-- Reduced route ambiguity in MVP-critical E2E journeys
-- Lower regression risk for canonical launch path messaging
+**Business Value:**
+- Reduces confusion in demos and enterprise onboarding.
+- Avoids QA waste caused by duplicated route assertions.
+- Improves trust by aligning product, tests, and roadmap around one launch story.
 
-**Remaining Action:**
-1. Keep redirect-compat tests isolated to the dedicated compatibility spec.
-2. Reject any new direct `/create/wizard` navigation in non-compat tests during review.
-3. Preserve `/launch/workspace` as the canonical top-level entry and `/launch/guided` as the downstream guided-wizard destination in new blocker-facing coverage.
+**Reality Check (April 4, 2026):**
+- Keep this closed as a product blocker.
+- The only remaining work is communication hygiene: stakeholder-facing docs still need to describe `/launch/workspace` as the entry point and `/launch/guided` as the downstream wizard destination.
 
----
+**Recommended Action:**
+- Treat this as documentation maintenance, not feature work.
 
 #### 4. **Error Message User Experience** 🟡 **PRIORITY: MEDIUM**
 
-**Issue:** Error messages sometimes expose technical details instead of user-friendly guidance
+**Issue:** Error handling has improved materially in release-evidence and compliance surfaces, but the remaining business risk is now around truthful operator guidance and surfacing the right next step when protected release evidence is unavailable.
 
 **Evidence:**
-- Components use `err.message` patterns which may show stack traces or error codes
-- Good patterns exist (`StateMessage` component with `userGuidance` and `nextAction` fields) but not used consistently
-- Some errors show "Temporary Issue" vs "Error" semantic differentiation (good) but inconsistent
+- Release Evidence Center and adjacent workspaces now distinguish `environment_blocked`, `stale`, `partial_hydration`, `backend_confirmed`, and related truth states.
+- Notification center and remediation guidance now explain what operators should do next instead of failing silently.
+- Strict sign-off workflows now emit infrastructure-status artifacts, allowing the UI to fail closed instead of bluffing readiness.
 
-**Business Impact:**
-- Non-technical users confused by error messages (target audience per roadmap)
-- Increased support ticket volume
-- Reduced user trust and confidence
-- Longer time to resolution for user errors
+**Business Value:**
+- Improves enterprise trust during demos and audits by making uncertainty explicit.
+- Reduces support load because users see actionable next steps instead of generic errors.
+- Aligns the product story with the platform's actual release-governance state.
 
-**Required Actions:**
-1. Audit all error handling code for user-facing error messages
-2. Implement consistent error message translation layer
-3. Ensure all errors include:
-   - What happened (user-friendly language)
-   - Why it matters (business impact)
-   - How to fix it (actionable next steps)
-   - Support contact (for unresolvable errors)
-4. Add error message testing to QA checklist
-5. Document error message patterns in style guide
+**Reality Check (April 4, 2026):**
+- This area remains commercially important, but the highest-value work is now maintaining truthful messaging as the strict sign-off environment is provisioned and as release-evidence artifacts become real.
+- The notification-center Playwright failure shows why error/truth UX tests must also stay deterministic over time; operator-facing proof is only as credible as the stability of the tests that back it.
 
-**Acceptance Criteria:**
-- 100% of user-facing errors use translation layer
-- All errors include 3-part structure (what/why/how)
-- No technical error codes or stack traces shown to users
-- Error messages tested with non-technical users
-- Style guide documented with 10+ examples
-
-**Estimated Effort:** 32-48 hours (2 weeks, 1 developer)
-
----
+**Recommended Action:**
+- Prioritize deterministic evidence maintenance and strict sign-off provisioning before expanding into new error UX variants.
 
 #### 5. **View/Component Consolidation** 🟡 **PRIORITY: LOW**
 
-**Issue:** 42 views detected, with more overlap risk now that onboarding, evidence, reporting, and cockpit surfaces have expanded rapidly.
+**Issue:** Consolidation across enterprise views improved, but some duplicate test patterns and documentation still create business drag by increasing maintenance overhead and making evidence less trustworthy.
 
 **Evidence:**
-- `src/views/` contains **42** view files
-- Multiple similar flows: GuidedTokenLaunch.vue, TokenCreationWizard.vue, TokenCreator.vue
-- Unclear which flow is recommended for different user types
-- Increases maintenance burden and testing surface
+- Shared shell, truthfulness utilities, release-readiness helpers, and auth helpers now power multiple high-value routes.
+- Remaining debt clusters are now mostly in test posture and docs: helper divergence, fixed polling sleeps, skip guards, and stale status docs.
+- Recent roadmap-only commits changed no shipped product code yet still changed the business evidence story because test assumptions were time-brittle.
 
-**Business Impact:**
-- Confuses users about which flow to use
-- Increased development and QA costs
-- Risk of feature drift between duplicate flows
-- Harder to measure conversion metrics (split across flows)
+**Business Value:**
+- Lower maintenance cost for enterprise release-readiness evidence.
+- Faster, more reliable future launches when evidence and product stay aligned.
+- Clearer investor / operator messaging because duplicate stale narratives are removed.
 
-**Required Actions:**
-1. Map all 42 views to user journeys
-2. Identify duplicate/overlapping functionality
-3. Consolidate to single recommended flow per use case
-4. Archive or remove deprecated views
-5. Update navigation to reflect consolidated structure
-6. Add flow selection guidance for edge cases
+**Reality Check (April 4, 2026):**
+- Further consolidation should focus on test and documentation systems rather than new UI refactors.
 
-**Acceptance Criteria:**
-- Single recommended token creation flow documented
-- Deprecated views removed from codebase
-- Navigation updated to reflect consolidated structure
-- User journey map shows clear paths (no overlap)
-- Analytics tracking on single consolidated flow
-
-**Estimated Effort:** 40-60 hours (2-3 weeks, 1 developer)
-
----
+**Recommended Action:**
+- Fold remaining blocker-grade helper cleanup, wait cleanup, and status-doc refresh work into the next maintenance cycle.
 
 ### Low Priority UX Improvements 🟢
 
 #### 6. **Loading State Consistency** 🟢 **PRIORITY: LOW**
 
-**Issue:** Loading states exist (Button component has loading spinner) but consistency across views not verified
+**Issue:** Loading states are still somewhat inconsistent, but this is no longer a business-owner blocker because the more important release-governance gaps now sit in protected sign-off evidence and deterministic validation.
 
-**Required Actions:**
-1. Audit all async operations for loading state indicators
-2. Standardize loading state patterns (skeleton loaders, spinners, progress bars)
-3. Ensure loading states accessible (aria-busy, aria-live announcements)
-4. Document loading state guidelines
+**Business Value:**
+- Small UX polish benefit.
+- Minor reduction in perceived latency.
 
-**Estimated Effort:** 16-24 hours
-
----
+**Recommended Action:**
+- Leave in backlog until strict sign-off evidence and current-head Playwright health are both green.
 
 #### 7. **Form Validation UX** 🟢 **PRIORITY: LOW**
 
-**Issue:** Form validation present (Input/Select components have error states) but validation timing not documented
+**Issue:** Form validation can still be improved, but the commercial bottleneck is not form polish — it is proving current-head readiness honestly.
 
-**Required Actions:**
-1. Audit validation timing (on blur vs on submit vs on change)
-2. Standardize validation feedback patterns
-3. Add inline validation hints before errors occur
-4. Test validation UX with real users
+**Business Value:**
+- Incremental usability uplift.
+- Lower abandonment on long forms over time.
 
-**Estimated Effort:** 16-24 hours
-
----
+**Recommended Action:**
+- Keep in backlog behind strict sign-off provisioning and test-determinism maintenance.
 
 #### 8. **Progressive Disclosure** 🟢 **PRIORITY: LOW**
 
-**Issue:** Some components use `<details>` for technical information (good pattern) but not consistent across complex flows
+**Issue:** There is still room to simplify some advanced workflows, but this is not the gating factor for MVP commercial launch readiness.
 
-**Required Actions:**
-1. Identify complex workflows with 5+ steps
-2. Implement progressive disclosure (show essential, hide advanced)
-3. Add "Show advanced options" toggles
-4. Test with beginner vs expert users
+**Business Value:**
+- Moderate future usability benefit.
+- Helpful once enterprise workflows become broader and denser.
 
-**Estimated Effort:** 24-32 hours
-
----
+**Recommended Action:**
+- Revisit after the business-owner blocker list is materially reduced.
 
 ### Recommended Implementation Priority
 
-**Phase 1 (MVP Blockers - Next 2 Weeks):**
-1. 🔴 **Configure and pass the strict backend sign-off lane** - Provision protected-environment secrets, execute the real backend Playwright lane, and obtain the first green `is_release_evidence:true` artifact on the actual release candidate / current `main` head
-2. 🔴 **Promote strict sign-off to a real release gate** - Treat the workflow result as required evidence for MVP / business-owner sign-off
-3. 🟡 **Keep strict-evidence UX and docs aligned** - Preserve the merged PR **#733** fail-closed artifact panel, and refresh operator-facing documentation whenever strict workflow behavior or artifact semantics change
+**Phase 1 (MVP Blocker Closure - Weeks 1-2):**
+1. 🔴 **Provision protected strict sign-off environment** - Configure `SIGNOFF_API_BASE_URL`, `SIGNOFF_TEST_PASSWORD`, and optional `SIGNOFF_TEST_EMAIL`; obtain first `is_release_evidence:true` artifact-backed run on current head
+2. 🔴 **Restore current-head Playwright health** - Fix the date-brittle notification-center freshness assertions and rerun current `main` until the browser lane is green again
+3. 🔴 **Finish blocker-grade Playwright hardening** - Remove strict-lane `waitForTimeout()` sleeps, reduce guarded skips, and finish the remaining `mvp-stabilization.spec.ts` auth-helper cleanup
 
 **Phase 2 (Post-MVP Hardening - Weeks 3-6):**
-4. 🟡 **Maintain human-reviewed accessibility evidence** - Keep the new screen-reader and procurement artifacts current for procurement-sensitive flows
-5. 🟡 **Reduce permissive Playwright patterns** - Restrict broad `suppressBrowserErrors()`, reduce `withAuth()` dependence, and keep blocker-adjacent suites closer to production reality
+4. 🟡 **Refresh stakeholder-facing evidence docs** - Align `PLAYWRIGHT_STATUS.md`, `MVP_SIGNOFF_READINESS_BLOCKER_MAPPING.md`, and `e2e/README.md` to the real route contract and current strict/permissive posture
+5. 🟡 **Maintain human-reviewed accessibility evidence** - Keep the new screen-reader and procurement artifacts current for procurement-sensitive flows
 6. 🟡 **Productize the operations cockpit with live case-management parity** - Extend the shipped role-aware cockpit with deployed backend data, workflow handoffs, and case-management parity so upstream operations match downstream governance surfaces
 
 **Phase 3 (Commercial Maturity - Q2 2026):**
@@ -442,7 +389,7 @@ Based on comprehensive product review including source code analysis, E2E test c
 ### Success Metrics
 
 **Accessibility:**
-- Automated WCAG / contrast evidence on critical routes: **Green on `main` in the permissive Playwright lane, including compliance policy, compliance setup, whitelist, team workspace, and shared shell routes**
+- Automated WCAG / contrast evidence on critical routes: **Green on recent `main` heads in the permissive Playwright lane for accessibility-critical suites; overall current-head Playwright is red only because of a separate notification-center freshness assertion**
 - Screen-reader and keyboard validation on highest-value flows: **Keyboard shell proof automated and screen-reader review now documented with release evidence artifacts; both need active refresh as product surfaces evolve**
 
 **Navigation:**
@@ -460,9 +407,9 @@ Based on comprehensive product review including source code analysis, E2E test c
 - Playwright auth split: **44 files with `withAuth()`** vs **22 files with `loginWithCredentials()`** vs **2 files with `loginWithCredentialsStrict()`**
 - Legacy route debt: direct `goto('/create/wizard')` still appears in only **1 spec file**, the dedicated redirect-compat suite
 - `waitForTimeout` debt: **48 actual `waitForTimeout(...)` calls remain across 22 spec files**, and the two live polling sleeps that matter most for sign-off quality are still inside `e2e/mvp-backend-signoff.spec.ts` and `e2e/backend-deployment-contract.spec.ts`
-- Documentation drift: the roadmap is current again, but `PLAYWRIGHT_STATUS.md`, `MVP_SIGNOFF_READINESS_BLOCKER_MAPPING.md`, and parts of `e2e/README.md` still do not match the April 3 `main` head `d248c1e`; the newest strict artifact is still run **23844787156** on older head `d70a0ab` and still reports infrastructure-only `not_configured` status instead of release evidence, and the docs still lag the real `/launch/workspace` → `/launch/guided` launch-route contract
+- Documentation drift: the roadmap is current again, but `PLAYWRIGHT_STATUS.md`, `MVP_SIGNOFF_READINESS_BLOCKER_MAPPING.md`, and parts of `e2e/README.md` still do not match the April 4 `main` head `c2c90e7`; they still overstate current-head Playwright health, understate remaining `withAuth()` / `waitForTimeout()` debt, and lag the real `/launch/workspace` → `/launch/guided` launch-route contract while the newest strict artifact remains **23844787156** on older head `d70a0ab` as infrastructure-only `not_configured` evidence
 
 ---
 
-**Last Updated:** April 3, 2026 (reality check for current `main` head `d248c1e`; `Playwright Tests` **23942801225** and `Run Tests` **23942801187** are green on that exact commit, the latest `Build and Deploy FE` success remains **23844787131** on prior product-bearing head `d70a0ab` because `build-fe.yml` is path-scoped away from docs-only changes, and the newest `Strict Backend Sign-off Gate` artifact remains **23844787156** on that older head as a successful-but-`not_configured` infrastructure artifact because `SIGNOFF_API_BASE_URL` / `SIGNOFF_TEST_PASSWORD` are not set and `is_release_evidence` remains `false`; issues **#751**, **#747**, **#749**, and **#753** plus merged PR **#754** still count as shipped enterprise UX progress on `main`, PR **#744** remains the last merged blocker-suite hardening milestone, and the remaining business-owner blockers are protected release-evidence credibility, fresh strict-run provenance on current head, residual blocker-suite helper / wait discipline, local Playwright reproducibility, and stale stakeholder-facing Playwright documentation including the canonical launch-route contract)
-**Next Review:** April 10, 2026
+**Last Updated:** April 4, 2026 (reality check for current `main` head `c2c90e7`; `Run Tests` **23964156707** is green on that exact commit, but `Playwright Tests` **23964156699** is failing there — and **23964079739** already failed on prior docs-only head `1887285` — because `e2e/compliance-notification-center.spec.ts` still hardcodes a freshness-filter expectation that aged mock data now breaks; the latest successful Playwright evidence on `main` therefore remains **23942801225** on earlier head `d248c1e`, the latest `Build and Deploy FE` success remains **23844787131** on prior product-bearing head `d70a0ab` because `build-fe.yml` is path-scoped away from docs-only changes, and the newest `Strict Backend Sign-off Gate` artifact remains **23844787156** on that older head as a successful-but-`not_configured` infrastructure artifact because `SIGNOFF_API_BASE_URL` / `SIGNOFF_TEST_PASSWORD` are not set and `is_release_evidence` remains `false`; issues **#751**, **#747**, **#749**, and **#753** plus merged PR **#754** still count as shipped enterprise UX progress on `main`, PR **#744** remains the last merged blocker-suite hardening milestone, and the remaining business-owner blockers are current-head Playwright determinism, protected release-evidence credibility, fresh strict-run provenance on current head, residual blocker-suite helper / wait discipline, local Playwright reproducibility, and stale stakeholder-facing Playwright documentation including the canonical launch-route contract)
+**Next Review:** April 11, 2026
