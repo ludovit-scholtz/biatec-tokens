@@ -1,5 +1,6 @@
 import { mount } from '@vue/test-utils'
 import { describe, it, expect, vi } from 'vitest'
+import { nextTick } from 'vue'
 import InviteMemberModal from '../InviteMemberModal.vue'
 
 // Stub heavy child components
@@ -150,5 +151,26 @@ describe('InviteMemberModal', () => {
     const opts = vm.roleOptions as Array<{ value: string; label: string }>
     expect(opts.some((o) => o.value === 'owner')).toBe(false)
     expect(opts.length).toBeGreaterThan(0)
+  })
+
+  describe('watch loading→false without error triggers success (lines 250-257)', () => {
+    it('sets successMessage when loading transitions from true to false with no error', async () => {
+      vi.useFakeTimers()
+      const w = mountModal({ loading: true, isOpen: true })
+      const vm = w.vm as any
+      // Transition: loading was true, now false, no error
+      await w.setProps({ loading: false })
+      await nextTick()
+      expect(vm.successMessage).toBe('Invitation sent successfully!')
+      vi.useRealTimers()
+    })
+
+    it('does not set successMessage when apiError is set', async () => {
+      const w = mountModal({ loading: true, isOpen: true })
+      const vm = w.vm as any
+      await w.setProps({ loading: false, apiError: 'Bad request' })
+      await nextTick()
+      expect(vm.successMessage).toBeNull()
+    })
   })
 })

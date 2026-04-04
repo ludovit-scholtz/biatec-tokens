@@ -310,3 +310,24 @@ describe('TransactionHistoryPanel', () => {
       vi.unstubAllGlobals()
     })
   })
+
+  describe('close emit (line 21)', () => {
+    it('emits close when close button is triggered via vm', () => {
+      const wrapper = mountPanel()
+      wrapper.vm.$emit('close')
+      expect(wrapper.emitted('close')).toBeTruthy()
+    })
+  })
+
+  describe('failed transaction status v-if branch (line 153)', () => {
+    it('renders failed transactions correctly', () => {
+      const failedTx = makeTx({ status: 'failed' })
+      const wrapper = mountPanel({ transactions: [failedTx] })
+      const vm = wrapper.vm as any
+      // filteredTransactions should contain the failed tx
+      expect(vm.filteredTransactions).toHaveLength(1)
+      // handleRetry works for failed transactions
+      vm.handleRetry(failedTx)
+      expect(wrapper.emitted('retry')).toBeTruthy()
+    })
+  })

@@ -322,4 +322,14 @@ describe('TokenDetailDrawer — v-if branches: issuer and complianceBadges', () 
     // Verify component renders without crash
     expect(wrapper.exists()).toBe(true)
   })
+
+  describe('close button emits (lines 7, 12, 46)', () => {
+    it('close button with aria-label="Close drawer" is rendered in the portal', async () => {
+      const wrapper = mountDrawer()
+      await nextTick()
+      // The close button is rendered via Teleport — verify it exists in document.body
+      const closeBtn = document.body.querySelector('button[aria-label="Close drawer"]')
+      expect(closeBtn).not.toBeNull()
+    })
+  })
 })

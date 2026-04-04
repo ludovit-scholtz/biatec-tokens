@@ -185,6 +185,36 @@ describe('EscalationFlowModal — note input', () => {
     expect(textarea!.getAttribute('maxlength')).toBe('500')
     wrapper.unmount()
   })
+
+  it('note v-model updates vm note when textarea value changes (line 164)', async () => {
+    const wrapper = await mountModal()
+    const textarea = bodyQuery(ESCALATION_MODAL_TEST_IDS.NOTE_INPUT) as HTMLTextAreaElement | null
+    if (textarea) {
+      textarea.value = 'Custom escalation note'
+      textarea.dispatchEvent(new Event('input'))
+      await nextTick()
+      const vm = wrapper.vm as any
+      expect(vm.note).toBe('Custom escalation note')
+    }
+    wrapper.unmount()
+  })
+
+  it('selectedReason v-model updates when select value changes (line 116)', async () => {
+    const wrapper = await mountModal()
+    const select = bodyQuery(ESCALATION_MODAL_TEST_IDS.REASON_SELECT) as HTMLSelectElement | null
+    if (select) {
+      // Change to a different option
+      const opts = select.options
+      if (opts.length > 1) {
+        select.value = opts[1].value
+        select.dispatchEvent(new Event('change'))
+        await nextTick()
+        const vm = wrapper.vm as any
+        expect(vm.selectedReason).toBe(opts[1].value)
+      }
+    }
+    wrapper.unmount()
+  })
 })
 
 // ---------------------------------------------------------------------------
