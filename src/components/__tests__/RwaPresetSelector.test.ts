@@ -72,9 +72,9 @@ describe('RwaPresetSelector — selectPreset', () => {
       selectedPreset: string | null
     }
     expect(vm.selectedPreset).toBeNull()
-    vm.selectPreset('rwa-real-estate')
+    vm.selectPreset('rwa-security-token')
     await nextTick()
-    expect(vm.selectedPreset).toBe('rwa-real-estate')
+    expect(vm.selectedPreset).toBe('rwa-security-token')
   })
 
   it('can switch to a different preset', async () => {
@@ -83,11 +83,11 @@ describe('RwaPresetSelector — selectPreset', () => {
       selectPreset: (id: string) => void
       selectedPreset: string | null
     }
-    vm.selectPreset('rwa-real-estate')
+    vm.selectPreset('rwa-security-token')
     await nextTick()
-    vm.selectPreset('rwa-commodity')
+    vm.selectPreset('rwa-real-estate-token')
     await nextTick()
-    expect(vm.selectedPreset).toBe('rwa-commodity')
+    expect(vm.selectedPreset).toBe('rwa-real-estate-token')
   })
 })
 
@@ -106,11 +106,11 @@ describe('RwaPresetSelector — currentPreset computed', () => {
       selectPreset: (id: string) => void
       currentPreset: { id: string; name: string } | null
     }
-    vm.selectPreset('rwa-commodity')
+    vm.selectPreset('rwa-security-token')
     await nextTick()
     expect(vm.currentPreset).not.toBeNull()
-    expect(vm.currentPreset!.id).toBe('rwa-commodity')
-    expect(vm.currentPreset!.name).toBe('Commodity Token')
+    expect(vm.currentPreset!.id).toBe('rwa-security-token')
+    expect(vm.currentPreset!.name).toBe('RWA Security Token (Whitelisted)')
   })
 
   it('returns null for an unknown preset ID', async () => {
@@ -150,7 +150,8 @@ describe('RwaPresetSelector — rwaPresets computed', () => {
   it('returns all templates from the token store', () => {
     const wrapper = mountSelector()
     const vm = wrapper.vm as unknown as { rwaPresets: object[] }
-    expect(vm.rwaPresets).toHaveLength(2)
+    // The token store has 5 RWA presets (rwaTokenTemplates is a computed, not overridable via initialState)
+    expect(vm.rwaPresets).toHaveLength(5)
   })
 })
 
@@ -158,8 +159,8 @@ describe('RwaPresetSelector — template rendering', () => {
   it('renders preset names from the store', () => {
     const wrapper = mountSelector()
     const html = wrapper.html()
-    expect(html).toContain('Real Estate Token')
-    expect(html).toContain('Commodity Token')
+    expect(html).toContain('RWA Real Estate Token')
+    expect(html).toContain('RWA Security Token (Whitelisted)')
   })
 
   it('does not render any wallet connector UI', () => {

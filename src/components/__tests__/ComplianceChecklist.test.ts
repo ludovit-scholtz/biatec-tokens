@@ -202,8 +202,10 @@ describe('ComplianceChecklist — handleExport', () => {
     const appendSpy = vi.spyOn(document.body, 'appendChild').mockImplementation((el) => el)
     const removeSpy = vi.spyOn(document.body, 'removeChild').mockImplementation((el) => el)
     const clickSpy = vi.fn()
+    // Save the original before spying to avoid infinite recursion in the mock
+    const originalCreateElement = document.createElement.bind(document)
     vi.spyOn(document, 'createElement').mockImplementation((tag: string) => {
-      const el = document.createElement.apply(document, [tag]) as HTMLAnchorElement
+      const el = originalCreateElement(tag) as HTMLAnchorElement
       if (tag === 'a') {
         ;(el as any).click = clickSpy
       }
