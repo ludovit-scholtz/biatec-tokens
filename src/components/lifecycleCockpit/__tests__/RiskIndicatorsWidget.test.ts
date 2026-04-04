@@ -116,4 +116,28 @@ describe('RiskIndicatorsWidget', () => {
       expect(emitted).toBeDefined()
     }
   })
+
+  it('applies green border for healthy inactivity severity (else branch line 44)', () => {
+    const w = mount(RiskIndicatorsWidget, {
+      props: { indicators: makeIndicators({ inactivity: makeIndicator({ severity: 'healthy' as any }) }) },
+      global: { stubs },
+    })
+    expect(w.html()).toContain('border-green-500')
+  })
+
+  it('applies green border for healthy unusualActivity severity (else branch line 58)', () => {
+    const w = mount(RiskIndicatorsWidget, {
+      props: { indicators: makeIndicators({ unusualActivity: makeIndicator({ severity: 'healthy' as any }) }) },
+      global: { stubs },
+    })
+    expect(w.html()).toContain('border-green-500')
+  })
+
+  it('cursor-pointer class absent when no deepLink on concentration (line 35)', () => {
+    const w = mount(RiskIndicatorsWidget, {
+      props: { indicators: makeIndicators({ concentration: makeIndicator({ deepLink: undefined }) }) },
+      global: { stubs },
+    })
+    expect(w.find('.cursor-pointer').exists()).toBe(false)
+  })
 })

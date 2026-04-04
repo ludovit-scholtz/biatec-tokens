@@ -167,3 +167,39 @@ describe('additional slot', () => {
     expect(wrapperWithSlot.find('#extra-slot').exists()).toBe(true)
   })
 })
+
+describe('expectedDuration and durationNote rendering (lines 49-55, 72)', () => {
+  it('renders expectedDuration when prop is provided (line 49)', () => {
+    const wrapper = mountExplainer({ defaultExpanded: true, expectedDuration: '2-5 minutes' })
+    expect(wrapper.text()).toContain('2-5 minutes')
+    expect(wrapper.text()).toContain('Expected duration')
+  })
+
+  it('renders durationNote when expectedDuration and durationNote are provided (line 53)', () => {
+    const wrapper = mountExplainer({
+      defaultExpanded: true,
+      expectedDuration: '30 seconds',
+      durationNote: 'depending on network congestion',
+    })
+    expect(wrapper.text()).toContain('depending on network congestion')
+  })
+
+  it('does not render expectedDuration section when prop is not provided', () => {
+    const wrapper = mountExplainer({ defaultExpanded: true })
+    expect(wrapper.find('.explainer-section').text()).not.toContain('Expected duration')
+  })
+
+  it('renders additional slot when provided (line 72)', () => {
+    const wrapper = mount(ActionExplainer, {
+      props: {
+        actionTitle: 'Test',
+        whatHappens: 'happens',
+        steps: ['step1'],
+        defaultExpanded: true,
+      },
+      slots: { additional: '<p class="extra-slot-content">Custom extra content</p>' },
+    })
+    expect(wrapper.find('.extra-slot-content').exists()).toBe(true)
+    expect(wrapper.text()).toContain('Custom extra content')
+  })
+})

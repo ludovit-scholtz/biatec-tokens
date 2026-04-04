@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import AllowanceListItem from '../AllowanceListItem.vue'
 import type { EVMTokenAllowance, AVMAssetOptIn } from '../../types/allowances'
@@ -143,5 +143,114 @@ describe('AllowanceListItem', () => {
       global: { stubs },
     })
     expect(wrapper.text()).toContain('500')
+  })
+
+  describe('shouldShowWarning and warningMessage branches (lines 163-176)', () => {
+    it('shouldShowWarning returns true for critical EVM (non-unlimited)', () => {
+      const criticalLimitedEvm: EVMTokenAllowance = {
+        ...evmAllowance,
+        id: 'evm-crit',
+        isUnlimited: false,
+        riskLevel: 'critical',
+      }
+      const wrapper = mount(AllowanceListItem, {
+        props: { allowance: criticalLimitedEvm },
+        global: { stubs },
+      })
+      const vm = wrapper.vm as any
+      expect(vm.shouldShowWarning).toBe(true)
+    })
+
+    it('warningMessage returns critical message when not unlimited but critical risk', () => {
+      const criticalLimitedEvm: EVMTokenAllowance = {
+        ...evmAllowance,
+        id: 'evm-crit2',
+        isUnlimited: false,
+        riskLevel: 'critical',
+      }
+      const wrapper = mount(AllowanceListItem, {
+        props: { allowance: criticalLimitedEvm },
+        global: { stubs },
+      })
+      const vm = wrapper.vm as any
+      expect(vm.warningMessage).toContain('critical security risk')
+    })
+
+    it('warningMessage returns empty string for AVM (non-EVM)', () => {
+      const wrapper = mount(AllowanceListItem, {
+        props: { allowance: avmAllowance },
+        global: { stubs },
+      })
+      const vm = wrapper.vm as any
+      expect(vm.warningMessage).toBe('')
+    })
+
+    it('shouldShowWarning returns false for AVM allowance', () => {
+      const wrapper = mount(AllowanceListItem, {
+        props: { allowance: avmAllowance },
+        global: { stubs },
+      })
+      const vm = wrapper.vm as any
+      expect(vm.shouldShowWarning).toBe(false)
+    })
+  })
+
+  describe('formatTimestamp branches (lines 189-207)', () => {
+    it('returns "Today" for same-day timestamps', () => {
+      const wrapper = mount(AllowanceListItem, { props: { allowance: evmAllowance }, global: { stubs } })
+      const vm = wrapper.vm as any
+      const today = new Date()
+      expect(vm.formatTimestamp(today)).toBe('Today')
+    })
+
+    it('returns "Yesterday" for 1-day-old timestamps', () => {
+      const wrapper = mount(AllowanceListItem, { props: { allowance: evmAllowance }, global: { stubs } })
+      const vm = wrapper.vm as any
+      const yesterday = new Date(Date.now() - 25 * 60 * 60 * 1000)
+      expect(vm.formatTimestamp(yesterday)).toBe('Yesterday')
+    })
+
+    it('returns "N days ago" for 2-29 day old timestamps', () => {
+      const wrapper = mount(AllowanceListItem, { props: { allowance: evmAllowance }, global: { stubs } })
+      const vm = wrapper.vm as any
+      const fiveDaysAgo = new Date(Date.now() - 5 * 24 * 60 * 60 * 1000)
+      expect(vm.formatTimestamp(fiveDaysAgo)).toBe('5 days ago')
+    })
+
+    it('returns "1 month ago" for 30-364 day old timestamps', () => {
+      const wrapper = mount(AllowanceListItem, { props: { allowance: evmAllowance }, global: { stubs } })
+      const vm = wrapper.vm as any
+      const thirtyDaysAgo = new Date(Date.now() - 31 * 24 * 60 * 60 * 1000)
+      const result = vm.formatTimestamp(thirtyDaysAgo)
+      expect(result).toMatch(/month/)
+    })
+
+    it('returns plural "months ago" for 2+ month old timestamps', () => {
+      const wrapper = mount(AllowanceListItem, { props: { allowance: evmAllowance }, global: { stubs } })
+      const vm = wrapper.vm as any
+      const twoMonthsAgo = new Date(Date.now() - 65 * 24 * 60 * 60 * 1000)
+      const result = vm.formatTimestamp(twoMonthsAgo)
+      expect(result).toContain('months ago')
+    })
+
+    it('returns "N year(s) ago" for 365+ day old timestamps', () => {
+      const wrapper = mount(AllowanceListItem, { props: { allowance: evmAllowance }, global: { stubs } })
+      const vm = wrapper.vm as any
+      const twoYearsAgo = new Date(Date.now() - 730 * 24 * 60 * 60 * 1000)
+      const result = vm.formatTimestamp(twoYearsAgo)
+      expect(result).toContain('year')
+    })
+  })
+
+  describe('copyAddress error handling (line 185)', () => {
+    it('handles clipboard write failure gracefully', async () => {
+      // Stub clipboard.writeText on the prototype to simulate rejection
+      const clipboardSpy = vi.spyOn(navigator.clipboard, 'writeText').mockRejectedValue(new Error('Clipboard denied'))
+      const wrapper = mount(AllowanceListItem, { props: { allowance: evmAllowance }, global: { stubs } })
+      const vm = wrapper.vm as any
+      // Should not throw — copyAddress catches the error internally
+      await expect(vm.copyAddress()).resolves.not.toThrow()
+      clipboardSpy.mockRestore()
+    })
   })
 })

@@ -98,4 +98,101 @@ describe('IssuerStatusWidget', () => {
     })
     expect(wrapper.html()).not.toMatch(/WalletConnect|MetaMask|\bPera\b|Defly/i)
   })
+
+  describe('getIconColor computed (lines 93-105)', () => {
+    it('returns green for verified status', async () => {
+      mockGetIssuerStatus.mockResolvedValueOnce({ status: 'verified', legalName: 'A', lastUpdated: '2026-01-01T00:00:00Z' })
+      const wrapper = mount(IssuerStatusWidget, { props: { issuerAddress: 'A1' }, global: { plugins: [createTestingPinia({ createSpy: vi.fn })] } })
+      await new Promise(r => setTimeout(r, 10)); await wrapper.vm.$nextTick()
+      expect((wrapper.vm as any).getIconColor).toBe('green')
+    })
+
+    it('returns yellow for pending status', async () => {
+      mockGetIssuerStatus.mockResolvedValueOnce({ status: 'pending', legalName: 'A', lastUpdated: '2026-01-01T00:00:00Z' })
+      const wrapper = mount(IssuerStatusWidget, { props: { issuerAddress: 'A2' }, global: { plugins: [createTestingPinia({ createSpy: vi.fn })] } })
+      await new Promise(r => setTimeout(r, 10)); await wrapper.vm.$nextTick()
+      expect((wrapper.vm as any).getIconColor).toBe('yellow')
+    })
+
+    it('returns orange for incomplete status', async () => {
+      mockGetIssuerStatus.mockResolvedValueOnce({ status: 'incomplete', legalName: 'A', lastUpdated: '2026-01-01T00:00:00Z' })
+      const wrapper = mount(IssuerStatusWidget, { props: { issuerAddress: 'A3' }, global: { plugins: [createTestingPinia({ createSpy: vi.fn })] } })
+      await new Promise(r => setTimeout(r, 10)); await wrapper.vm.$nextTick()
+      expect((wrapper.vm as any).getIconColor).toBe('orange')
+    })
+
+    it('returns orange for rejected status', async () => {
+      mockGetIssuerStatus.mockResolvedValueOnce({ status: 'rejected', legalName: 'A', lastUpdated: '2026-01-01T00:00:00Z' })
+      const wrapper = mount(IssuerStatusWidget, { props: { issuerAddress: 'A4' }, global: { plugins: [createTestingPinia({ createSpy: vi.fn })] } })
+      await new Promise(r => setTimeout(r, 10)); await wrapper.vm.$nextTick()
+      expect((wrapper.vm as any).getIconColor).toBe('orange')
+    })
+
+    it('returns blue for default (unknown) status', async () => {
+      mockGetIssuerStatus.mockResolvedValueOnce({ status: 'unknown_status', legalName: 'A', lastUpdated: '2026-01-01T00:00:00Z' })
+      const wrapper = mount(IssuerStatusWidget, { props: { issuerAddress: 'A5' }, global: { plugins: [createTestingPinia({ createSpy: vi.fn })] } })
+      await new Promise(r => setTimeout(r, 10)); await wrapper.vm.$nextTick()
+      expect((wrapper.vm as any).getIconColor).toBe('blue')
+    })
+
+    it('returns blue when status is null', async () => {
+      mockGetIssuerStatus.mockResolvedValueOnce(null)
+      const wrapper = mount(IssuerStatusWidget, { props: { issuerAddress: 'A6' }, global: { plugins: [createTestingPinia({ createSpy: vi.fn })] } })
+      await new Promise(r => setTimeout(r, 10)); await wrapper.vm.$nextTick()
+      expect((wrapper.vm as any).getIconColor).toBe('blue')
+    })
+  })
+
+  describe('getStatusColor computed (lines 108-121)', () => {
+    it('returns text-red-400 for rejected status', async () => {
+      mockGetIssuerStatus.mockResolvedValueOnce({ status: 'rejected', legalName: 'A', lastUpdated: '2026-01-01T00:00:00Z' })
+      const wrapper = mount(IssuerStatusWidget, { props: { issuerAddress: 'B4' }, global: { plugins: [createTestingPinia({ createSpy: vi.fn })] } })
+      await new Promise(r => setTimeout(r, 10)); await wrapper.vm.$nextTick()
+      expect((wrapper.vm as any).getStatusColor).toBe('text-red-400')
+    })
+
+    it('returns text-gray-400 for default status', async () => {
+      mockGetIssuerStatus.mockResolvedValueOnce({ status: 'xunknown', legalName: 'A', lastUpdated: '2026-01-01T00:00:00Z' })
+      const wrapper = mount(IssuerStatusWidget, { props: { issuerAddress: 'B5' }, global: { plugins: [createTestingPinia({ createSpy: vi.fn })] } })
+      await new Promise(r => setTimeout(r, 10)); await wrapper.vm.$nextTick()
+      expect((wrapper.vm as any).getStatusColor).toBe('text-gray-400')
+    })
+  })
+
+  describe('getStatusLabel computed (lines 123-137)', () => {
+    it('returns "Rejected" for rejected status', async () => {
+      mockGetIssuerStatus.mockResolvedValueOnce({ status: 'rejected', legalName: 'A', lastUpdated: '2026-01-01T00:00:00Z' })
+      const wrapper = mount(IssuerStatusWidget, { props: { issuerAddress: 'C4' }, global: { plugins: [createTestingPinia({ createSpy: vi.fn })] } })
+      await new Promise(r => setTimeout(r, 10)); await wrapper.vm.$nextTick()
+      expect((wrapper.vm as any).getStatusLabel).toBe('Rejected')
+    })
+
+    it('returns "Unknown" for default status', async () => {
+      mockGetIssuerStatus.mockResolvedValueOnce({ status: 'xunknown', legalName: 'A', lastUpdated: '2026-01-01T00:00:00Z' })
+      const wrapper = mount(IssuerStatusWidget, { props: { issuerAddress: 'C5' }, global: { plugins: [createTestingPinia({ createSpy: vi.fn })] } })
+      await new Promise(r => setTimeout(r, 10)); await wrapper.vm.$nextTick()
+      expect((wrapper.vm as any).getStatusLabel).toBe('Unknown')
+    })
+  })
+
+  describe('formatTimestamp (line 151 — years branch)', () => {
+    it('returns "N years ago" for >365 day old timestamp', async () => {
+      const wrapper = mount(IssuerStatusWidget, { props: { issuerAddress: 'D1' }, global: { plugins: [createTestingPinia({ createSpy: vi.fn })] } })
+      const vm = wrapper.vm as any
+      const twoYearsAgo = new Date(Date.now() - 730 * 24 * 60 * 60 * 1000).toISOString()
+      expect(vm.formatTimestamp(twoYearsAgo)).toMatch(/year/)
+    })
+  })
+
+  describe('gtag analytics in loadStatus (line 165)', () => {
+    it('calls gtag when it is defined on window', async () => {
+      const gtagMock = vi.fn();
+      (window as any).gtag = gtagMock
+      mockGetIssuerStatus.mockResolvedValueOnce({ status: 'verified', legalName: 'A', lastUpdated: '2026-01-01T00:00:00Z' })
+      const wrapper = mount(IssuerStatusWidget, { props: { issuerAddress: 'E1' }, global: { plugins: [createTestingPinia({ createSpy: vi.fn })] } })
+      await new Promise(r => setTimeout(r, 10)); await wrapper.vm.$nextTick()
+      expect(gtagMock).toHaveBeenCalledWith('event', 'compliance_widget_view', expect.objectContaining({ widget_type: 'issuer_status' }));
+      delete (window as any).gtag
+    })
+  })
 })

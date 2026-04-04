@@ -942,4 +942,52 @@ describe('WhitelistManagement Component', () => {
 
     expect(wrapper.vm.isUploading).toBe(false);
   });
+
+  it('addAddress returns early with error when newAddress is empty (lines 518-519)', async () => {
+    vi.mocked(whitelistService.getWhitelist).mockResolvedValue([]);
+    const wrapper = mount(WhitelistManagement, { props: { tokenId: 'token123' } });
+    await wrapper.vm.$nextTick();
+    wrapper.vm.newAddress = '';
+    await wrapper.vm.addAddress();
+    expect(wrapper.vm.addressError).toBe('Address is required');
+    expect(whitelistService.addAddress).not.toHaveBeenCalled();
+  });
+
+  it('loadWhitelist catch block sets error and isLoading false (lines 506-509)', async () => {
+    vi.mocked(whitelistService.getWhitelist).mockRejectedValue(new Error('Network error'));
+    const wrapper = mount(WhitelistManagement, { props: { tokenId: 'token123' } });
+    await wrapper.vm.$nextTick();
+    expect(wrapper.vm.isLoading).toBe(false);
+    expect(wrapper.vm.error).toContain('Network error');
+  });
+
+  it('removeAddress catch block handles error (line 566)', async () => {
+    vi.mocked(whitelistService.getWhitelist).mockResolvedValue([]);
+    vi.mocked(whitelistService.removeAddress).mockRejectedValue(new Error('Remove failed'));
+    const wrapper = mount(WhitelistManagement, { props: { tokenId: 'token123' } });
+    await wrapper.vm.$nextTick();
+    wrapper.vm.addressToRemove = 'A23456723456723456723456723456723456723456723456723456723A';
+    await wrapper.vm.removeAddress();
+    expect(wrapper.vm.isRemoving).toBe(false);
+  });
+
+  it('validateCsvData sets csvError when CSV is empty (lines 582-584)', async () => {
+    vi.mocked(whitelistService.getWhitelist).mockResolvedValue([]);
+    const wrapper = mount(WhitelistManagement, { props: { tokenId: 'token123' } });
+    await wrapper.vm.$nextTick();
+    wrapper.vm.csvData = '   \n\n  ';
+    await wrapper.vm.validateCsvData();
+    expect(wrapper.vm.csvError).toBe('CSV file is empty');
+    expect(wrapper.vm.validationResults).toEqual([]);
+  });
+
+  it('validateCsvData sets csvError when CSV has no address header (lines 589-591)', async () => {
+    vi.mocked(whitelistService.getWhitelist).mockResolvedValue([]);
+    const wrapper = mount(WhitelistManagement, { props: { tokenId: 'token123' } });
+    await wrapper.vm.$nextTick();
+    wrapper.vm.csvData = 'name,email\nJohn,john@test.com';
+    await wrapper.vm.validateCsvData();
+    expect(wrapper.vm.csvError).toBe('CSV must contain an "address" column header');
+    expect(wrapper.vm.validationResults).toEqual([]);
+  });
 });

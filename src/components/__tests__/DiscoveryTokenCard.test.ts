@@ -262,4 +262,21 @@ describe('DiscoveryTokenCard', () => {
       )
     })
   })
+
+  describe('formatNumber (line 252)', () => {
+    it('formats large numbers in compact notation', () => {
+      const wrapper = mount(DiscoveryTokenCard, { props: { token: makeToken() } })
+      const vm = wrapper.vm as any
+      const fn = vm.$.setupState.formatNumber ?? vm.formatNumber
+      if (fn) {
+        expect(fn(1000000)).toMatch(/1M|1,000,000/)
+        expect(fn(1500)).toMatch(/1\.5K|1,500/)
+      } else {
+        // formatNumber is called in template — test that large holder count renders compactly
+        const tokenWithLargeHolders = makeToken({ holdersCount: 2500000 })
+        const w2 = mount(DiscoveryTokenCard, { props: { token: tokenWithLargeHolders } })
+        expect(w2.text()).toMatch(/2\.5M|2,500,000/)
+      }
+    })
+  })
 })

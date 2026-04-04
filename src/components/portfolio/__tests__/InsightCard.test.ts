@@ -90,4 +90,25 @@ describe('InsightCard', () => {
     const article = wrapper.find('[role="article"]')
     expect(article.attributes('aria-label')).toContain('High Concentration Risk')
   })
+
+  describe('fallback branches for unknown severity (lines 74, 83, 92)', () => {
+    it('returns severity string as label for unknown severity', () => {
+      const wrapper = mount(InsightCard, { props: { insight: makeInsight({ severity: 'urgent' as any }) } })
+      const vm = wrapper.vm as any
+      // severityLabel returns the raw severity string when not in the known map
+      expect(vm.severityLabel).toBe('urgent')
+    })
+
+    it('returns empty string badgeClasses for unknown severity', () => {
+      const wrapper = mount(InsightCard, { props: { insight: makeInsight({ severity: 'urgent' as any }) } })
+      const vm = wrapper.vm as any
+      expect(vm.badgeClasses).toBe('')
+    })
+
+    it('returns default white cardClasses for unknown severity', () => {
+      const wrapper = mount(InsightCard, { props: { insight: makeInsight({ severity: 'urgent' as any }) } })
+      const vm = wrapper.vm as any
+      expect(vm.cardClasses).toContain('bg-white')
+    })
+  })
 })

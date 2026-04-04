@@ -72,4 +72,15 @@ describe('RiskIndicatorBadge Component', () => {
       expect(wrapper.find('span').exists()).toBe(true);
     });
   });
+
+  describe('Unknown Risk Level (default branches)', () => {
+    it('should use gray fallback styling for unknown risk level', () => {
+      const wrapper = mount(RiskIndicatorBadge, {
+        props: { riskLevel: 'unknown' as any },
+      });
+      expect(wrapper.find('div').classes()).toContain('text-gray-400');
+      expect(wrapper.find('i').classes()).toContain('pi-info-circle');
+      expect(wrapper.text()).toContain('Unknown');
+    });
+  });
 });

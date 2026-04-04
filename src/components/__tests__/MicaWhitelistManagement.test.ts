@@ -1043,6 +1043,18 @@ AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA,KYC Passed,John Doe,t
       expect(filtered.every((entry: any) => entry.kycVerified === true)).toBe(true);
     });
 
+    it('filteredEntries filters by KYC not-verified status (line 559)', async () => {
+      const wrapper = mount(MicaWhitelistManagement, {
+        props: { tokenId: 'test-token-123', network: 'VOI' },
+        global: { stubs: { Modal: true, Input: true } },
+      });
+      await new Promise(resolve => setTimeout(resolve, 100));
+      const component = wrapper.vm as any;
+      component.kycFilter = 'not-verified';
+      const filtered = component.filteredEntries;
+      expect(filtered.every((entry: any) => entry.kycVerified !== true)).toBe(true);
+    });
+
     it('statistics calculates correct metrics', async () => {
       const wrapper = mount(MicaWhitelistManagement, {
         props: {
