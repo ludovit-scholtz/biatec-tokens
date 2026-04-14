@@ -182,8 +182,11 @@ npx playwright install
 ### Running Tests
 
 ```bash
-# Run all E2E tests
+# Run all E2E tests (uses 'vite dev' with file watchers)
 npm run test:e2e
+
+# Run tests without file watchers — for constrained environments (see below)
+npm run test:e2e:no-watch
 
 # Run tests in UI mode (interactive)
 npm run test:e2e:ui
@@ -196,6 +199,53 @@ npm run test:e2e:debug
 
 # View test report
 npm run test:e2e:report
+```
+
+### Running E2E Tests Without File Watchers (EMFILE Fix)
+
+In some environments — particularly developer machines with many projects open, Docker containers
+with low `fs.inotify.max_user_watches`, or CI runners with restricted file-descriptor limits —
+the standard `npm run test:e2e` command fails with:
+
+```
+Error: EMFILE: too many open files
+```
+
+This happens because Playwright's `webServer` starts `vite dev`, which registers inotify/kqueue
+watchers for every source file and node_modules entry it tracks. On constrained systems, this
+exhausts the OS watcher limit before the dev server finishes starting.
+
+**Solution:** Use the non-watch Playwright configuration that serves the pre-built app via
+`vite preview` (a static file server with no file watchers):
+
+```bash
+# Build the app once, then run all E2E tests without any file watchers
+npm run test:e2e:no-watch
+```
+
+This uses `playwright.no-watch.config.ts` which is identical to `playwright.config.ts` except
+the `webServer` command is `vite preview --port 5173` instead of `npm run dev`.
+
+**Additional benefit:** Because `vite preview` does not maintain the Vite HMR Server-Sent Events
+(SSE) connection that `vite dev` establishes, any test using `waitForLoadState('networkidle')`
+works correctly (the SSE connection in dev mode prevents networkidle from ever completing).
+
+**To run only the blocker-grade sign-off suites without file watchers:**
+
+```bash
+npm run build
+npx playwright test \
+  e2e/mvp-signoff-readiness.spec.ts \
+  e2e/mvp-backend-signoff.spec.ts \
+  --config playwright.no-watch.config.ts
+```
+
+**Increasing inotify limits (alternative):** If you prefer to keep the dev server, you can
+raise the OS limit instead:
+
+```bash
+# Linux — raise inotify limit (add to /etc/sysctl.conf for persistence)
+sudo sysctl fs.inotify.max_user_watches=524288
 ```
 
 ## Canonical Route Policy

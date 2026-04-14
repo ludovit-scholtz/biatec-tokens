@@ -129,7 +129,19 @@ test.describe('White-Label Branding Workspace — unauthenticated redirect', () 
   test('redirects unauthenticated users away from /enterprise/branding', async ({ page }) => {
     await page.goto('http://localhost:5173/enterprise/branding', { timeout: 15000 })
     await page.waitForLoadState('load', { timeout: 10000 })
-    await page.waitForTimeout(3000)
+    // Semantic wait: poll until the router guard has redirected away from /enterprise/branding,
+    // added showAuth=true, or surfaced the auth form — replaces a fixed 3 s sleep.
+    await page.waitForFunction(
+      () =>
+        !window.location.pathname.startsWith('/enterprise/branding') ||
+        window.location.search.includes('showAuth=true') ||
+        document.querySelector('form input[type="email"]') !== null,
+      { timeout: 10000 },
+    ).catch((err: Error) => {
+      // Non-fatal: if the router guard hasn't fired within 10 s, fall through to the
+      // flexible assertion below (redirectedAway || urlHasAuthParam || authFormVisible).
+      console.log(`[white-label-branding] waitForFunction timed out (non-fatal): ${err.message}`)
+    })
     const url = page.url()
     const redirectedAway = !url.includes('/enterprise/branding')
     const hasAuthParam = url.includes('showAuth=true')
