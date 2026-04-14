@@ -12,7 +12,7 @@
 
 **Market Opportunity:** $50B+ RWA tokenization market by 2025, with MICA regulation creating demand for compliant platforms. Current competitors lack comprehensive compliance tooling.
 
-**Current Status:** April 13, 2026 reality check: the accessible working copy of `main` points to commit `c2c90e79cf7e9a6054407dc10945ef5c5dd91460` (`docs: refresh business roadmap reality check`). This repository is a public fork (`ludovit-scholtz/biatec-tokens`) with issues disabled and no visible Actions run history on the fork, while fork metadata still points to `scholtz/biatec-tokens` as the source repository; however, the source repository and its raw files / Actions APIs were not reachable from this environment, so the older upstream run IDs cited elsewhere in this document must now be treated as historical references, not freshly revalidated evidence. Local validation is therefore the authoritative signal available here: `npm ci` and `npm run build` both succeed on `c2c90e7`, but representative Playwright blocker suites (`e2e/mvp-signoff-readiness.spec.ts`, `e2e/mvp-stabilization.spec.ts`) still fail to start locally because Playwright's `webServer` hits Vite `EMFILE` watcher limits. The remaining business-owner MVP blockers are fresh executable sign-off evidence on the maintained release head, protected-environment provisioning, residual Playwright blocker-suite rigor, local Playwright reproducibility, route-contract truthfulness, and stale stakeholder-facing Playwright documentation.
+**Current Status:** April 14, 2026 reality check: the accessible working copy of `main` now points to commit `a779f2c89913ea0d2167be061d45997407d17fe1` (`docs: refresh business roadmap reality check`) in `ludovit-scholtz/biatec-tokens`. GitHub currently exposes the workflows on this repo but no visible workflow-run history, and issues remain disabled, so the older run IDs cited elsewhere in this document and adjacent test-status docs must be treated as historical references rather than freshly revalidated current-head evidence. Local validation is therefore the authoritative signal available here: `npm ci` and `npm run build` both succeed on `a779f2c`, `npm test` is almost green but still has 1 timeout failure in `src/__tests__/integration/ScreenReaderSignOffEvidence.integration.test.ts`, and representative Playwright blocker suites (`e2e/mvp-signoff-readiness.spec.ts`, `e2e/mvp-stabilization.spec.ts`) still fail to start locally because Playwright's `webServer` hits Vite `EMFILE` watcher limits. The remaining business-owner MVP blockers are fresh executable sign-off evidence on the current release head, protected-environment provisioning, residual Playwright blocker-suite rigor, local Playwright reproducibility, route-contract/document truthfulness, and stabilization of the lingering screen-reader sign-off timeout.
 
 ---
 
@@ -148,14 +148,14 @@
 
 ---
 
-## MVP Blockers Reality Check (April 13, 2026 - accessible `main` at `c2c90e7`)
+## MVP Blockers Reality Check (April 14, 2026 - accessible `main` at `a779f2c`)
 
 ### Evidence Reviewed
 
-- Accessible `main` in this environment is commit `c2c90e79cf7e9a6054407dc10945ef5c5dd91460` (`docs: refresh business roadmap reality check`) in the public fork `ludovit-scholtz/biatec-tokens`.
-- Fork metadata confirms this repo is behind a source repository (`scholtz/biatec-tokens`) and was last pushed on April 4, 2026, while the cached parent metadata shows the source repo moved again on April 13, 2026. The source repo itself, its raw files, and its Actions APIs were not reachable from this environment, so prior upstream workflow run IDs remain historical references only.
-- The fork currently has issues disabled and exposes no visible workflow/run history through GitHub CLI, so there is no fresh browser-level CI evidence available from the maintained working repo during this audit.
-- Local validation succeeded for dependency install and build: `npm ci` completed successfully, and `npm run build` produced a green production bundle on `c2c90e7`. The build still emits the known large-chunk warning (`dist/assets/index-DozjBDdL.js` ~2.67 MB) and an ineffective dynamic import warning for `src/stores/subscription.ts`, which are product hardening concerns but not the primary MVP blocker.
+- Accessible `main` in this environment is commit `a779f2c89913ea0d2167be061d45997407d17fe1` (`docs: refresh business roadmap reality check`) in `ludovit-scholtz/biatec-tokens`.
+- GitHub currently reports this repository as a fork, but the accessible API surface here does not expose parent details or any visible workflow-run history; issues are also disabled. That means the run IDs cited in older docs remain useful historical context, but they were not freshly revalidated during this audit.
+- Local validation succeeded for dependency install and build: `npm ci` completed successfully, and `npm run build` produced a green production bundle on `a779f2c`. The build still emits the known large-chunk warning (`dist/assets/index-DozjBDdL.js` ~2.67 MB) and an ineffective dynamic import warning for `src/stores/subscription.ts`, which are product hardening concerns but not the primary MVP blocker.
+- Local unit-test validation is close but not fully green: `npm test` finished with **1** failing test file / **1** failing test (`src/__tests__/integration/ScreenReaderSignOffEvidence.integration.test.ts` timing out in the “single h1 — screen reader announced page identity” case) alongside **478** passing files, **15129** passing tests, and **25** skipped tests.
 - Local Playwright execution remains operationally blocked in this container. Running representative blocker suites (`npx playwright test --project=chromium e2e/mvp-signoff-readiness.spec.ts --reporter=line` and the equivalent `mvp-stabilization` command) fails before test execution because the configured Playwright `webServer` starts Vite in watch mode and hits `EMFILE: too many open files, watch '/app/biatec-tokens/vite.config.ts'`.
 - Test discovery still works: `npx playwright test --list e2e/mvp-signoff-readiness.spec.ts` enumerates **95** tests and `--list e2e/mvp-stabilization.spec.ts` enumerates **90** tests, confirming the blocker specs are present even though this container cannot execute them end-to-end.
 - Static review of the current Playwright corpus still shows strong blocker-facing coverage in `e2e/mvp-signoff-readiness.spec.ts`, `e2e/release-evidence-center.spec.ts`, `e2e/compliance-reporting-workspace.spec.ts`, `e2e/kyc-aml-operator-journey.spec.ts`, and `e2e/wizard-redirect-compat.spec.ts`.
@@ -164,9 +164,9 @@
 
 ### Blocker Validation Status
 
-- 🔴 **Fresh executable sign-off evidence is not currently available:** the accessible fork exposes no live Actions history, the source repository could not be queried from this environment, and local Playwright execution still fails at `webServer` startup because of `EMFILE`.
-- 🔴 **Backend-confirmed strict-release blocker remains open:** there is still no locally revalidated `is_release_evidence:true` artifact for business-owner sign-off, and the document's older strict-run references must be treated as historical rather than current proof.
-- 🟡 **Current-head application build health is acceptable, but browser-level proof is weaker than the roadmap previously implied:** `npm run build` passes on `c2c90e7`, but no fresh current-head Playwright run was executable in this environment.
+- 🔴 **Fresh executable sign-off evidence is not currently available:** the accessible repo exposes workflows but no visible workflow-run history, and local Playwright execution still fails at `webServer` startup because of `EMFILE`.
+- 🔴 **Backend-confirmed strict-release blocker remains open:** there is still no locally revalidated `is_release_evidence:true` artifact for business-owner sign-off, and the older strict-run references in docs must be treated as historical rather than current proof.
+- 🟡 **Current-head application health is acceptable but not fully clean:** `npm run build` passes on `a779f2c`, but no fresh current-head Playwright run was executable in this environment and the unit-test baseline still has a remaining timeout in `ScreenReaderSignOffEvidence.integration.test.ts`.
 - ✅ **Enterprise onboarding, reporting, release-evidence, and accessibility surfaces remain strong in code:** the KYC/AML operator journey, reporting workspace, release-evidence center, and accessibility evidence specs still exist and remain aligned with the wallet-free enterprise story.
 - 🟡 **Blocker-suite helper discipline is only partially compliant:** `mvp-stabilization.spec.ts` still mixes seeded auth with backend-attempted auth, so some blocker-facing paths remain softer than the stated `loginWithCredentials()` standard.
 - 🟡 **Semantic-waits-only standard is still not met:** `mvp-backend-signoff.spec.ts` and the strict branch of `backend-deployment-contract.spec.ts` still rely on fixed polling sleeps.
@@ -183,13 +183,14 @@ Current Playwright coverage still proves a meaningful share of the code-level MV
 
 ### Required Playwright Improvements Before MVP Sign-off
 
-1. Re-establish a trustworthy evidence source for the maintained release head: either make the source repository's workflow history accessible to roadmap maintainers again or enable equivalent Actions evidence on the maintained repo/fork so current-head browser proof can be audited directly.
+1. Re-establish a trustworthy evidence source for the maintained release head: either expose current workflow-run history on the repo that business owners actually audit or provide an equivalent, reviewable current-head evidence channel.
 2. Configure `SIGNOFF_API_BASE_URL`, `SIGNOFF_TEST_PASSWORD`, and (if needed) `SIGNOFF_TEST_EMAIL` in the real `sign-off-protected` environment, then run the strict lane on the actual maintained release head until it produces `is_release_evidence:true`.
 3. Remove the remaining polling sleeps from `e2e/mvp-backend-signoff.spec.ts` and the strict lane inside `e2e/backend-deployment-contract.spec.ts`, replacing them with a semantic polling/retry helper that matches the documented blocker-suite standard.
 4. Finish the auth-helper cleanup by moving the remaining blocker-facing seeded-auth assertions in `e2e/mvp-stabilization.spec.ts` to `loginWithCredentials()`, and clearly label any surviving `withAuth()` use as non-blocker evidence.
-5. Refresh `docs/testing/PLAYWRIGHT_STATUS.md`, `docs/implementations/MVP_SIGNOFF_READINESS_BLOCKER_MAPPING.md`, and `e2e/README.md` so stakeholder-facing guidance matches the current repo topology (fork vs source), actual helper usage, strict-lane prerequisites, real `waitForTimeout()` posture, and the `/launch/workspace` → `/launch/guided` route split.
+5. Refresh `docs/testing/PLAYWRIGHT_STATUS.md`, `docs/implementations/MVP_SIGNOFF_READINESS_BLOCKER_MAPPING.md`, and `e2e/README.md` so stakeholder-facing guidance matches the current repo topology, actual helper usage, strict-lane prerequisites, real `waitForTimeout()` posture, and the `/launch/workspace` → `/launch/guided` route split.
 6. Add a non-watch startup path (or equivalent Playwright `webServer` override) so representative blocker suites can run locally without Vite exhausting file watchers.
-7. Preserve the KYC/reporting/release-evidence/accessibility hardening bar while reducing permissive debt in the rest of the E2E corpus.
+7. Stabilize `src/__tests__/integration/ScreenReaderSignOffEvidence.integration.test.ts` so the local sign-off baseline is fully green again.
+8. Preserve the KYC/reporting/release-evidence/accessibility hardening bar while reducing permissive debt in the rest of the E2E corpus.
 
 ### Priority Action Items
 
@@ -197,8 +198,9 @@ Current Playwright coverage still proves a meaningful share of the code-level MV
 - **URGENT:** Provision the real `sign-off-protected` environment and obtain the first locally credible `is_release_evidence:true` artifact-backed strict run on the maintained release head.
 - **HIGH:** Remove the remaining strict-lane `waitForTimeout()` polling in `mvp-backend-signoff.spec.ts` and `backend-deployment-contract.spec.ts`.
 - **HIGH:** Finish converting blocker-facing seeded-auth usage in `mvp-stabilization.spec.ts` to `loginWithCredentials()` or explicitly downgrade those assertions from blocker-grade evidence.
-- **HIGH:** Refresh `docs/testing/PLAYWRIGHT_STATUS.md`, `docs/implementations/MVP_SIGNOFF_READINESS_BLOCKER_MAPPING.md`, and `e2e/README.md` so they stop overstating current strict-suite posture, repo topology, and the canonical launch-route contract.
+- **HIGH:** Refresh `docs/testing/PLAYWRIGHT_STATUS.md`, `docs/implementations/MVP_SIGNOFF_READINESS_BLOCKER_MAPPING.md`, and `e2e/README.md` so they stop overstating current strict-suite posture and the canonical launch-route contract.
 - **HIGH:** Add a non-watch local Playwright startup path so roadmap stakeholders can execute representative blocker suites outside CI.
+- **HIGH:** Fix the remaining timeout in `src/__tests__/integration/ScreenReaderSignOffEvidence.integration.test.ts` so local release-sign-off validation is fully green, not almost green.
 - **MEDIUM:** Treat the large frontend bundle warning and ineffective subscription-store dynamic import as commercial hardening work that should be addressed once MVP blockers above are under tighter control.
 - **MEDIUM:** Keep provider-backed onboarding proof, accessibility evidence, release-evidence truthfulness, and reporting/audit-export flows current as compliance surfaces evolve.
 
@@ -454,5 +456,5 @@ Based on comprehensive product review including source code analysis, E2E test c
 
 ---
 
-**Last Updated:** April 13, 2026 (reality check for accessible `main` head `c2c90e7`; local `npm ci` and `npm run build` succeed, but representative Playwright blocker suites still fail to start in this environment because the Playwright `webServer` launches Vite in watch mode and hits `EMFILE`; the maintained fork exposes no fresh Actions run history, the source repository was not reachable from this environment, and the remaining business-owner blockers are fresh executable sign-off evidence, protected release-environment provisioning, residual blocker-suite helper / wait discipline, local Playwright reproducibility, route-contract truthfulness, and stale stakeholder-facing Playwright documentation)
-**Next Review:** April 20, 2026
+**Last Updated:** April 14, 2026 (reality check for accessible `main` head `a779f2c`; local `npm ci` and `npm run build` succeed, `npm test` still has 1 timeout failure in `ScreenReaderSignOffEvidence.integration.test.ts`, representative Playwright blocker suites still fail to start in this environment because the Playwright `webServer` launches Vite in watch mode and hits `EMFILE`, the repo exposes no visible workflow-run history for fresh current-head audit evidence, and the remaining business-owner blockers are fresh executable sign-off evidence, protected release-environment provisioning, residual blocker-suite helper / wait discipline, local Playwright reproducibility, route-contract truthfulness, and stale stakeholder-facing Playwright documentation)
+**Next Review:** April 21, 2026
