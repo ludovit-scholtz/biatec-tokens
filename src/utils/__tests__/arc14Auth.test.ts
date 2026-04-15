@@ -1,6 +1,16 @@
 import { describe, it, expect, vi } from 'vitest'
 import { makeArc14AuthHeader, makeArc14TxWithSuggestedParams } from '../arc14Auth'
-import algosdk from 'algosdk'
+
+vi.mock('algosdk', async () => {
+  const actual = await vi.importActual<typeof import('algosdk')>('algosdk')
+  return {
+    ...actual,
+    default: {
+      ...actual.default,
+      makePaymentTxnWithSuggestedParamsFromObject: vi.fn(),
+    },
+  }
+})
 
 describe('arc14Auth', () => {
   it('makeArc14AuthHeader returns SigTx prefix with base64 encoded transaction', () => {
@@ -48,13 +58,14 @@ describe('arc14Auth', () => {
 })
 
 describe('makeArc14TxWithSuggestedParams', () => {
-  it('calls algosdk.makePaymentTxnWithSuggestedParamsFromObject with correct fields', async () => {
+  it('calls makePaymentTxnWithSuggestedParamsFromObject with correct fields', async () => {
+    const algosdk = await import('algosdk')
+    const mockFn = algosdk.default
+      .makePaymentTxnWithSuggestedParamsFromObject as ReturnType<typeof vi.fn>
     const mockTx = { txID: () => 'mock-txid' }
-    const spy = vi
-      .spyOn(algosdk, 'makePaymentTxnWithSuggestedParamsFromObject')
-      .mockReturnValue(mockTx as unknown as algosdk.Transaction)
+    mockFn.mockReturnValue(mockTx)
 
-    const params: algosdk.SuggestedParams = {
+    const params = {
       fee: 1000,
       firstValid: 100,
       lastValid: 200,
@@ -67,27 +78,24 @@ describe('makeArc14TxWithSuggestedParams', () => {
 
     const result = await makeArc14TxWithSuggestedParams(realm, address, params)
 
-    expect(spy).toHaveBeenCalledOnce()
-    const callArg = spy.mock.calls[0][0]
+    expect(mockFn).toHaveBeenCalledOnce()
+    const callArg = mockFn.mock.calls[0][0]
     expect(callArg.sender).toBe(address)
     expect(callArg.receiver).toBe(address)
     expect(callArg.amount).toBe(0)
     expect(callArg.suggestedParams).toBe(params)
-    // note must encode "ARC14:<realm>:<address>"
     const expectedNote = new TextEncoder().encode(`ARC14:${realm}:${address}`)
     expect(callArg.note).toEqual(expectedNote)
     expect(result).toBe(mockTx)
-
-    spy.mockRestore()
   })
 
   it('embeds the realm and address in the note bytes', async () => {
-    const mockTx = {} as algosdk.Transaction
-    const spy = vi
-      .spyOn(algosdk, 'makePaymentTxnWithSuggestedParamsFromObject')
-      .mockReturnValue(mockTx)
+    const algosdk = await import('algosdk')
+    const mockFn = algosdk.default
+      .makePaymentTxnWithSuggestedParamsFromObject as ReturnType<typeof vi.fn>
+    mockFn.mockReturnValue({})
 
-    const params: algosdk.SuggestedParams = {
+    const params = {
       fee: 0,
       firstValid: 1,
       lastValid: 1001,
@@ -98,10 +106,8 @@ describe('makeArc14TxWithSuggestedParams', () => {
 
     await makeArc14TxWithSuggestedParams('example.com', 'ADDR123', params)
 
-    const note = spy.mock.calls[0][0].note as Uint8Array
+    const note = mockFn.mock.calls[mockFn.mock.calls.length - 1][0].note as Uint8Array
     const decoded = new TextDecoder().decode(note)
     expect(decoded).toBe('ARC14:example.com:ADDR123')
-
-    spy.mockRestore()
   })
 })
