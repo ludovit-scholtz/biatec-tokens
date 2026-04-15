@@ -148,10 +148,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: 'npm'
@@ -335,7 +335,7 @@ jobs:
 
       - name: Upload sign-off report artifact
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v4
         with:
           # Include run ID for audit trail — sign-off artifacts are kept for 90 days
           name: strict-signoff-report-${{ github.run_id }}
