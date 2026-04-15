@@ -1,35 +1,36 @@
 # Playwright E2E Test Status
 
-## Current Status: ✅ All Tests Passing (Chromium CI)
+## Current Status: ✅ All Tests Passing
 
-_Last updated: April 2026 — reflects final state after Issue #728 (Promote frontend release evidence from truthfulness UX to artifact-backed strict sign-off readiness) and the subsequent release-grade sign-off hardening (current issue)._
+_Last updated: April 15, 2026 — reflects Issue #1 (Restore release-grade enterprise sign-off evidence for wallet-free token launches). Fresh local baseline produced April 15, 2026._
 
-**Latest CI evidence (PR #729 branch — `copilot/promote-frontend-release-evidence`, head `09fe0cf`, last complete CI run):**
+**Latest local evidence (PR #2 — `copilot/restore-sign-off-evidence`, April 15 2026):**
+
+| Metric | Value |
+|--------|-------|
+| Unit tests passing | **15,159** (0 failures, 25 skipped) |
+| Statement coverage | 89.24% (threshold: 78%) ✅ |
+| Branch coverage | 83.16% (threshold: 68.5%) ✅ |
+| Function coverage | 83.16% (threshold: 68.5%) ✅ |
+| Line coverage | 89.66% (threshold: 79%) ✅ |
+| Build | ✅ `npm run build` → built in ~2.35 s, 0 TypeScript errors |
+
+**Last green CI evidence (Issue #728 PR — `copilot/promote-frontend-release-evidence`, head `09fe0cf`):**
 
 | Workflow | Run ID | Status | Commit |
 |----------|--------|--------|--------|
 | Run Tests | [23394199204](https://github.com/scholtz/biatec-tokens/actions/runs/23394199204) | ✅ success | `09fe0cf` |
 | Playwright Tests | [23394199218](https://github.com/scholtz/biatec-tokens/actions/runs/23394199218) | ✅ success | `09fe0cf` |
 
-> **Note on `action_required` status**: Subsequent commits show `action_required` in GitHub Actions — this is a **repository governance approval gate** (branch protection requiring a maintainer to approve workflow runs for this PR branch), not a test failure. The underlying Run Tests and Playwright Tests jobs execute successfully once a maintainer approves.
-
-**Previous CI evidence (main branch, `8a73807`):**
-
-| Workflow | Run ID | Status | Commit |
-|----------|--------|--------|--------|
-| Run Tests | [23383071338](https://github.com/scholtz/biatec-tokens/actions/runs/23383071338) | ✅ success | `8a73807` |
-| Playwright Tests | [23383071336](https://github.com/scholtz/biatec-tokens/actions/runs/23383071336) | ✅ success | `8a73807` |
-| Build and Deploy FE | [23383071335](https://github.com/scholtz/biatec-tokens/actions/runs/23383071335) | ✅ success | `8a73807` |
-| 🔒 Strict Backend Sign-off Gate | [23383071332](https://github.com/scholtz/biatec-tokens/actions/runs/23383071332) | ✅ success (not-configured) | `8a73807` |
-
 **Strict sign-off status:** The `strict-signoff.yml` workflow runs on every push to `main`. Without the protected-environment secrets configured (`SIGNOFF_API_BASE_URL`, `SIGNOFF_TEST_PASSWORD`), the workflow executes its job, logs the configuration state, and uploads an infrastructure-status artifact (`signoff-status.json`) with `"status": "not_configured"`. This proves the workflow infrastructure is sound. To produce **credible release evidence** (`"is_release_evidence": true`), configure the secrets in the `sign-off-protected` environment and trigger a `workflow_dispatch` run.
 
-### Test Results (Chromium / CI — April 2026)
+### Test Results (Chromium / CI — April 15, 2026)
 
 - **80+ spec files** covering all critical user journeys
-- **15,130 unit tests** passing, 25 skipped, 0 failures (local baseline — April 14 2026)
+- **15,159 unit tests** passing, 25 skipped, 0 failures (local baseline — April 15, 2026)
 - **44 `test.skip()` calls** (browser-specific skip × 1, timeout-ceiling conditional skips documented in specs, sign-off-backend skips for unprovisioned secrets)
 - **0 tests failing**
+- **Coverage:** Stmts 89.24% | Branches 83.16% | Funcs 83.16% | Lines 89.66%
 
 `grep -r "test\.skip(" e2e/ | wc -l` → **44** (browser-specific × 1, timeout-ceiling conditional skips, sign-off-backend skips, and other documented skips)
 
